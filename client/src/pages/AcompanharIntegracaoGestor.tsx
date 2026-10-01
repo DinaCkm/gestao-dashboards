@@ -417,10 +417,33 @@ function saudeProcesso(colaborador: ColaboradorAcompanhamento) {
   };
 }
 
-function sinaisAtencaoUgp(colaborador: ColaboradorAcompanhamento): string[] {
-  const sinais: string[] = [];
+type AbaAcompanhamentoUgp = 'trajetoria' | 'formularios' | 'desenvolvimento' | 'registros' | 'perfil';
+type SeveridadeAlertaUgp = 'info' | 'acompanhar' | 'atencao';
+
+interface AlertaExecutivoUgp {
+  chave: string;
+  tipo: 'trajetoria' | 'formularios' | 'desenvolvimento' | 'perfil' | 'registros' | 'operacional';
+  titulo: string;
+  mensagem: string;
+  severidade: SeveridadeAlertaUgp;
+  abaDestino?: AbaAcompanhamentoUgp;
+  acao?: string;
+}
+
+function sinaisAtencaoUgpDetalhados(colaborador: ColaboradorAcompanhamento): AlertaExecutivoUgp[] {
+  const sinais: AlertaExecutivoUgp[] = [];
   const atrasados = colaborador.formulariosPendentes.filter((p) => p.atrasado).length;
-  if (atrasados) sinais.push(`${atrasados} formulário(s) atrasado(s)`);
+  if (atrasados) {
+    sinais.push({
+      chave: 'formularios-pendentes',
+      tipo: 'formularios',
+      titulo: 'Formulários em atraso',
+      mensagem: `${atrasados} formulário(s) atrasado(s)`,
+      severidade: 'atencao',
+      abaDestino: 'formularios',
+      acao: 'Ver formulários',
+    });
+  }
 
   const pesquisa = evolucaoPesquisaColaborador(colaborador.respostas);
   if (pesquisa.length >= 2) {
@@ -430,9 +453,15 @@ function sinaisAtencaoUgp(colaborador: ColaboradorAcompanhamento): string[] {
     const atual = mediaMomentoPesquisa(momentoAtual);
     if (anterior != null && atual != null && anterior - atual >= 10) {
       const variacao = variacaoPercentual(anterior, atual);
-      sinais.push(
-        `Pelas respostas do colaborador na Pesquisa de Integração do alinhamento de ${diaDoAlinhamento(momentoAtual.ciclo)} dias, a experiência geral ficou ${variacao == null ? 'menor' : `${Math.round(Math.abs(variacao))}% menor`} do que no alinhamento de ${diaDoAlinhamento(momentoAnterior.ciclo)} dias (${Math.round(atual)}% agora; ${Math.round(anterior)}% antes).`
-      );
+      sinais.push({
+        chave: 'trajetoria-queda',
+        tipo: 'trajetoria',
+        titulo: 'Atenção na trajetória',
+        mensagem: `Pelas respostas do colaborador na Pesquisa de Integração do alinhamento de ${diaDoAlinhamento(momentoAtual.ciclo)} dias, a experiência geral ficou ${variacao == null ? 'menor' : `${Math.round(Math.abs(variacao))}% menor`} do que no alinhamento de ${diaDoAlinhamento(momentoAnterior.ciclo)} dias (${Math.round(atual)}% agora; ${Math.round(anterior)}% antes).`,
+        severidade: 'atencao',
+        abaDestino: 'trajetoria',
+        acao: 'Ver trajetória',
+      });
     }
   }
 
@@ -442,27 +471,70 @@ function sinaisAtencaoUgp(colaborador: ColaboradorAcompanhamento): string[] {
   const a = anjo[anjo.length - 1]?.mediaGeral;
   if (g != null && a != null && Math.abs(g - a) >= 3) {
     const diferenca = Math.abs(g - a);
-    sinais.push(`No alinhamento mais recente, Gestor e Anjo apresentaram uma diferença relevante na percepção sobre a adaptação do colaborador (diferença de ${diferenca.toFixed(1).replace('.', ',')} pontos na escala original de 1 a 5).`);
+    sinais.push({
+      chave: 'formularios-gestor-anjo',
+      tipo: 'formularios',
+      titulo: 'Percepções diferentes',
+      mensagem: `No alinhamento mais recente, Gestor e Anjo apresentaram uma diferença relevante na percepção sobre a adaptação do colaborador (diferença de ${diferenca.toFixed(1).replace('.', ',')} pontos na escala original de 1 a 5).`,
+      severidade: 'acompanhar',
+      abaDestino: 'formularios',
+      acao: 'Ver formulários',
+    });
   }
 
   const fechamento = requisitosFechamento(colaborador);
   if (!fechamento.prazoFinal && colaborador.dia >= 45 && colaborador.pdi.percentual != null && colaborador.pdi.percentual < 25) {
-    sinais.push(`PDI com ${Math.round(colaborador.pdi.percentual)}% de avanço`);
+    sinais.push({
+      chave: 'pdi',
+      tipo: 'desenvolvimento',
+      titulo: 'PDI requer acompanhamento',
+      mensagem: `PDI com ${Math.round(colaborador.pdi.percentual)}% de avanço`,
+      severidade: 'acompanhar',
+      abaDestino: 'desenvolvimento',
+      acao: 'Ver desenvolvimento',
+    });
   }
   if (!fechamento.prazoFinal && colaborador.dia >= 45 && colaborador.jornadaCompliance.percentual != null && colaborador.jornadaCompliance.percentual === 0) {
-    sinais.push('Jornada Compliance ainda não iniciada');
+    sinais.push({
+      chave: 'compliance',
+      tipo: 'desenvolvimento',
+      titulo: 'Jornada Compliance',
+      mensagem: 'Jornada Compliance ainda não iniciada',
+      severidade: 'acompanhar',
+      abaDestino: 'desenvolvimento',
+      acao: 'Ver desenvolvimento',
+    });
   }
-
 
   if (fechamento.prazoFinal) {
     if (!fechamento.complianceOk) {
-      sinais.push(`Jornada Compliance precisa estar 100% concluída até o 150º dia (atual: ${colaborador.jornadaCompliance.percentual == null ? 'sem dado' : Math.round(Number(colaborador.jornadaCompliance.percentual)) + '%'}).`);
+      sinais.push({
+        chave: 'compliance',
+        tipo: 'desenvolvimento',
+        titulo: 'Jornada Compliance',
+        mensagem: `Jornada Compliance precisa estar 100% concluída até o 150º dia (atual: ${colaborador.jornadaCompliance.percentual == null ? 'sem dado' : Math.round(Number(colaborador.jornadaCompliance.percentual)) + '%'}).`,
+        severidade: 'atencao',
+        abaDestino: 'desenvolvimento',
+        acao: 'Ver desenvolvimento',
+      });
     }
     if (!fechamento.pdiOk) {
-      sinais.push(`As tarefas do PDI precisam estar 100% concluídas até o 150º dia (atual: ${colaborador.pdi.percentual == null ? 'sem dado' : Math.round(Number(colaborador.pdi.percentual)) + '%'}).`);
+      sinais.push({
+        chave: 'pdi',
+        tipo: 'desenvolvimento',
+        titulo: 'PDI requer fechamento',
+        mensagem: `As tarefas do PDI precisam estar 100% concluídas até o 150º dia (atual: ${colaborador.pdi.percentual == null ? 'sem dado' : Math.round(Number(colaborador.pdi.percentual)) + '%'}).`,
+        severidade: 'atencao',
+        abaDestino: 'desenvolvimento',
+        acao: 'Ver desenvolvimento',
+      });
     }
   }
   return sinais;
+}
+
+function sinaisAtencaoUgp(colaborador: ColaboradorAcompanhamento): string[] {
+  return sinaisAtencaoUgpDetalhados(colaborador).map((sinal) => sinal.mensagem);
 }
 
 
@@ -2046,16 +2118,38 @@ function PerfilAssessmentModal({
   );
 }
 
-function alertasDoColaborador(colaborador: ColaboradorAcompanhamento): string[] {
-  const alertas: string[] = [];
+function alertasDoColaboradorDetalhados(colaborador: ColaboradorAcompanhamento): AlertaExecutivoUgp[] {
+  const alertas: AlertaExecutivoUgp[] = [];
   if (colaborador.acessouEcoLider === false) {
-    alertas.push('Esse colaborador ainda não entrou na EcoLíder.');
+    alertas.push({
+      chave: 'ecolider-acesso',
+      tipo: 'operacional',
+      titulo: 'Acesso à ECO Líderes',
+      mensagem: 'Esse colaborador ainda não entrou na EcoLíder.',
+      severidade: 'acompanhar',
+    });
   }
   if (colaborador.assessmentPotencialConcluido === false) {
-    alertas.push('Esse colaborador ainda não realizou o Assessment/Avaliação de Potencial.');
+    alertas.push({
+      chave: 'assessment',
+      tipo: 'perfil',
+      titulo: 'Assessment/Avaliação de Potencial',
+      mensagem: 'Esse colaborador ainda não realizou o Assessment/Avaliação de Potencial.',
+      severidade: 'acompanhar',
+      abaDestino: 'perfil',
+      acao: 'Ver perfil',
+    });
   }
   if (colaborador.jornadaCompliance.total > 0 && colaborador.jornadaCompliance.concluidas === 0) {
-    alertas.push('Esse colaborador não iniciou a Jornada Compliance.');
+    alertas.push({
+      chave: 'compliance',
+      tipo: 'desenvolvimento',
+      titulo: 'Jornada Compliance',
+      mensagem: 'Esse colaborador não iniciou a Jornada Compliance.',
+      severidade: 'acompanhar',
+      abaDestino: 'desenvolvimento',
+      acao: 'Ver desenvolvimento',
+    });
   }
   const temTarefaPdiComPrazoCritico = colaborador.pdi.total > 0 &&
     (colaborador.pdi.itens || []).some((item) => {
@@ -2071,9 +2165,57 @@ function alertasDoColaborador(colaborador: ColaboradorAcompanhamento): string[] 
     });
 
   if (temTarefaPdiComPrazoCritico) {
-    alertas.push('Há tarefa pendente do PDI vencida, com prazo para hoje ou para os próximos 3 dias.');
+    alertas.push({
+      chave: 'pdi',
+      tipo: 'desenvolvimento',
+      titulo: 'Prazo do PDI',
+      mensagem: 'Há tarefa pendente do PDI vencida, com prazo para hoje ou para os próximos 3 dias.',
+      severidade: 'atencao',
+      abaDestino: 'desenvolvimento',
+      acao: 'Ver desenvolvimento',
+    });
   }
   return alertas;
+}
+
+function alertasDoColaborador(colaborador: ColaboradorAcompanhamento): string[] {
+  return alertasDoColaboradorDetalhados(colaborador).map((alerta) => alerta.mensagem);
+}
+
+function alertaFormularioOperacional(colaborador: ColaboradorAcompanhamento): AlertaExecutivoUgp | null {
+  const pendencias = colaborador.formulariosPendentes || [];
+  if (!pendencias.length) return null;
+  const atrasados = pendencias.filter((p) => p.atrasado).length;
+  return {
+    chave: 'formularios-pendentes',
+    tipo: 'formularios',
+    titulo: atrasados > 0 ? 'Formulários em atraso' : 'Formulários aguardando resposta',
+    mensagem: atrasados > 0
+      ? `${atrasados} formulário(s) está(ão) atrasado(s) e precisa(m) de acompanhamento.`
+      : `${pendencias.length} formulário(s) está(ão) pendente(s) de preenchimento.`,
+    severidade: atrasados > 0 ? 'atencao' : 'acompanhar',
+    abaDestino: 'formularios',
+    acao: 'Ver formulários',
+  };
+}
+
+function pontosAtencaoExecutivosUgp(colaborador: ColaboradorAcompanhamento): AlertaExecutivoUgp[] {
+  const candidatos: AlertaExecutivoUgp[] = [
+    ...sinaisAtencaoUgpDetalhados(colaborador),
+    ...alertasDoColaboradorDetalhados(colaborador),
+  ];
+  const formulario = alertaFormularioOperacional(colaborador);
+  if (formulario) candidatos.push(formulario);
+
+  const ordem: Record<SeveridadeAlertaUgp, number> = { info: 0, acompanhar: 1, atencao: 2 };
+  const porChave = new Map<string, AlertaExecutivoUgp>();
+  candidatos.forEach((alerta) => {
+    const atual = porChave.get(alerta.chave);
+    if (!atual || ordem[alerta.severidade] > ordem[atual.severidade]) {
+      porChave.set(alerta.chave, alerta);
+    }
+  });
+  return Array.from(porChave.values());
 }
 
 function EvolucaoPesquisaColaborador({ respostas }: { respostas: RespostaAcompanhamento[] }) {
