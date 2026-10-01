@@ -679,7 +679,7 @@ function GuiaLeituraUgp({ colaborador }: { colaborador: ColaboradorAcompanhament
       <CardContent className="p-5 sm:p-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-cyan-100">
+            <div className="flex items-center gap-2 text-sm font-black tracking-tight text-cyan-50">
               <Eye className="h-4 w-4" /> Não sabe por onde começar? Comece por aqui!
             </div>
             <h3 className="mt-2 text-2xl font-black tracking-tight text-white">Leitura rápida para RH / UGP</h3>
@@ -1078,6 +1078,7 @@ function PerfilAssessmentResumo({
   const clustersComDado = (perfil?.autoavaliacaoClusters || []).filter((item) => item.percentual != null);
   const temDados = Boolean(disc || clustersComDado.length);
   const perfilPredominanteLetra = String(disc?.perfilPredominante || '').trim().toUpperCase().charAt(0);
+  const visualPredominante = discVisual(perfilPredominanteLetra);
   const maiorAutoavaliacao = clustersComDado.length
     ? Math.max(...clustersComDado.map((item) => Number(item.percentual || 0)))
     : null;
@@ -1115,7 +1116,7 @@ function PerfilAssessmentResumo({
           <div className="mt-5 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
             <div className="rounded-xl border border-slate-200 bg-[#FAFAFD] p-5 shadow-none">
               <div className="text-xs font-black uppercase tracking-wide text-violet-700">Perfil DISC predominante</div>
-              <div className="mt-2 text-4xl font-black text-violet-950">{disc?.perfilPredominante || '—'}</div>
+              <div className="mt-2 inline-flex rounded-xl border px-3 py-2 text-4xl font-black" style={{ borderColor: visualPredominante.borda, backgroundColor: visualPredominante.fundo, color: visualPredominante.texto }}>{disc?.perfilPredominante || '—'}</div>
               <div className="mt-1 text-sm text-slate-600">
                 {disc?.perfilSecundario ? `Perfil secundário: ${disc.perfilSecundario}` : 'Sem perfil secundário disponível'}
               </div>
