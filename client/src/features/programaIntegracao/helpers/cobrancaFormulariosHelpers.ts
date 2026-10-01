@@ -128,7 +128,12 @@ export function destinoPapel(processo: ProcessoIntegracao, papel: PapelCobranca)
       trat: primeiro(processo.nome),
     };
   }
-  return { para: processo.ugp || '', nome: 'UGP', trat: '' };
+  const nomeUgp = processo.ugpResponsavelNome || '';
+  return {
+    para: processo.ugpResponsavelEmail || '',
+    nome: nomeUgp || 'UGP/RH',
+    trat: primeiro(nomeUgp),
+  };
 }
 
 function textoLink(

@@ -16,6 +16,8 @@ const FECHADO = new Set(['ok', 'na', 'wont']);
 
 type ProcessoEmail = ProcessoIntegracao & {
   ugp?: string;
+  ugpResponsavelNome?: string;
+  ugpResponsavelEmail?: string;
   consultora?: string;
   mentora?: string;
   horarios?: string;
@@ -215,7 +217,10 @@ export function valoresEmailIntegracao(
     ANJO_1: primeiro(processo.anjo),
     ANJO: processo.anjo,
     EMAIL_ANJO: processo.anjoEmail,
-    UGP: processo.ugp || '',
+    // {{UGP}} é usado como destinatário/cópia nos modelos de e-mail.
+    // Nunca usar o campo legado, que pode conter nome, texto livre ou endereço desatualizado.
+    // Sem UGP oficial segura, o token fica vazio e a prévia falha fechada como PREENCHA AQUI.
+    UGP: processo.ugpResponsavelEmail || '',
     CONSULTORA: contexto.mentoraNome || processo.consultora || processo.mentora || '',
     DATA_INICIO: processo.inicio ? fmtc(processo.inicio) : '',
     HORARIOS: horariosDe(processo),

@@ -4354,6 +4354,14 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                         </div>
                       )}
 
+                      {integracaoUgpResponsavelAtual?.duplicidade && (
+                        <Alert variant="destructive">
+                          <AlertDescription>
+                            Existe mais de uma UGP/RH marcada como responsável oficial para esta empresa. O Programa bloqueará o uso automático dessa UGP até a configuração ser corrigida.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
                       {integracaoUgpResponsible && integracaoMode === "manual" && (
                         <p className="text-xs font-medium text-amber-700">
                           Atenção: restringir a visualização a pessoas selecionadas não retira a responsabilidade UGP/RH. Este usuário continuará sendo a UGP oficial da empresa inteira.
@@ -4387,24 +4395,23 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                       return;
                     }
 
-                    if (!integracaoEnabled && integracaoConfig?.ugpResponsible) {
-                      const confirmarRemocao = window.confirm(
-                        "Este usuário é a UGP/RH responsável oficial da empresa. Ao remover o acesso à Integração, a empresa ficará sem UGP/RH oficial até que outra pessoa seja definida. Deseja continuar?"
-                      );
-                      if (!confirmarRemocao) return;
-                    }
-
-                    if (
-                      integracaoEnabled &&
-                      integracaoUgpResponsible &&
+                    const responsabilidadeAtualMudara = Boolean(
                       integracaoConfig?.ugpResponsible &&
-                      integracaoConfig.programId &&
-                      Number(integracaoConfig.programId) !== Number(integracaoProgramId)
-                    ) {
-                      const confirmarTrocaEmpresa = window.confirm(
-                        "Este usuário é UGP/RH oficial da empresa anterior. Ao trocar a empresa, a responsabilidade acompanhará a nova empresa e a anterior ficará sem responsável oficial. Deseja continuar?"
-                      );
-                      if (!confirmarTrocaEmpresa) return;
+                      (
+                        !integracaoEnabled ||
+                        integracaoAccessLevel !== "ugp" ||
+                        !integracaoUgpResponsible ||
+                        Number(integracaoConfig.programId || 0) !== Number(integracaoProgramId || 0)
+                      )
+                    );
+                    let confirmarMudancaResponsabilidade = false;
+                    if (responsabilidadeAtualMudara) {
+                      const mesmaEmpresa = Number(integracaoConfig?.programId || 0) === Number(integracaoProgramId || 0);
+                      const mensagem = mesmaEmpresa
+                        ? "Este usuário é a UGP/RH responsável oficial da empresa. Esta alteração retirará essa responsabilidade, mas preservará os demais acessos permitidos. Deseja continuar?"
+                        : "Este usuário é a UGP/RH responsável oficial da empresa anterior. Ao trocar a empresa, a responsabilidade anterior será retirada. Deseja continuar?";
+                      confirmarMudancaResponsabilidade = window.confirm(mensagem);
+                      if (!confirmarMudancaResponsabilidade) return;
                     }
 
                     const responsavelAtual = integracaoUgpResponsavelAtual?.responsavel;
@@ -4431,6 +4438,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                       demoOnly: integracaoAccessLevel === "ugp" && integracaoMode === "manual" ? integracaoDemoOnly : false,
                       ugpResponsible: integracaoEnabled && integracaoAccessLevel === "ugp" ? integracaoUgpResponsible : false,
                       replaceUgpResponsible: substituirResponsavel,
+                      confirmResponsibilityChange: confirmarMudancaResponsabilidade,
                     });
                   }}
                 >

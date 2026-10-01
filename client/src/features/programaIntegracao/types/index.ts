@@ -68,11 +68,16 @@ export interface ProcessoIntegracao {
   anjoEmail: string;
   consultora: string;
   mentorId: string;
-  ugp: string; // UGP responsável
+  ugp: string; // Campo histórico legado. Não define mais a UGP operacional.
 
-  // Contexto de empresa calculado pelo servidor somente para leitura/filtros.
+  // Contexto de empresa e UGP oficial calculados pelo servidor somente para leitura.
   empresaProgramId?: number | null;
   empresaProgramNome?: string;
+  ugpResponsavelUserId?: number | null;
+  ugpResponsavelNome?: string;
+  ugpResponsavelEmail?: string;
+  ugpResponsavelConfigurada?: boolean;
+  ugpResponsavelConflito?: boolean;
 
   // Dados adicionais
   horarios: string;

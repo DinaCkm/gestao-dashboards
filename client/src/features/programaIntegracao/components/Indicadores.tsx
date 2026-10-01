@@ -163,9 +163,14 @@ export function Indicadores({
     return () => { cancelado = true; };
   }, [alunoIds.join(',')]);
 
+  const nomeUgpFiltro = (p: ProcessoIntegracao) =>
+    p.ugpResponsavelConflito
+      ? 'UGP/RH com conflito de configuração'
+      : p.ugpResponsavelNome || 'UGP/RH não definida';
+
   const opcoes = useMemo(() => ({
     empresas: opcoesUnicas(todos.map((p) => p.empresaProgramNome)),
-    ugps: opcoesUnicas(todos.map((p) => p.ugp)),
+    ugps: opcoesUnicas(todos.map(nomeUgpFiltro)),
     unidades: opcoesUnicas(todos.map((p) => p.unidade)),
     gestores: opcoesUnicas(todos.map((p) => p.gestor)),
     mentoras: opcoesUnicas(todos.map((p) => mentoraVinculada(p, config)?.nome || p.consultora)),
@@ -208,7 +213,7 @@ export function Indicadores({
       if (filtros.status && status !== filtros.status) return false;
       if (filtros.etapa && etapa !== filtros.etapa) return false;
       if (filtros.empresa && p.empresaProgramNome !== filtros.empresa) return false;
-      if (filtros.ugp && p.ugp !== filtros.ugp) return false;
+      if (filtros.ugp && nomeUgpFiltro(p) !== filtros.ugp) return false;
       if (filtros.unidade && p.unidade !== filtros.unidade) return false;
       if (filtros.gestor && p.gestor !== filtros.gestor) return false;
       if (filtros.mentora && mentora !== filtros.mentora) return false;
