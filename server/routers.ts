@@ -8197,6 +8197,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
               taskMode: s.taskMode || 'sem_tarefa',
               taskName,
               taskCompetencia,
+              taskDescription: s.customTaskDescription || task?.resumo || '',
               taskDeadline: s.taskDeadline,
               taskStatus: s.taskStatus,
               evidenceLink: s.evidenceLink,
