@@ -70,6 +70,10 @@ export interface ProcessoIntegracao {
   mentorId: string;
   ugp: string; // UGP responsável
 
+  // Contexto de empresa calculado pelo servidor somente para leitura/filtros.
+  empresaProgramId?: number | null;
+  empresaProgramNome?: string;
+
   // Dados adicionais
   horarios: string;
   statusPdi: string;
