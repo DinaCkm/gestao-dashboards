@@ -8268,7 +8268,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     updateActivity: protectedProcedure
       .input(z.object({
         sessionId: z.number(),
-        customTaskTitle: z.string().min(1).max(500),
+        customTaskTitle: z.string().trim().min(1).max(500),
         customTaskDescription: z.string().max(10000).nullable(),
         taskDeadline: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).nullable(),
       }))
