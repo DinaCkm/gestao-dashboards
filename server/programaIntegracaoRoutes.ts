@@ -1620,20 +1620,10 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         competenciasMentoraSelecionadas,
       );
 
-      const testeAtualDemo = estadoAtualDemo?.teste || {};
-      const overrideDemo = testeAtualDemo?.andamentoDemoOverride;
-      const overridePermitido =
-        Boolean(testeAtualDemo?.perfilDemoFullEcoAutorizado) &&
-        String(testeAtualDemo?.demoTag || "").startsWith("ugp_demo_") &&
-        overrideDemo &&
-        typeof overrideDemo === "object";
-      const andamento = overridePermitido
-        ? {
-            ...(andamentoEco || {}),
-            jornadaCompliance: overrideDemo.jornadaCompliance || andamentoEco?.jornadaCompliance,
-            pdi: overrideDemo.pdi || andamentoEco?.pdi,
-          }
-        : andamentoEco;
+      // Quando existe vínculo ECO Líderes válido, PDI e Jornada Compliance
+      // devem refletir sempre o andamento real do aluno vinculado.
+      // Overrides antigos de demonstração não podem substituir esses dados reais.
+      const andamento = andamentoEco;
       const perfilAssessment = perfilEcoId ? perfisAssessment[String(perfilEcoId)] : null;
       const rawRespostas = respostasRawPorProcesso.get(Number(row.id)) || [];
       const ultimaRespostaBem = rawRespostas
