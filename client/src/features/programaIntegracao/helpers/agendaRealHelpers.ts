@@ -10,12 +10,14 @@ export type FiltroStatusAgenda = 'aberto' | 'feito' | 'na' | '';
 export interface FiltrosAgendaReal {
   responsavel?: ResponsavelIntegracao | '';
   pessoa?: string;
+  empresa?: string;
   status?: FiltroStatusAgenda;
 }
 
 export interface LinhaAgendaReal {
   pid: string;
   pnome: string;
+  empresa: string;
   cor: string;
   data: string;
   dia: number;
@@ -107,6 +109,7 @@ export function linhasAgendaReal(
         out.push({
           pid,
           pnome: processo.nome || pid,
+          empresa: String(processo.empresaProgramNome || '').trim(),
           cor: processo.cor || '',
           data: dataItem,
           dia: e.dia,
@@ -153,6 +156,7 @@ export function linhasAgendaReal(
         out.push({
           pid,
           pnome: processo.nome || pid,
+          empresa: String(processo.empresaProgramNome || '').trim(),
           cor: processo.cor || '',
           data: dt,
           dia: MARCO[n] - 7,
@@ -182,9 +186,13 @@ export function linhasAgendaReal(
   return out.filter((x) => {
     if (filtros.responsavel && !x.papeisAtuais.includes(filtros.responsavel)) return false;
     if (filtros.pessoa && x.pid !== filtros.pessoa) return false;
-    if (status === 'aberto' && fechado(x.s)) return false;
-    if (status === 'feito' && x.s !== 'ok') return false;
-    if (status === 'na' && x.s !== 'na' && x.s !== 'wont') return false;
+    if (filtros.empresa && x.empresa !== filtros.empresa) return false;
+
+    // O filtro deve refletir exatamente a situação exibida na tela.
+    // Isso evita que uma linha visualmente "Feito" permaneça em "Em aberto".
+    if (status === 'aberto' && (x.st.k === 'ok' || x.st.k === 'off')) return false;
+    if (status === 'feito' && x.st.k !== 'ok') return false;
+    if (status === 'na' && x.st.k !== 'off') return false;
     return true;
   }).sort((a, b) => a.data.localeCompare(b.data) || a.pnome.localeCompare(b.pnome, 'pt-BR'));
 }
