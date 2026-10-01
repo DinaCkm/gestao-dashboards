@@ -560,7 +560,7 @@ export default function Performance() {
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h1 className="text-2xl font-bold">{aluno.name}</h1>
+                  <h1 className="text-2xl font-extrabold tracking-tight text-white drop-shadow-sm">{aluno.name}</h1>
                   <div className="flex flex-wrap gap-2 mt-2">
                     <Badge className="bg-white/20 text-white border-white/30">
                       <GraduationCap className="h-3 w-3 mr-1" />{aluno.programa}
@@ -735,7 +735,7 @@ export default function Performance() {
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h1 className="text-2xl font-bold">{aluno.name}</h1>
+                  <h1 className="text-2xl font-extrabold tracking-tight text-white drop-shadow-sm">{aluno.name}</h1>
                   <div className="flex flex-wrap gap-2 mt-2">
                     <Badge className="bg-white/20 text-white border-white/30">
                       <GraduationCap className="h-3 w-3 mr-1" />{aluno.programa}
