@@ -99,7 +99,7 @@ export default function Home() {
     if (user.role === "user") {
       if (usuarioPotencialmenteAnjoPuro) {
         if (!anjoStatusResolvido) return;
-        setLocation(anjoStatus?.hasActiveAssignments ? "/anjo/formularios" : "/anjo");
+        setLocation(anjoStatus?.hasActiveAssignments ? "/anjo/orientacoes" : "/anjo");
         return;
       }
       // Verificar se precisa de onboarding
