@@ -209,6 +209,7 @@ export function CobrancaFormulariosUgp({
   busca,
   setBusca,
   unidade,
+  setUnidade,
   fase,
   status,
   filtroRapido,
@@ -221,6 +222,7 @@ export function CobrancaFormulariosUgp({
   busca: string;
   setBusca: (valor: string) => void;
   unidade: string;
+  setUnidade: (valor: string) => void;
   fase: string;
   status: string;
   filtroRapido: string;
@@ -464,11 +466,18 @@ export function CobrancaFormulariosUgp({
               <Button size="sm" variant="outline" onClick={() => setFiltroRapido('all')}>Voltar para a carteira</Button>
             </div>
 
-            <div className="grid gap-3 lg:grid-cols-[1fr_190px_190px]">
+            <div className="grid gap-3 lg:grid-cols-[1fr_200px_180px_180px]">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <Input className="pl-9" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por respondente ou colaborador..." />
               </div>
+              <Select value={unidade} onValueChange={setUnidade}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as unidades</SelectItem>
+                  {[...new Set(colaboradores.map((item) => item.unidade).filter(Boolean))].sort().map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+                </SelectContent>
+              </Select>
               <Select value={papel} onValueChange={setPapel}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
