@@ -20,7 +20,7 @@ export default function AnjoSemIntegracoes() {
           return;
         }
         if (status.hasActiveAssignments) {
-          setLocation("/anjo/formularios");
+          setLocation("/anjo/orientacoes");
           return;
         }
         setAutorizado(true);
