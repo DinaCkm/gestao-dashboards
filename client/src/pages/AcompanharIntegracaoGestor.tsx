@@ -4088,6 +4088,12 @@ function PreviewRegistrosUgp({
 function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:ColaboradorAcompanhamento; onVoltar:()=>void; onPerfil:()=>void }) {
   const st=statusCarteira(colaborador);
   const [aba, setAba] = useState('visao');
+  const selecionarAba = (destino: string) => {
+    setAba(destino);
+    window.setTimeout(() => {
+      document.getElementById('acompanhamento-abas')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
+  };
   const iniciais = colaborador.nome.split(/\s+/).filter(Boolean).slice(0, 2).map((parte) => parte[0]).join('').toUpperCase();
 
   return (
@@ -4114,10 +4120,10 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
       </div>
 
       <KpisOperacionais colaborador={colaborador}/>
-      <GuiaLeituraUgp colaborador={colaborador} onSelect={setAba} />
+      <GuiaLeituraUgp colaborador={colaborador} onSelect={selecionarAba} />
 
       <Tabs value={aba} onValueChange={setAba} className="space-y-4">
-        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl bg-slate-200/70 p-1 md:grid-cols-3 xl:grid-cols-6">
+        <TabsList id="acompanhamento-abas" className="scroll-mt-24 grid h-auto w-full grid-cols-2 gap-1 rounded-2xl bg-slate-200/70 p-1 md:grid-cols-3 xl:grid-cols-6">
           <TabsTrigger value="visao" className="rounded-xl py-2.5 font-semibold text-slate-600 data-[state=active]:bg-violet-700 data-[state=active]:text-white data-[state=active]:shadow-sm focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2">Visão geral</TabsTrigger>
           <TabsTrigger value="trajetoria" className="rounded-xl py-2.5 font-semibold text-slate-600 data-[state=active]:bg-violet-700 data-[state=active]:text-white data-[state=active]:shadow-sm focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2">Trajetória</TabsTrigger>
           <TabsTrigger value="formularios" className="rounded-xl py-2.5 font-semibold text-slate-600 data-[state=active]:bg-violet-700 data-[state=active]:text-white data-[state=active]:shadow-sm focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2">Formulários</TabsTrigger>
@@ -4127,12 +4133,15 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
         </TabsList>
 
         <TabsContent value="visao" className="space-y-6">
-          <SinaisCompactos colaborador={colaborador}/>
-          <AlertasOperacionaisUgp colaborador={colaborador}/>
-          {indiceIntegracao(colaborador).indice!=null&&<ComposicaoIndice colaborador={colaborador}/>}
-          <TimelineAlinhamentos colaborador={colaborador}/>
-          <TabelaFormulariosPendentesUgp colaborador={colaborador}/>
-          <RegistrosAlinhamentosUgp colaborador={colaborador}/>
+          <PontosAtencaoExecutivosUgp colaborador={colaborador} onSelect={selecionarAba}/>
+          {indiceIntegracao(colaborador).indice!=null&&<ComposicaoIndice colaborador={colaborador} onSelect={selecionarAba}/>}
+          <TimelineAlinhamentos colaborador={colaborador} onSelect={selecionarAba}/>
+          <div className="grid items-start gap-4 lg:grid-cols-2">
+            <PreviewTrajetoriaUgp colaborador={colaborador} onSelect={selecionarAba}/>
+            <PreviewDesenvolvimentoUgp colaborador={colaborador} onSelect={selecionarAba}/>
+            <PreviewPerfilUgp colaborador={colaborador} onSelect={selecionarAba}/>
+            <PreviewRegistrosUgp colaborador={colaborador} onSelect={selecionarAba}/>
+          </div>
         </TabsContent>
 
         <TabsContent value="trajetoria"><TrajetoriaHeatmap colaborador={colaborador}/></TabsContent>
