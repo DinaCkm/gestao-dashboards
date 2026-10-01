@@ -490,6 +490,12 @@ function DashboardLayoutContent({
     managerPagePerms.some((p: string) => p.startsWith('/'));
   const isGerente = consultorRole === 'gerente' || (!hasConsultorId && user?.role === 'manager' && !(user as any)?.alunoId);
 
+  const sidebarRoleGradient = (isAngelWorkspace || isPureAngel)
+    ? "bg-gradient-to-b from-[#3B0764] via-[#7E22CE] to-[#DB2777]"
+    : isGerente
+      ? "bg-gradient-to-b from-[#3B0764] via-[#4C1D95] to-[#1D4ED8]"
+      : "";
+
   // Badge de revisões pendentes para admin e mentor
   const isMentorOrAdmin = isAdmin || consultorRole === 'mentor';
   const { data: revisoesPendentes } = trpc.onboarding.contarRevisoesPendentes.useQuery(undefined, {
@@ -701,6 +707,7 @@ function DashboardLayoutContent({
           className="border-r-0 bg-sidebar"
           disableTransition={isResizing}
         >
+          <div className={`flex h-full w-full flex-col ${sidebarRoleGradient}`}>
           {/* ===== HEADER ===== */}
           <SidebarHeader className="h-16 justify-center border-b border-sidebar-border">
             <div className="flex items-center gap-3 px-2 transition-all w-full justify-between">
@@ -1024,6 +1031,7 @@ function DashboardLayoutContent({
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarFooter>
+          </div>
         </Sidebar>
         <div
           className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/20 transition-colors ${isCollapsed ? "hidden" : ""}`}
