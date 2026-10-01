@@ -4020,7 +4020,8 @@ function PreviewPerfilUgp({
   colaborador: ColaboradorAcompanhamento;
   onSelect: (aba: AbaAcompanhamentoUgp) => void;
 }) {
-  const concluido = colaborador.assessmentPotencialConcluido === true;
+  const statusAssessment = colaborador.assessmentPotencialConcluido;
+  const concluido = statusAssessment === true;
   const disc = colaborador.perfilAssessment?.disc?.perfilPredominante;
 
   return (
@@ -4035,7 +4036,9 @@ function PreviewPerfilUgp({
       </div>
       <div className="mt-4 text-sm text-slate-700">
         <div className="text-xs text-slate-500">Assessment/Avaliação de Potencial</div>
-        <div className={`mt-1 font-bold ${concluido ? 'text-emerald-700' : 'text-slate-700'}`}>{concluido ? 'Concluído' : 'Ainda não concluído'}</div>
+        <div className={`mt-1 font-bold ${concluido ? 'text-emerald-700' : 'text-slate-700'}`}>
+          {concluido ? 'Concluído' : statusAssessment === false ? 'Ainda não concluído' : 'Situação ainda não disponível'}
+        </div>
         {disc && <div className="mt-3"><span className="text-slate-500">Perfil DISC predominante:</span> <b>{disc}</b></div>}
       </div>
       <div className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-violet-700">Ver perfil <ChevronRight className="h-4 w-4" /></div>
