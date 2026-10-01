@@ -4,7 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 
-export default function NotificationBell() {
+export default function NotificationBell({ highContrast = false }: { highContrast?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const [, setLocation] = useLocation();
@@ -69,10 +69,10 @@ export default function NotificationBell() {
       {/* Botão do Sino */}
       <button
         onClick={() => setOpen(!open)}
-        className="relative h-9 w-9 flex items-center justify-center rounded-lg hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className={`relative h-9 w-9 flex items-center justify-center rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${highContrast ? "text-white hover:bg-white/15" : "hover:bg-accent"}`}
         aria-label="Notificações"
       >
-        <Bell className="h-5 w-5 text-muted-foreground" />
+        <Bell className={`h-5 w-5 ${highContrast ? "text-white" : "text-muted-foreground"}`} />
         {unreadCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full animate-pulse">
             {unreadCount > 99 ? "99+" : unreadCount}
