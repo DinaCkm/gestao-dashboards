@@ -417,10 +417,33 @@ function saudeProcesso(colaborador: ColaboradorAcompanhamento) {
   };
 }
 
-function sinaisAtencaoUgp(colaborador: ColaboradorAcompanhamento): string[] {
-  const sinais: string[] = [];
+type AbaAcompanhamentoUgp = 'trajetoria' | 'formularios' | 'desenvolvimento' | 'registros' | 'perfil';
+type SeveridadeAlertaUgp = 'info' | 'acompanhar' | 'atencao';
+
+interface AlertaExecutivoUgp {
+  chave: string;
+  tipo: 'trajetoria' | 'formularios' | 'desenvolvimento' | 'perfil' | 'registros' | 'operacional';
+  titulo: string;
+  mensagem: string;
+  severidade: SeveridadeAlertaUgp;
+  abaDestino?: AbaAcompanhamentoUgp;
+  acao?: string;
+}
+
+function sinaisAtencaoUgpDetalhados(colaborador: ColaboradorAcompanhamento): AlertaExecutivoUgp[] {
+  const sinais: AlertaExecutivoUgp[] = [];
   const atrasados = colaborador.formulariosPendentes.filter((p) => p.atrasado).length;
-  if (atrasados) sinais.push(`${atrasados} formulário(s) atrasado(s)`);
+  if (atrasados) {
+    sinais.push({
+      chave: 'formularios-pendentes',
+      tipo: 'formularios',
+      titulo: 'Formulários em atraso',
+      mensagem: `${atrasados} formulário(s) atrasado(s)`,
+      severidade: 'atencao',
+      abaDestino: 'formularios',
+      acao: 'Ver formulários',
+    });
+  }
 
   const pesquisa = evolucaoPesquisaColaborador(colaborador.respostas);
   if (pesquisa.length >= 2) {
@@ -430,9 +453,15 @@ function sinaisAtencaoUgp(colaborador: ColaboradorAcompanhamento): string[] {
     const atual = mediaMomentoPesquisa(momentoAtual);
     if (anterior != null && atual != null && anterior - atual >= 10) {
       const variacao = variacaoPercentual(anterior, atual);
-      sinais.push(
-        `Pelas respostas do colaborador na Pesquisa de Integração do alinhamento de ${diaDoAlinhamento(momentoAtual.ciclo)} dias, a experiência geral ficou ${variacao == null ? 'menor' : `${Math.round(Math.abs(variacao))}% menor`} do que no alinhamento de ${diaDoAlinhamento(momentoAnterior.ciclo)} dias (${Math.round(atual)}% agora; ${Math.round(anterior)}% antes).`
-      );
+      sinais.push({
+        chave: 'trajetoria-queda',
+        tipo: 'trajetoria',
+        titulo: 'Atenção na trajetória',
+        mensagem: `Pelas respostas do colaborador na Pesquisa de Integração do alinhamento de ${diaDoAlinhamento(momentoAtual.ciclo)} dias, a experiência geral ficou ${variacao == null ? 'menor' : `${Math.round(Math.abs(variacao))}% menor`} do que no alinhamento de ${diaDoAlinhamento(momentoAnterior.ciclo)} dias (${Math.round(atual)}% agora; ${Math.round(anterior)}% antes).`,
+        severidade: 'atencao',
+        abaDestino: 'trajetoria',
+        acao: 'Ver trajetória',
+      });
     }
   }
 
@@ -442,27 +471,70 @@ function sinaisAtencaoUgp(colaborador: ColaboradorAcompanhamento): string[] {
   const a = anjo[anjo.length - 1]?.mediaGeral;
   if (g != null && a != null && Math.abs(g - a) >= 3) {
     const diferenca = Math.abs(g - a);
-    sinais.push(`No alinhamento mais recente, Gestor e Anjo apresentaram uma diferença relevante na percepção sobre a adaptação do colaborador (diferença de ${diferenca.toFixed(1).replace('.', ',')} pontos na escala original de 1 a 5).`);
+    sinais.push({
+      chave: 'formularios-gestor-anjo',
+      tipo: 'formularios',
+      titulo: 'Percepções diferentes',
+      mensagem: `No alinhamento mais recente, Gestor e Anjo apresentaram uma diferença relevante na percepção sobre a adaptação do colaborador (diferença de ${diferenca.toFixed(1).replace('.', ',')} pontos na escala original de 1 a 5).`,
+      severidade: 'acompanhar',
+      abaDestino: 'formularios',
+      acao: 'Ver formulários',
+    });
   }
 
   const fechamento = requisitosFechamento(colaborador);
   if (!fechamento.prazoFinal && colaborador.dia >= 45 && colaborador.pdi.percentual != null && colaborador.pdi.percentual < 25) {
-    sinais.push(`PDI com ${Math.round(colaborador.pdi.percentual)}% de avanço`);
+    sinais.push({
+      chave: 'pdi',
+      tipo: 'desenvolvimento',
+      titulo: 'PDI requer acompanhamento',
+      mensagem: `PDI com ${Math.round(colaborador.pdi.percentual)}% de avanço`,
+      severidade: 'acompanhar',
+      abaDestino: 'desenvolvimento',
+      acao: 'Ver desenvolvimento',
+    });
   }
   if (!fechamento.prazoFinal && colaborador.dia >= 45 && colaborador.jornadaCompliance.percentual != null && colaborador.jornadaCompliance.percentual === 0) {
-    sinais.push('Jornada Compliance ainda não iniciada');
+    sinais.push({
+      chave: 'compliance',
+      tipo: 'desenvolvimento',
+      titulo: 'Jornada Compliance',
+      mensagem: 'Jornada Compliance ainda não iniciada',
+      severidade: 'acompanhar',
+      abaDestino: 'desenvolvimento',
+      acao: 'Ver desenvolvimento',
+    });
   }
-
 
   if (fechamento.prazoFinal) {
     if (!fechamento.complianceOk) {
-      sinais.push(`Jornada Compliance precisa estar 100% concluída até o 150º dia (atual: ${colaborador.jornadaCompliance.percentual == null ? 'sem dado' : Math.round(Number(colaborador.jornadaCompliance.percentual)) + '%'}).`);
+      sinais.push({
+        chave: 'compliance',
+        tipo: 'desenvolvimento',
+        titulo: 'Jornada Compliance',
+        mensagem: `Jornada Compliance precisa estar 100% concluída até o 150º dia (atual: ${colaborador.jornadaCompliance.percentual == null ? 'sem dado' : Math.round(Number(colaborador.jornadaCompliance.percentual)) + '%'}).`,
+        severidade: 'atencao',
+        abaDestino: 'desenvolvimento',
+        acao: 'Ver desenvolvimento',
+      });
     }
     if (!fechamento.pdiOk) {
-      sinais.push(`As tarefas do PDI precisam estar 100% concluídas até o 150º dia (atual: ${colaborador.pdi.percentual == null ? 'sem dado' : Math.round(Number(colaborador.pdi.percentual)) + '%'}).`);
+      sinais.push({
+        chave: 'pdi',
+        tipo: 'desenvolvimento',
+        titulo: 'PDI requer fechamento',
+        mensagem: `As tarefas do PDI precisam estar 100% concluídas até o 150º dia (atual: ${colaborador.pdi.percentual == null ? 'sem dado' : Math.round(Number(colaborador.pdi.percentual)) + '%'}).`,
+        severidade: 'atencao',
+        abaDestino: 'desenvolvimento',
+        acao: 'Ver desenvolvimento',
+      });
     }
   }
   return sinais;
+}
+
+function sinaisAtencaoUgp(colaborador: ColaboradorAcompanhamento): string[] {
+  return sinaisAtencaoUgpDetalhados(colaborador).map((sinal) => sinal.mensagem);
 }
 
 
@@ -633,7 +705,13 @@ function DicasGestorProtegidas({ colaborador }: { colaborador: ColaboradorAcompa
   );
 }
 
-function GuiaLeituraUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+function GuiaLeituraUgp({
+  colaborador,
+  onSelect,
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  onSelect: (aba: string) => void;
+}) {
   const sinais = sinaisAtencaoUgp(colaborador);
   const mudancas = mudancasDimensoes(colaborador.respostas);
   const quedas = mudancas.filter((m) => m.direcao === 'caiu');
@@ -650,7 +728,7 @@ function GuiaLeituraUgp({ colaborador }: { colaborador: ColaboradorAcompanhament
         ? `${sinais.length} sinal(is) objetivo(s) pedem atenção neste momento.`
         : 'Não há sinais críticos no momento. Confira a trajetória para entender a evolução.',
       acao: 'Abrir resumo executivo',
-      destino: 'resumo-executivo',
+      aba: 'visao',
       icon: Activity,
     },
     {
@@ -660,7 +738,7 @@ function GuiaLeituraUgp({ colaborador }: { colaborador: ColaboradorAcompanhament
         ? `${quedas.length} dimensão(ões) caiu(ram) desde o último alinhamento. Veja onde aconteceu e quanto mudou.`
         : 'Compare 15, 45, 75 e 150 dias para enxergar avanço, estabilidade ou queda.',
       acao: 'Abrir trajetória',
-      destino: 'trajetoria-integracao',
+      aba: 'trajetoria',
       icon: Route,
     },
     {
@@ -669,8 +747,8 @@ function GuiaLeituraUgp({ colaborador }: { colaborador: ColaboradorAcompanhament
       texto: perfilDisponivel
         ? 'DISC/Assessment, Colaborador, Gestor e Anjo ajudam a contextualizar a integração sem misturar os instrumentos.'
         : 'Compare Colaborador, Gestor e Anjo para entender convergências e diferenças de percepção.',
-      acao: perfilDisponivel ? 'Abrir perfil' : 'Abrir três olhares',
-      destino: perfilDisponivel ? 'perfil-assessment-resumo' : 'tres-olhares',
+      acao: perfilDisponivel ? 'Abrir perfil' : 'Abrir formulários',
+      aba: perfilDisponivel ? 'perfil' : 'formularios',
       icon: perfilDisponivel ? Brain : Users,
     },
   ];
@@ -710,7 +788,7 @@ function GuiaLeituraUgp({ colaborador }: { colaborador: ColaboradorAcompanhament
               <button
                 key={passo.numero}
                 type="button"
-                onClick={() => navegarPara(passo.destino)}
+                onClick={() => onSelect(passo.aba)}
                 className={`group rounded-2xl border p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(15,23,42,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${visualPasso.card}`}
               >
                 <div className="flex items-start gap-3">
@@ -2040,16 +2118,38 @@ function PerfilAssessmentModal({
   );
 }
 
-function alertasDoColaborador(colaborador: ColaboradorAcompanhamento): string[] {
-  const alertas: string[] = [];
+function alertasDoColaboradorDetalhados(colaborador: ColaboradorAcompanhamento): AlertaExecutivoUgp[] {
+  const alertas: AlertaExecutivoUgp[] = [];
   if (colaborador.acessouEcoLider === false) {
-    alertas.push('Esse colaborador ainda não entrou na EcoLíder.');
+    alertas.push({
+      chave: 'ecolider-acesso',
+      tipo: 'operacional',
+      titulo: 'Acesso à ECO Líderes',
+      mensagem: 'Esse colaborador ainda não entrou na EcoLíder.',
+      severidade: 'acompanhar',
+    });
   }
   if (colaborador.assessmentPotencialConcluido === false) {
-    alertas.push('Esse colaborador ainda não realizou o Assessment/Avaliação de Potencial.');
+    alertas.push({
+      chave: 'assessment',
+      tipo: 'perfil',
+      titulo: 'Assessment/Avaliação de Potencial',
+      mensagem: 'Esse colaborador ainda não realizou o Assessment/Avaliação de Potencial.',
+      severidade: 'acompanhar',
+      abaDestino: 'perfil',
+      acao: 'Ver perfil',
+    });
   }
   if (colaborador.jornadaCompliance.total > 0 && colaborador.jornadaCompliance.concluidas === 0) {
-    alertas.push('Esse colaborador não iniciou a Jornada Compliance.');
+    alertas.push({
+      chave: 'compliance',
+      tipo: 'desenvolvimento',
+      titulo: 'Jornada Compliance',
+      mensagem: 'Esse colaborador não iniciou a Jornada Compliance.',
+      severidade: 'acompanhar',
+      abaDestino: 'desenvolvimento',
+      acao: 'Ver desenvolvimento',
+    });
   }
   const temTarefaPdiComPrazoCritico = colaborador.pdi.total > 0 &&
     (colaborador.pdi.itens || []).some((item) => {
@@ -2065,9 +2165,57 @@ function alertasDoColaborador(colaborador: ColaboradorAcompanhamento): string[] 
     });
 
   if (temTarefaPdiComPrazoCritico) {
-    alertas.push('Há tarefa pendente do PDI vencida, com prazo para hoje ou para os próximos 3 dias.');
+    alertas.push({
+      chave: 'pdi',
+      tipo: 'desenvolvimento',
+      titulo: 'Prazo do PDI',
+      mensagem: 'Há tarefa pendente do PDI vencida, com prazo para hoje ou para os próximos 3 dias.',
+      severidade: 'atencao',
+      abaDestino: 'desenvolvimento',
+      acao: 'Ver desenvolvimento',
+    });
   }
   return alertas;
+}
+
+function alertasDoColaborador(colaborador: ColaboradorAcompanhamento): string[] {
+  return alertasDoColaboradorDetalhados(colaborador).map((alerta) => alerta.mensagem);
+}
+
+function alertaFormularioOperacional(colaborador: ColaboradorAcompanhamento): AlertaExecutivoUgp | null {
+  const pendencias = colaborador.formulariosPendentes || [];
+  if (!pendencias.length) return null;
+  const atrasados = pendencias.filter((p) => p.atrasado).length;
+  return {
+    chave: 'formularios-pendentes',
+    tipo: 'formularios',
+    titulo: atrasados > 0 ? 'Formulários em atraso' : 'Formulários aguardando resposta',
+    mensagem: atrasados > 0
+      ? `${atrasados} formulário(s) está(ão) atrasado(s) e precisa(m) de acompanhamento.`
+      : `${pendencias.length} formulário(s) está(ão) pendente(s) de preenchimento.`,
+    severidade: atrasados > 0 ? 'atencao' : 'acompanhar',
+    abaDestino: 'formularios',
+    acao: 'Ver formulários',
+  };
+}
+
+function pontosAtencaoExecutivosUgp(colaborador: ColaboradorAcompanhamento): AlertaExecutivoUgp[] {
+  const candidatos: AlertaExecutivoUgp[] = [
+    ...sinaisAtencaoUgpDetalhados(colaborador),
+    ...alertasDoColaboradorDetalhados(colaborador),
+  ];
+  const formulario = alertaFormularioOperacional(colaborador);
+  if (formulario) candidatos.push(formulario);
+
+  const ordem: Record<SeveridadeAlertaUgp, number> = { info: 0, acompanhar: 1, atencao: 2 };
+  const porChave = new Map<string, AlertaExecutivoUgp>();
+  candidatos.forEach((alerta) => {
+    const atual = porChave.get(alerta.chave);
+    if (!atual || ordem[alerta.severidade] > ordem[atual.severidade]) {
+      porChave.set(alerta.chave, alerta);
+    }
+  });
+  return Array.from(porChave.values());
 }
 
 function EvolucaoPesquisaColaborador({ respostas }: { respostas: RespostaAcompanhamento[] }) {
@@ -2521,13 +2669,19 @@ function resumoExecutivoTexto(colaborador: ColaboradorAcompanhamento) {
   return partes.length ? partes.join('. ') + '.' : 'Ainda não há dados suficientes para produzir uma síntese executiva da integração.';
 }
 
-function ComposicaoIndice({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+function ComposicaoIndice({
+  colaborador,
+  onSelect,
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  onSelect?: (aba: AbaAcompanhamentoUgp) => void;
+}) {
   const indice = indiceIntegracao(colaborador);
   const comps = [
-    { nome:'Experiência', valor:indice.experiencia, peso:40, cor:PAPEL_CORES.colaborador },
-    { nome:'Adaptação', valor:indice.adaptacao, peso:35, cor:PAPEL_CORES.gestor },
-    { nome:'Desenvolvimento', valor:indice.desenvolvimento, peso:25, cor:'#7C3AED' },
-  ].filter((x) => x.valor != null) as Array<{nome:string; valor:number; peso:number; cor:string}>;
+    { nome:'Experiência', valor:indice.experiencia, peso:40, cor:PAPEL_CORES.colaborador, aba:'trajetoria' as const },
+    { nome:'Adaptação', valor:indice.adaptacao, peso:35, cor:PAPEL_CORES.gestor, aba:'formularios' as const },
+    { nome:'Desenvolvimento', valor:indice.desenvolvimento, peso:25, cor:'#7C3AED', aba:'desenvolvimento' as const },
+  ].filter((x) => x.valor != null) as Array<{nome:string; valor:number; peso:number; cor:string; aba:AbaAcompanhamentoUgp}>;
   const somaPesos = comps.reduce((s,x) => s + x.peso, 0) || 1;
   const contribs = comps.map((x) => ({ ...x, contribuicao:x.valor * x.peso / somaPesos }));
   return (
@@ -2552,10 +2706,19 @@ function ComposicaoIndice({ colaborador }: { colaborador: ColaboradorAcompanhame
         </div>
         <div className="mt-3 grid gap-2 sm:grid-cols-3">
           {contribs.map((x) => (
-            <div key={x.nome} className="rounded-xl bg-slate-50 px-3 py-2 text-xs">
+            <button
+              key={x.nome}
+              type="button"
+              onClick={() => onSelect?.(x.aba)}
+              className="group rounded-xl border border-transparent bg-slate-50 px-3 py-2 text-left text-xs transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:bg-white hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+              aria-label={`Ver detalhes de ${x.nome}`}
+            >
               <div className="flex items-center gap-2 font-semibold text-slate-800"><span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor:x.cor}} />{x.nome}</div>
-              <div className="mt-1 font-bold tabular-nums text-slate-950">{Math.round(x.valor)}%</div>
-            </div>
+              <div className="mt-1 flex items-end justify-between gap-2">
+                <span className="font-bold tabular-nums text-slate-950">{Math.round(x.valor)}%</span>
+                {onSelect && <span className="inline-flex items-center gap-1 font-semibold text-violet-700 opacity-80">Ver detalhes <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" /></span>}
+              </div>
+            </button>
           ))}
         </div>
 
@@ -2577,7 +2740,13 @@ function ComposicaoIndice({ colaborador }: { colaborador: ColaboradorAcompanhame
   );
 }
 
-function TimelineAlinhamentos({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+function TimelineAlinhamentos({
+  colaborador,
+  onSelect,
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  onSelect?: (aba: AbaAcompanhamentoUgp) => void;
+}) {
   const marcos = [1,2,3,4].map((numero) => {
     const tem = (form:string,papel:string) => colaborador.respostas.some((r) => Number(r.ciclo) === numero && r.form === form && (form === 'pesquisa' || r.papel === papel));
     return { numero, dia:diaDoAlinhamento(numero), c:tem('pesquisa','Colaborador'), g:tem('aval','Gestor'), a:tem('aval','Anjo') };
@@ -2618,7 +2787,15 @@ function TimelineAlinhamentos({ colaborador }: { colaborador: ColaboradorAcompan
                           tabIndex={0}
                           aria-label={`${papel} — ${status}`}
                           className="grid h-7 w-7 cursor-help place-items-center rounded-full border text-[10px] font-black outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-violet-300 focus-visible:ring-offset-2"
-                          style={ok ? {backgroundColor:String(cor),borderColor:String(cor),color:'#fff'} : {borderColor:'#CBD5E1',color:'#94A3B8'}}
+                          style={
+                            status === 'Preenchido'
+                              ? {backgroundColor:String(cor),borderColor:String(cor),color:'#fff'}
+                              : status === 'Atrasado'
+                                ? {backgroundColor:'#FFF1F2',borderColor:'#FB7185',color:'#BE123C',boxShadow:'0 0 0 2px rgba(251,113,133,.12)'}
+                                : status === 'Pendente'
+                                  ? {backgroundColor:'#FFFBEB',borderColor:'#F59E0B',color:'#B45309'}
+                                  : {backgroundColor:'#F8FAFC',borderColor:'#CBD5E1',color:'#94A3B8'}
+                          }
                         >
                           {label}
                         </span>
@@ -2634,6 +2811,17 @@ function TimelineAlinhamentos({ colaborador }: { colaborador: ColaboradorAcompan
             </div>
           ))}
         </div>
+        {onSelect && (
+          <div className="mt-4 flex justify-end border-t border-slate-100 pt-3">
+            <button
+              type="button"
+              onClick={() => onSelect('formularios')}
+              className="group inline-flex items-center gap-1.5 text-sm font-semibold text-violet-700 hover:text-violet-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+            >
+              Ver formulários e respostas <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -2880,15 +3068,10 @@ function SinaisCompactos({ colaborador }: { colaborador: ColaboradorAcompanhamen
 
 function AlertasOperacionaisUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
   const alertas = alertasDoColaborador(colaborador);
-  const pendencias = colaborador.formulariosPendentes || [];
-  const atrasados = pendencias.filter((p) => p.atrasado).length;
+  const alertaFormulario = alertaFormularioOperacional(colaborador);
 
-  if (pendencias.length > 0) {
-    alertas.unshift(
-      atrasados > 0
-        ? atrasados + ' formulário(s) está(ão) atrasado(s) e precisa(m) de acompanhamento.'
-        : pendencias.length + ' formulário(s) está(ão) pendente(s) de preenchimento.'
-    );
+  if (alertaFormulario) {
+    alertas.unshift(alertaFormulario.mensagem);
   }
 
   if (!alertas.length) return null;
@@ -3633,9 +3816,287 @@ function EvolucaoFormulariosUgp({ colaborador }: { colaborador: ColaboradorAcomp
   );
 }
 
+
+function PontosAtencaoExecutivosUgp({
+  colaborador,
+  onSelect,
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  onSelect: (aba: AbaAcompanhamentoUgp) => void;
+}) {
+  const alertas = pontosAtencaoExecutivosUgp(colaborador);
+
+  if (!alertas.length) {
+    return (
+      <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3 text-sm text-emerald-900">
+        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+        <span>Nenhum ponto objetivo de atenção identificado neste momento.</span>
+      </div>
+    );
+  }
+
+  const visual = (severidade: SeveridadeAlertaUgp) => {
+    if (severidade === 'atencao') return { borda:'border-rose-200', fundo:'bg-rose-50/55', icone:'bg-rose-100 text-rose-700', texto:'text-rose-950' };
+    if (severidade === 'acompanhar') return { borda:'border-amber-200', fundo:'bg-amber-50/55', icone:'bg-amber-100 text-amber-700', texto:'text-amber-950' };
+    return { borda:'border-blue-200', fundo:'bg-blue-50/55', icone:'bg-blue-100 text-blue-700', texto:'text-blue-950' };
+  };
+
+  const rotuloTipo: Record<AlertaExecutivoUgp['tipo'], string> = {
+    trajetoria: 'Trajetória',
+    formularios: 'Formulários',
+    desenvolvimento: 'Desenvolvimento',
+    perfil: 'Perfil',
+    registros: 'Registros',
+    operacional: 'Operacional',
+  };
+
+  return (
+    <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+      <CardContent className="p-5">
+        <div className="flex items-start gap-3">
+          <span className="rounded-xl bg-amber-100 p-2 text-amber-700"><AlertTriangle className="h-5 w-5" /></span>
+          <div>
+            <h3 className="font-bold text-slate-950">Pontos de atenção</h3>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">Sinais objetivos que merecem acompanhamento, sem substituir a análise detalhada de cada área.</p>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          {alertas.map((alerta) => {
+            const estilo = visual(alerta.severidade);
+            const conteudo = (
+              <>
+                <div className="flex items-start gap-3">
+                  <span className={`mt-0.5 rounded-lg p-1.5 ${estilo.icone}`}><AlertTriangle className="h-4 w-4" /></span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">{rotuloTipo[alerta.tipo]}</div>
+                    <div className={`mt-1 text-sm font-bold ${estilo.texto}`}>{alerta.titulo}</div>
+                    <p className="mt-1 text-sm leading-relaxed text-slate-700">{alerta.mensagem}</p>
+                    {alerta.abaDestino && alerta.acao && (
+                      <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-violet-700">
+                        {alerta.acao} <ChevronRight className="h-3.5 w-3.5" />
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </>
+            );
+
+            return alerta.abaDestino ? (
+              <button
+                key={alerta.chave}
+                type="button"
+                onClick={() => onSelect(alerta.abaDestino!)}
+                className={`rounded-xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 ${estilo.borda} ${estilo.fundo}`}
+              >
+                {conteudo}
+              </button>
+            ) : (
+              <div key={alerta.chave} className={`rounded-xl border p-4 ${estilo.borda} ${estilo.fundo}`}>
+                {conteudo}
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function PreviewTrajetoriaUgp({
+  colaborador,
+  onSelect,
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  onSelect: (aba: AbaAcompanhamentoUgp) => void;
+}) {
+  const momentos = evolucaoPesquisaColaborador(colaborador.respostas);
+  const ultimo = momentos[momentos.length - 1];
+  const anterior = momentos[momentos.length - 2];
+  const valorUltimo = mediaMomentoPesquisa(ultimo);
+  const valorAnterior = mediaMomentoPesquisa(anterior);
+  const variacao = variacaoPercentual(valorAnterior, valorUltimo);
+  const maiorMudanca = mudancasDimensoes(colaborador.respostas).find((item) => item.delta != null);
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect('trajetoria')}
+      className="group w-full rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-[0_1px_2px_rgba(16,24,40,.05)] transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 font-bold text-slate-950"><Route className="h-5 w-5 text-blue-700" /> Trajetória da experiência</div>
+        <ChevronRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5" />
+      </div>
+
+      {momentos.length >= 2 && valorAnterior != null && valorUltimo != null ? (
+        <div className="mt-4">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+            <div>
+              <div className="text-xs text-slate-500">{diaDoAlinhamento(anterior.ciclo)} dias</div>
+              <div className="mt-1 text-2xl font-black tabular-nums text-slate-900">{Math.round(valorAnterior)}%</div>
+            </div>
+            <ArrowRight className="h-5 w-5 text-slate-300" />
+            <div className="text-right">
+              <div className="text-xs text-slate-500">{diaDoAlinhamento(ultimo.ciclo)} dias</div>
+              <div className="mt-1 text-2xl font-black tabular-nums text-blue-800">{Math.round(valorUltimo)}%</div>
+            </div>
+          </div>
+          <div className="mt-3 text-sm font-semibold text-slate-700">
+            {variacao == null
+              ? 'Comparação disponível entre os dois alinhamentos mais recentes.'
+              : variacao < 0
+                ? `↓ ${Math.round(Math.abs(variacao))}% menor que no alinhamento anterior`
+                : variacao > 0
+                  ? `↑ ${Math.round(Math.abs(variacao))}% maior que no alinhamento anterior`
+                  : '→ Estável em relação ao alinhamento anterior'}
+          </div>
+          {maiorMudanca && (
+            <div className="mt-3 rounded-xl bg-blue-50/60 px-3 py-2 text-xs text-slate-700">
+              <span className="font-semibold">Maior mudança recente:</span> {maiorMudanca.nome}
+            </div>
+          )}
+        </div>
+      ) : momentos.length === 1 && valorUltimo != null ? (
+        <div className="mt-4">
+          <div className="text-xs text-slate-500">Primeira medição disponível</div>
+          <div className="mt-1 text-2xl font-black tabular-nums text-blue-800">{diaDoAlinhamento(ultimo.ciclo)} dias — {Math.round(valorUltimo)}%</div>
+          <p className="mt-3 text-sm leading-relaxed text-slate-600">Ainda não há outro alinhamento com Pesquisa de Integração para comparar a evolução.</p>
+        </div>
+      ) : (
+        <p className="mt-4 text-sm leading-relaxed text-slate-500">Ainda não existem respostas da Pesquisa de Integração para analisar a trajetória.</p>
+      )}
+
+      <div className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-violet-700">Ver trajetória completa <ChevronRight className="h-4 w-4" /></div>
+    </button>
+  );
+}
+
+function PreviewDesenvolvimentoUgp({
+  colaborador,
+  onSelect,
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  onSelect: (aba: AbaAcompanhamentoUgp) => void;
+}) {
+  const registros = [...(colaborador.registrosAlinhamentos || [])].sort((a,b) => Number(a.marco || 0) - Number(b.marco || 0));
+  const realizados = registros.filter((item) => item.realizado);
+  const ultimo = realizados[realizados.length - 1];
+  const proximo = registros.find((item) => !item.realizado);
+  const parecer = ultimo ? [ultimo.conclusao, ultimo.consultora, ultimo.lider, ultimo.colab].find((texto) => String(texto || '').trim()) : null;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect('desenvolvimento')}
+      className="group w-full rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-[0_1px_2px_rgba(16,24,40,.05)] transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 font-bold text-slate-950"><Target className="h-5 w-5 text-violet-700" /> Desenvolvimento e alinhamentos</div>
+        <ChevronRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5" />
+      </div>
+      {ultimo ? (
+        <div className="mt-4 space-y-2 text-sm text-slate-700">
+          <div><span className="text-slate-500">Último alinhamento:</span> <b>{ultimo.marco || diaDoAlinhamento(ultimo.numero)} dias</b></div>
+          <div><span className="text-slate-500">Realizado em:</span> <b>{ultimo.data ? dataBr(ultimo.data) : 'data não informada'}</b></div>
+          <div className="text-xs font-semibold text-emerald-700">{ultimo.temConteudo ? 'Registro completo disponível.' : 'Alinhamento realizado.'}</div>
+          {parecer && <p className="line-clamp-2 rounded-xl bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-600">“{parecer}”</p>}
+          <div><span className="text-slate-500">Próximo marco:</span> <b>{proximo ? (proximo.marco || diaDoAlinhamento(proximo.numero)) + ' dias' : 'todos os marcos previstos concluídos'}</b></div>
+        </div>
+      ) : (
+        <div className="mt-4 text-sm text-slate-600">
+          <p>Nenhum alinhamento realizado até o momento.</p>
+          <p className="mt-2"><span className="text-slate-500">Próximo marco previsto:</span> <b>{proximo ? (proximo.marco || diaDoAlinhamento(proximo.numero)) + ' dias' : '15 dias'}</b></p>
+        </div>
+      )}
+      <div className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-violet-700">Ver alinhamentos e desenvolvimento <ChevronRight className="h-4 w-4" /></div>
+    </button>
+  );
+}
+
+function PreviewPerfilUgp({
+  colaborador,
+  onSelect,
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  onSelect: (aba: AbaAcompanhamentoUgp) => void;
+}) {
+  const statusAssessment = colaborador.assessmentPotencialConcluido;
+  const concluido = statusAssessment === true;
+  const disc = colaborador.perfilAssessment?.disc?.perfilPredominante;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect('perfil')}
+      className="group w-full rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-[0_1px_2px_rgba(16,24,40,.05)] transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 font-bold text-slate-950"><Brain className="h-5 w-5 text-violet-700" /> Perfil</div>
+        <ChevronRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5" />
+      </div>
+      <div className="mt-4 text-sm text-slate-700">
+        <div className="text-xs text-slate-500">Assessment/Avaliação de Potencial</div>
+        <div className={`mt-1 font-bold ${concluido ? 'text-emerald-700' : 'text-slate-700'}`}>
+          {concluido ? 'Concluído' : statusAssessment === false ? 'Ainda não concluído' : 'Situação ainda não disponível'}
+        </div>
+        {disc && <div className="mt-3"><span className="text-slate-500">Perfil DISC predominante:</span> <b>{disc}</b></div>}
+      </div>
+      <div className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-violet-700">Ver perfil <ChevronRight className="h-4 w-4" /></div>
+    </button>
+  );
+}
+
+function PreviewRegistrosUgp({
+  colaborador,
+  onSelect,
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  onSelect: (aba: AbaAcompanhamentoUgp) => void;
+}) {
+  const registros = [...(colaborador.registrosIntegracao || [])].sort((a,b) => {
+    const dataB = Date.parse(String(b.dataAcontecimento || b.cadastradoEm || '')) || 0;
+    const dataA = Date.parse(String(a.dataAcontecimento || a.cadastradoEm || '')) || 0;
+    return dataB - dataA;
+  });
+  const ultimo = registros[0];
+  const rotuloTipo = ultimo
+    ? ultimo.tipo === 'foto' ? 'Foto' : ultimo.tipo === 'documento' ? 'Documento' : ultimo.tipo === 'relato' ? 'Relato' : 'Registro'
+    : '';
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect('registros')}
+      className="group w-full rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-[0_1px_2px_rgba(16,24,40,.05)] transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 font-bold text-slate-950"><Paperclip className="h-5 w-5 text-slate-600" /> Registros da integração</div>
+        <ChevronRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5" />
+      </div>
+      {ultimo ? (
+        <div className="mt-4 text-sm text-slate-700">
+          <div><b>{registros.length}</b> evidência(s) complementar(es) registrada(s).</div>
+          <div className="mt-3 text-xs text-slate-500">Último registro</div>
+          <div className="mt-1 font-bold text-slate-900">{rotuloTipo} — {ultimo.titulo || 'Sem título'}</div>
+          <div className="mt-1 text-xs text-slate-500">{ultimo.dataAcontecimento ? dataBr(ultimo.dataAcontecimento) : ultimo.cadastradoEm ? dataBr(ultimo.cadastradoEm) : 'Data não informada'}</div>
+        </div>
+      ) : (
+        <p className="mt-4 text-sm leading-relaxed text-slate-500">Nenhuma evidência complementar registrada até o momento.</p>
+      )}
+      <div className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-violet-700">Ver registros <ChevronRight className="h-4 w-4" /></div>
+    </button>
+  );
+}
+
 function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:ColaboradorAcompanhamento; onVoltar:()=>void; onPerfil:()=>void }) {
   const st=statusCarteira(colaborador);
   const [aba, setAba] = useState('visao');
+  const selecionarAba = (destino: string) => {
+    setAba(destino);
+    window.setTimeout(() => {
+      document.getElementById('acompanhamento-abas')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
+  };
   const iniciais = colaborador.nome.split(/\s+/).filter(Boolean).slice(0, 2).map((parte) => parte[0]).join('').toUpperCase();
 
   return (
@@ -3662,10 +4123,10 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
       </div>
 
       <KpisOperacionais colaborador={colaborador}/>
-      <GuiaCompactoUgp colaborador={colaborador} onSelect={setAba} />
+      <GuiaLeituraUgp colaborador={colaborador} onSelect={selecionarAba} />
 
       <Tabs value={aba} onValueChange={setAba} className="space-y-4">
-        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl bg-slate-200/70 p-1 md:grid-cols-3 xl:grid-cols-6">
+        <TabsList id="acompanhamento-abas" className="scroll-mt-24 grid h-auto w-full grid-cols-2 gap-1 rounded-2xl bg-slate-200/70 p-1 md:grid-cols-3 xl:grid-cols-6">
           <TabsTrigger value="visao" className="rounded-xl py-2.5 font-semibold text-slate-600 data-[state=active]:bg-violet-700 data-[state=active]:text-white data-[state=active]:shadow-sm focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2">Visão geral</TabsTrigger>
           <TabsTrigger value="trajetoria" className="rounded-xl py-2.5 font-semibold text-slate-600 data-[state=active]:bg-violet-700 data-[state=active]:text-white data-[state=active]:shadow-sm focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2">Trajetória</TabsTrigger>
           <TabsTrigger value="formularios" className="rounded-xl py-2.5 font-semibold text-slate-600 data-[state=active]:bg-violet-700 data-[state=active]:text-white data-[state=active]:shadow-sm focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2">Formulários</TabsTrigger>
@@ -3675,12 +4136,15 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
         </TabsList>
 
         <TabsContent value="visao" className="space-y-6">
-          <SinaisCompactos colaborador={colaborador}/>
-          <AlertasOperacionaisUgp colaborador={colaborador}/>
-          {indiceIntegracao(colaborador).indice!=null&&<ComposicaoIndice colaborador={colaborador}/>}
-          <TimelineAlinhamentos colaborador={colaborador}/>
-          <TabelaFormulariosPendentesUgp colaborador={colaborador}/>
-          <RegistrosAlinhamentosUgp colaborador={colaborador}/>
+          <PontosAtencaoExecutivosUgp colaborador={colaborador} onSelect={selecionarAba}/>
+          {indiceIntegracao(colaborador).indice!=null&&<ComposicaoIndice colaborador={colaborador} onSelect={selecionarAba}/>}
+          <TimelineAlinhamentos colaborador={colaborador} onSelect={selecionarAba}/>
+          <div className="grid items-start gap-4 lg:grid-cols-2">
+            <PreviewTrajetoriaUgp colaborador={colaborador} onSelect={selecionarAba}/>
+            <PreviewDesenvolvimentoUgp colaborador={colaborador} onSelect={selecionarAba}/>
+            <PreviewPerfilUgp colaborador={colaborador} onSelect={selecionarAba}/>
+            <PreviewRegistrosUgp colaborador={colaborador} onSelect={selecionarAba}/>
+          </div>
         </TabsContent>
 
         <TabsContent value="trajetoria"><TrajetoriaHeatmap colaborador={colaborador}/></TabsContent>
