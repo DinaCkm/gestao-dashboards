@@ -531,7 +531,7 @@ export function Indicadores({
               <Card className="border-primary/15">
                 <CardHeader>
                   <CardTitle>Formulários Pós-Alinhamento pendentes</CardTitle>
-                  <CardDescription>Somente formulários cujo prazo já chegou e ainda não possuem resposta registrada.</CardDescription>
+                  <CardDescription>Formulários já liberados para resposta e ainda não respondidos, inclusive os que continuam dentro do prazo.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-5 flex items-baseline gap-2">
