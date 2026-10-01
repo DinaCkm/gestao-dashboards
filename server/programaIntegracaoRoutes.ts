@@ -754,6 +754,53 @@ function chaveGerenteAcompanhamento(nome: unknown, email: unknown): string {
   return nomeNormalizado ? `nome:${nomeNormalizado}` : "";
 }
 
+type UgpOficialEmpresa = {
+  userId: number;
+  nome: string;
+  email: string;
+};
+
+async function listarUgpOficialPorEmpresa(connection: any): Promise<{
+  porEmpresa: Map<number, UgpOficialEmpresa>;
+  empresasComConflito: Set<number>;
+}> {
+  const [rows] = (await connection.execute(
+    `SELECT u.id,u.name,u.email,app.permissions
+     FROM users u
+     INNER JOIN admin_page_permissions app ON app.userId=u.id
+     WHERE u.role='manager' AND u.isActive=1
+     ORDER BY u.id ASC`,
+  )) as any;
+
+  const candidatos = new Map<number, UgpOficialEmpresa[]>();
+  for (const row of rows || []) {
+    const permissions = asJson<string[]>(row.permissions, []);
+    const config = parseManagerIntegracaoPermissions(permissions);
+    const programId = Number(config.programId || 0);
+    if (!config.enabled || config.accessLevel !== "ugp" || !config.ugpResponsible || !programId) continue;
+
+    const email = String(row.email || "").trim().toLowerCase();
+    if (!email || !email.includes("@")) continue;
+
+    const lista = candidatos.get(programId) || [];
+    lista.push({
+      userId: Number(row.id),
+      nome: String(row.name || "").trim(),
+      email,
+    });
+    candidatos.set(programId, lista);
+  }
+
+  const porEmpresa = new Map<number, UgpOficialEmpresa>();
+  const empresasComConflito = new Set<number>();
+  for (const [programId, lista] of candidatos.entries()) {
+    if (lista.length === 1) porEmpresa.set(programId, lista[0]);
+    else if (lista.length > 1) empresasComConflito.add(programId);
+  }
+
+  return { porEmpresa, empresasComConflito };
+}
+
 programaIntegracaoRouter.get("/api/programa-integracao/bootstrap", requireAdmin, async (req, res) => {
   try {
     const connection = await getConnectionOr503(res); if (!connection) return;
@@ -772,6 +819,8 @@ programaIntegracaoRouter.get("/api/programa-integracao/bootstrap", requireAdmin,
     const nomeProgramaPorId = new Map<number, string>(
       (programRows || []).map((programa: any) => [Number(programa.id), String(programa.name || "")]),
     );
+    const { porEmpresa: ugpOficialPorEmpresa, empresasComConflito: empresasUgpConflito } =
+      await listarUgpOficialPorEmpresa(connection);
 
     const processos: Record<string, any> = {};
     (processRows || []).forEach((row: any) => {
@@ -796,6 +845,10 @@ programaIntegracaoRouter.get("/api/programa-integracao/bootstrap", requireAdmin,
       const empresaProgramNome =
         String(estado?.teste?.empresaProgramNome || "").trim() ||
         (empresaProgramId ? (nomeProgramaPorId.get(empresaProgramId) || "") : "");
+      const ugpResponsavelConflito = Boolean(empresaProgramId && empresasUgpConflito.has(empresaProgramId));
+      const ugpResponsavel = empresaProgramId && !ugpResponsavelConflito
+        ? ugpOficialPorEmpresa.get(empresaProgramId) || null
+        : null;
 
       processos[id] = { ...estado,
         nome: row.nome || "", cpf: row.cpf || "", nasc: sqlDateToIso(row.nasc),
@@ -805,6 +858,11 @@ programaIntegracaoRouter.get("/api/programa-integracao/bootstrap", requireAdmin,
         consultora: row.consultora || "", mentorId: row.mentorLegacyId || "", ugp: row.ugp || "", horarios: row.horarios || "",
         statusPdi: row.statusPdi || "", pendencias: row.pendencias || "", statusCursos: row.statusCursos || "", consideracoes: row.consideracoes || "", notas: row.notas || "", cor: row.cor || "",
         empresaProgramId: empresaProgramId || null, empresaProgramNome,
+        ugpResponsavelUserId: ugpResponsavel?.userId || null,
+        ugpResponsavelNome: ugpResponsavel?.nome || "",
+        ugpResponsavelEmail: ugpResponsavel?.email || "",
+        ugpResponsavelConfigurada: Boolean(ugpResponsavel),
+        ugpResponsavelConflito,
         feito: estado.feito || {}, alin: estado.alin || {}, bem: estado.bem || {}, teste: estado.teste || {}, resp: [],
       };
     });
@@ -2313,6 +2371,11 @@ programaIntegracaoRouter.put("/api/programa-integracao/processos/:legacyId", req
     // Campos calculados no bootstrap são somente de leitura e nunca são persistidos no JSON do processo.
     delete estado.empresaProgramId;
     delete estado.empresaProgramNome;
+    delete estado.ugpResponsavelUserId;
+    delete estado.ugpResponsavelNome;
+    delete estado.ugpResponsavelEmail;
+    delete estado.ugpResponsavelConfigurada;
+    delete estado.ugpResponsavelConflito;
     if (Array.isArray(estadoAtualServidor.registrosIntegracao)) {
       estado.registrosIntegracao = estadoAtualServidor.registrosIntegracao;
     }
