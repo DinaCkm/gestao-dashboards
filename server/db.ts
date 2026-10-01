@@ -15635,10 +15635,12 @@ export async function setManagerIntegracaoConfig(data: {
   demoOnly?: boolean;
   ugpResponsible?: boolean;
   replaceUgpResponsible?: boolean;
+  confirmResponsibilityChange?: boolean;
 }): Promise<{
   success: boolean;
   message?: string;
   requiresUgpReplacementConfirmation?: boolean;
+  requiresResponsibilityChangeConfirmation?: boolean;
   currentUgpResponsible?: { id: number; name: string; email: string } | null;
   replacedUgpResponsible?: { id: number; name: string; email: string } | null;
 }> {
@@ -15705,6 +15707,25 @@ export async function setManagerIntegracaoConfig(data: {
       if (!Array.isArray(currentPermissions)) currentPermissions = [];
     } catch {
       currentPermissions = [];
+    }
+
+    const currentConfig = parseManagerIntegracaoPermissions(currentPermissions);
+    const responsibilityChanges = Boolean(
+      currentConfig.ugpResponsible &&
+      (
+        !data.enabled ||
+        !data.ugpResponsible ||
+        data.accessLevel !== "ugp" ||
+        Number(currentConfig.programId || 0) !== Number(data.programId || 0)
+      )
+    );
+    if (responsibilityChanges && !data.confirmResponsibilityChange) {
+      await raw.rollback();
+      return {
+        success: false,
+        message: "Esta alteração retira ou transfere a responsabilidade UGP/RH oficial da empresa atual.",
+        requiresResponsibilityChangeConfirmation: true,
+      };
     }
 
     let replacedUgpResponsible: { id: number; name: string; email: string } | null = null;
