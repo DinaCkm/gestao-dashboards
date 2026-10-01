@@ -760,6 +760,21 @@ type UgpOficialEmpresa = {
   email: string;
 };
 
+function ecoAlunoVinculoEmpresaConfiavel(estado: Record<string, any>): number {
+  const teste = estado?.teste && typeof estado.teste === "object" ? estado.teste : {};
+  const ecoAlunoId = Number(teste?.ecoAlunoId || 0);
+  if (!ecoAlunoId) return 0;
+
+  const modo = String(teste?.ecoVinculoModo || "").trim();
+  const confirmado = Number(teste?.ecoAutomacaoConfirmada?.alunoId || 0) === ecoAlunoId;
+
+  // Somente vínculo escolhido/confirmado explicitamente pode prevalecer sobre
+  // identificadores históricos do processo. Correspondência automática não.
+  return modo === "manual" || modo === "manual_demo_autorizado" || confirmado
+    ? ecoAlunoId
+    : 0;
+}
+
 async function listarUgpOficialPorEmpresa(connection: any): Promise<{
   porEmpresa: Map<number, UgpOficialEmpresa>;
   empresasComConflito: Set<number>;
@@ -827,9 +842,11 @@ programaIntegracaoRouter.get("/api/programa-integracao/bootstrap", requireAdmin,
       const id = row.legacyId || `p${row.id}`;
       const estado = asJson<Record<string, any>>(row.estado, {});
       const empresaTesteId = Number(estado?.teste?.empresaProgramId || 0);
+      const ecoAlunoConfiavelId = ecoAlunoVinculoEmpresaConfiavel(estado);
+      const alunoEcoConfiavel = alunoPorId.get(ecoAlunoConfiavelId);
       const alunoDireto = alunoPorId.get(Number(row.alunoId || 0));
-      const alunoEco = alunoPorId.get(Number(estado?.teste?.ecoAlunoId || 0));
-      const correspondenciaSegura = empresaTesteId || alunoDireto || alunoEco
+      const alunoEcoFallback = alunoPorId.get(Number(estado?.teste?.ecoAlunoId || 0));
+      const correspondenciaSegura = empresaTesteId || alunoEcoConfiavel || alunoDireto || alunoEcoFallback
         ? null
         : escolherCorrespondenciaEmpresaSegura(
             String(row.nome || ""),
@@ -838,8 +855,9 @@ programaIntegracaoRouter.get("/api/programa-integracao/bootstrap", requireAdmin,
           );
       const empresaProgramId =
         empresaTesteId ||
+        Number(alunoEcoConfiavel?.programId || 0) ||
         Number(alunoDireto?.programId || 0) ||
-        Number(alunoEco?.programId || 0) ||
+        Number(alunoEcoFallback?.programId || 0) ||
         Number(correspondenciaSegura?.programId || 0) ||
         0;
       const empresaProgramNome =
@@ -922,6 +940,13 @@ programaIntegracaoRouter.get("/api/programa-integracao/admin/processos-ativos", 
       const empresaTesteId = Number(estado?.teste?.empresaProgramId || 0);
       if (empresaTesteId > 0) {
         return empresaTesteId === programId;
+      }
+
+      const ecoAlunoConfiavelId = ecoAlunoVinculoEmpresaConfiavel(estado);
+      if (ecoAlunoConfiavelId) {
+        // Vínculo ECO explícito é a fonte atual da empresa. Se não pertencer à
+        // empresa consultada, não cair para um vínculo histórico divergente.
+        return alunosEmpresaPorId.has(ecoAlunoConfiavelId);
       }
 
       const alunoIdDireto = Number(row.alunoId || 0);
@@ -1200,6 +1225,11 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       if (empresaTesteId > 0) {
         if (empresaTesteId !== empresaId) return null;
         return { id: null, programId: empresaId, demoEmpresa: true };
+      }
+
+      const ecoAlunoConfiavelId = ecoAlunoVinculoEmpresaConfiavel(estado);
+      if (ecoAlunoConfiavelId) {
+        return alunosEmpresaPorId.get(ecoAlunoConfiavelId) || null;
       }
 
       const alunoIdDireto = Number(row.alunoId || 0);
