@@ -4225,11 +4225,11 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
 
                   {integracaoMode === "manual" && (
                     <div className="space-y-3 rounded-lg border bg-muted/10 p-3">
-                      {integracaoMode === "ugp_restrita" && (
+                      {integracaoAccessLevel === "ugp" && (
                         <div className="space-y-2 rounded-md border border-violet-200 bg-violet-50/70 p-3">
-                          <p className="text-sm font-medium text-violet-950">Visão UGP/RH restrita</p>
+                          <p className="text-sm font-medium text-violet-950">UGP/RH com seleção manual</p>
                           <p className="text-xs text-violet-800">
-                            O usuário verá o mesmo conteúdo de leitura da UGP/RH, mas somente dos colaboradores marcados abaixo.
+                            O usuário mantém o nível de leitura UGP/RH, mas verá somente os colaboradores marcados abaixo.
                           </p>
                           <label className="flex items-start gap-2 text-xs text-violet-900">
                             <Checkbox
