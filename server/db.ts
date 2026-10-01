@@ -15652,7 +15652,7 @@ export async function setManagerIntegracaoConfig(data: {
     await raw.beginTransaction();
 
     const [managerRows]: any = await raw.execute(
-      `SELECT id,role,isActive FROM users WHERE id=? LIMIT 1 FOR UPDATE`,
+      `SELECT id,role,isActive,name,email FROM users WHERE id=? LIMIT 1 FOR UPDATE`,
       [data.userId],
     );
     const manager = managerRows?.[0];
@@ -15678,6 +15678,16 @@ export async function setManagerIntegracaoConfig(data: {
       if (data.ugpResponsible && data.accessLevel !== "ugp") {
         await raw.rollback();
         return { success: false, message: "A UGP/RH responsável oficial precisa ter nível de acesso UGP/RH." };
+      }
+      if (data.ugpResponsible) {
+        const emailResponsavel = String(manager.email || "").trim().toLowerCase();
+        if (!emailResponsavel || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailResponsavel)) {
+          await raw.rollback();
+          return {
+            success: false,
+            message: "Cadastre um e-mail válido para este gerente antes de defini-lo como UGP/RH responsável oficial.",
+          };
+        }
       }
     }
 
