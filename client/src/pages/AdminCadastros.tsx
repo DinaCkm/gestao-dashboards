@@ -4374,21 +4374,63 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                       toast.error("Selecione a empresa acompanhada no Programa de Integração.");
                       return;
                     }
-                    if (integracaoEnabled && (integracaoMode === "manual" || integracaoMode === "ugp_restrita") && integracaoProcessIds.length === 0) {
+                    if (integracaoEnabled && integracaoMode === "manual" && integracaoProcessIds.length === 0) {
                       toast.error("Selecione pelo menos um colaborador para este escopo.");
+                      return;
+                    }
+                    if (integracaoEnabled && integracaoUgpResponsible && integracaoAccessLevel !== "ugp") {
+                      toast.error("A UGP/RH responsável oficial precisa ter nível de acesso UGP/RH.");
                       return;
                     }
                     if (!integracaoEnabled && editEspecial && editPermissions.length === 0) {
                       toast.error("Antes de remover a Integração, libere ao menos uma área geral ou desmarque Gerente Especial.");
                       return;
                     }
+
+                    if (!integracaoEnabled && integracaoConfig?.ugpResponsible) {
+                      const confirmarRemocao = window.confirm(
+                        "Este usuário é a UGP/RH responsável oficial da empresa. Ao remover o acesso à Integração, a empresa ficará sem UGP/RH oficial até que outra pessoa seja definida. Deseja continuar?"
+                      );
+                      if (!confirmarRemocao) return;
+                    }
+
+                    if (
+                      integracaoEnabled &&
+                      integracaoUgpResponsible &&
+                      integracaoConfig?.ugpResponsible &&
+                      integracaoConfig.programId &&
+                      Number(integracaoConfig.programId) !== Number(integracaoProgramId)
+                    ) {
+                      const confirmarTrocaEmpresa = window.confirm(
+                        "Este usuário é UGP/RH oficial da empresa anterior. Ao trocar a empresa, a responsabilidade acompanhará a nova empresa e a anterior ficará sem responsável oficial. Deseja continuar?"
+                      );
+                      if (!confirmarTrocaEmpresa) return;
+                    }
+
+                    const responsavelAtual = integracaoUgpResponsavelAtual?.responsavel;
+                    let substituirResponsavel = false;
+                    if (
+                      integracaoEnabled &&
+                      integracaoUgpResponsible &&
+                      responsavelAtual &&
+                      Number(responsavelAtual.id) !== Number(permissaoOpenId)
+                    ) {
+                      substituirResponsavel = window.confirm(
+                        `A empresa já tem ${responsavelAtual.name || "outro usuário"} como UGP/RH responsável oficial. Deseja transferir somente a responsabilidade UGP/RH para este usuário? O acesso do responsável anterior será preservado.`
+                      );
+                      if (!substituirResponsavel) return;
+                    }
+
                     salvarIntegracaoGerente.mutate({
                       userId: permissaoOpenId,
                       enabled: integracaoEnabled,
                       programId: integracaoEnabled ? parseInt(integracaoProgramId) : null,
+                      accessLevel: integracaoAccessLevel,
                       mode: integracaoMode,
-                      processIds: (integracaoMode === "manual" || integracaoMode === "ugp_restrita") ? integracaoProcessIds : [],
-                      demoOnly: integracaoMode === "ugp_restrita" ? integracaoDemoOnly : false,
+                      processIds: integracaoMode === "manual" ? integracaoProcessIds : [],
+                      demoOnly: integracaoAccessLevel === "ugp" && integracaoMode === "manual" ? integracaoDemoOnly : false,
+                      ugpResponsible: integracaoEnabled && integracaoAccessLevel === "ugp" ? integracaoUgpResponsible : false,
+                      replaceUgpResponsible: substituirResponsavel,
                     });
                   }}
                 >
