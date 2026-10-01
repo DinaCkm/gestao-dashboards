@@ -3194,7 +3194,9 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
           ? String(gerenteSelecionado.programId)
           : ""
     );
-    setIntegracaoMode((integracaoConfig.mode || "gestor") as "gestor" | "all" | "manual" | "ugp_restrita");
+    setIntegracaoAccessLevel((integracaoConfig.accessLevel || "gestor") as "gestor" | "ugp");
+    setIntegracaoMode((integracaoConfig.mode || "gestor") as "gestor" | "all" | "manual");
+    setIntegracaoUgpResponsible(Boolean(integracaoConfig.ugpResponsible));
     setIntegracaoDemoOnly(Boolean(integracaoConfig.demoOnly));
     setIntegracaoProcessIds(Array.isArray(integracaoConfig.processIds) ? integracaoConfig.processIds : []);
     setIntegracaoBusca("");
@@ -3202,7 +3204,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
   }, [permissaoOpenId, integracaoConfig, gerentesEmpresa]);
 
   useEffect(() => {
-    if (!permissaoOpenId || !integracaoEnabled || !["manual", "ugp_restrita"].includes(integracaoMode) || !integracaoProgramId) {
+    if (!permissaoOpenId || !integracaoEnabled || integracaoMode !== "manual" || !integracaoProgramId) {
       setIntegracaoProcessos([]);
       setIntegracaoProcessosErro("");
       setIntegracaoProcessosLoading(false);
