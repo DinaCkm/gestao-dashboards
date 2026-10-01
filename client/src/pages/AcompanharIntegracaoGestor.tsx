@@ -2606,13 +2606,12 @@ function TrajetoriaHeatmap({ colaborador }: { colaborador: ColaboradorAcompanham
   const ParecerIcon = parecer.icon;
   const heatStyle = (valor:number|null) => {
     if (valor == null) return {backgroundColor:'#F8FAFC',color:'#94A3B8'};
-    // A cor usa uma faixa visual de 60 a 100 para tornar diferenças altas mais perceptíveis.
-    // O número exibido continua sendo o percentual real, sem alteração de cálculo.
-    const normalizado = Math.max(0, Math.min(1, (valor - 60) / 40));
-    return {
-      backgroundColor:'rgba(37,99,235,' + (0.12 + normalizado * 0.60) + ')',
-      color: normalizado > 0.58 ? '#FFFFFF' : '#0F172A'
-    };
+    if (valor >= 90) return {backgroundColor:'#16A34A',color:'#FFFFFF'};
+    if (valor >= 70) return {backgroundColor:'#2563EB',color:'#FFFFFF'};
+    if (valor >= 60) return {backgroundColor:'#DBEAFE',color:'#1E3A8A'};
+    if (valor >= 50) return {backgroundColor:'#FDE68A',color:'#78350F'};
+    if (valor >= 25) return {backgroundColor:'#EA580C',color:'#FFFFFF'};
+    return {backgroundColor:'#DC2626',color:'#FFFFFF'};
   };
   return (
     <div className="space-y-4">
@@ -2655,7 +2654,7 @@ function TrajetoriaHeatmap({ colaborador }: { colaborador: ColaboradorAcompanham
               <p><b>Fonte:</b> Pesquisa de Integração do Colaborador. As respostas originais usam escala de 1 a 5; a opção 0 (“sem opinião”) não entra na média.</p>
               <p><b>Cálculo:</b> as perguntas são agrupadas em quatro dimensões. O sistema calcula a média das respostas válidas de cada grupo e multiplica por 20 para apresentar o resultado de 0 a 100. Ex.: média 4,0 = 80%.</p>
               <p><b>Exceção:</b> a pergunta sobre sobrecarga é invertida para que, em todas as dimensões, um percentual maior mantenha o mesmo sentido de percepção mais favorável.</p>
-              <p><b>Cores:</b> o número dentro da célula é sempre o resultado real. A intensidade do azul é apenas um recurso visual; valores mais altos ficam mais intensos. Como estes resultados costumam estar em faixa alta, a escala de cor é concentrada visualmente entre 60 e 100 para facilitar a comparação.</p>
+              <p><b>Cores:</b> o número dentro da célula é sempre o resultado real; a cor apenas identifica a faixa em que ele se encontra. <b>90 a 100</b> = verde; <b>70 a 89</b> = azul; <b>60 a 69</b> = azul-claro; <b>50 a 59</b> = amarelo; <b>25 a 49</b> = laranja; <b>0 a 24</b> = vermelho. Quando não houver resposta naquele alinhamento, a célula permanece cinza.</p>
               <p><b>Variação:</b> compara os dois alinhamentos mais recentes disponíveis daquela dimensão. ↑ indica aumento, ↓ redução e → estabilidade.</p>
             </div>
           </details>
