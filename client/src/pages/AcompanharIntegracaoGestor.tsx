@@ -633,7 +633,13 @@ function DicasGestorProtegidas({ colaborador }: { colaborador: ColaboradorAcompa
   );
 }
 
-function GuiaLeituraUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+function GuiaLeituraUgp({
+  colaborador,
+  onSelect,
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  onSelect: (aba: string) => void;
+}) {
   const sinais = sinaisAtencaoUgp(colaborador);
   const mudancas = mudancasDimensoes(colaborador.respostas);
   const quedas = mudancas.filter((m) => m.direcao === 'caiu');
@@ -650,7 +656,7 @@ function GuiaLeituraUgp({ colaborador }: { colaborador: ColaboradorAcompanhament
         ? `${sinais.length} sinal(is) objetivo(s) pedem atenção neste momento.`
         : 'Não há sinais críticos no momento. Confira a trajetória para entender a evolução.',
       acao: 'Abrir resumo executivo',
-      destino: 'resumo-executivo',
+      aba: 'visao',
       icon: Activity,
     },
     {
@@ -660,7 +666,7 @@ function GuiaLeituraUgp({ colaborador }: { colaborador: ColaboradorAcompanhament
         ? `${quedas.length} dimensão(ões) caiu(ram) desde o último alinhamento. Veja onde aconteceu e quanto mudou.`
         : 'Compare 15, 45, 75 e 150 dias para enxergar avanço, estabilidade ou queda.',
       acao: 'Abrir trajetória',
-      destino: 'trajetoria-integracao',
+      aba: 'trajetoria',
       icon: Route,
     },
     {
@@ -669,8 +675,8 @@ function GuiaLeituraUgp({ colaborador }: { colaborador: ColaboradorAcompanhament
       texto: perfilDisponivel
         ? 'DISC/Assessment, Colaborador, Gestor e Anjo ajudam a contextualizar a integração sem misturar os instrumentos.'
         : 'Compare Colaborador, Gestor e Anjo para entender convergências e diferenças de percepção.',
-      acao: perfilDisponivel ? 'Abrir perfil' : 'Abrir três olhares',
-      destino: perfilDisponivel ? 'perfil-assessment-resumo' : 'tres-olhares',
+      acao: perfilDisponivel ? 'Abrir perfil' : 'Abrir formulários',
+      aba: perfilDisponivel ? 'perfil' : 'formularios',
       icon: perfilDisponivel ? Brain : Users,
     },
   ];
@@ -710,7 +716,7 @@ function GuiaLeituraUgp({ colaborador }: { colaborador: ColaboradorAcompanhament
               <button
                 key={passo.numero}
                 type="button"
-                onClick={() => navegarPara(passo.destino)}
+                onClick={() => onSelect(passo.aba)}
                 className={`group rounded-2xl border p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(15,23,42,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${visualPasso.card}`}
               >
                 <div className="flex items-start gap-3">
@@ -3662,7 +3668,7 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
       </div>
 
       <KpisOperacionais colaborador={colaborador}/>
-      <GuiaCompactoUgp colaborador={colaborador} onSelect={setAba} />
+      <GuiaLeituraUgp colaborador={colaborador} onSelect={setAba} />
 
       <Tabs value={aba} onValueChange={setAba} className="space-y-4">
         <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl bg-slate-200/70 p-1 md:grid-cols-3 xl:grid-cols-6">
