@@ -1224,6 +1224,22 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       const empresaTesteId = Number(estado?.teste?.empresaProgramId || 0);
       if (empresaTesteId > 0) {
         if (empresaTesteId !== empresaId) return null;
+
+        // Processo de teste pode ter um vínculo ECO manual válido.
+        // Quando esse aluno pertence à mesma empresa autorizada ao Gestor/UGP,
+        // usamos o próprio aluno para buscar PDI e Jornada Compliance.
+        // Se não houver vínculo válido na empresa, mantemos apenas o contexto
+        // da empresa do teste sem inventar um aluno.
+        const ecoAlunoConfiavelIdTeste = ecoAlunoVinculoEmpresaConfiavel(estado);
+        if (ecoAlunoConfiavelIdTeste && alunosEmpresaPorId.has(ecoAlunoConfiavelIdTeste)) {
+          return alunosEmpresaPorId.get(ecoAlunoConfiavelIdTeste) || null;
+        }
+
+        const ecoAlunoIdTeste = Number(estado?.teste?.ecoAlunoId || 0);
+        if (ecoAlunoIdTeste && alunosEmpresaPorId.has(ecoAlunoIdTeste)) {
+          return alunosEmpresaPorId.get(ecoAlunoIdTeste) || null;
+        }
+
         return { id: null, programId: empresaId, demoEmpresa: true };
       }
 
