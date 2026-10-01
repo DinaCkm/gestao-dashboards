@@ -966,6 +966,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       origem?: "processo" | "configurado";
       userId?: number;
       modo?: string;
+      nivelAcesso?: "gestor" | "ugp";
       empresaId?: number | null;
       empresaNome?: string;
       config?: ReturnType<typeof parseManagerIntegracaoPermissions>;
@@ -1017,6 +1018,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
           origem: "configurado",
           userId: Number(row.id),
           modo: String(config.mode || "gestor"),
+          nivelAcesso: config.accessLevel,
           empresaId: config.programId,
           empresaNome: config.programId
             ? (programNames.get(Number(config.programId)) || `Empresa #${config.programId}`)
@@ -1109,6 +1111,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       colaboradores: g.colaboradores,
       origem: g.origem,
       modo: g.modo,
+      nivelAcesso: g.nivelAcesso || (g.origem === "processo" ? "gestor" : undefined),
       empresaId: g.empresaId ?? null,
       empresaNome: g.empresaNome || "",
     });
