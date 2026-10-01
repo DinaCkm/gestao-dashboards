@@ -3273,7 +3273,11 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
     onSuccess: async (data) => {
       if (data.success) {
         toast.success(data.message || "Programa de Integração atualizado.");
-        await Promise.all([refetchIntegracaoConfig(), refetchPermissoesGerente()]);
+        await Promise.all([
+          refetchIntegracaoConfig(),
+          refetchPermissoesGerente(),
+          refetchIntegracaoUgpResponsavelAtual(),
+        ]);
       } else {
         toast.error(data.message || "Não foi possível atualizar o Programa de Integração.");
       }
