@@ -175,6 +175,7 @@ export function montarEmailCobranca(
     '**Se você já tiver respondido nos últimos dias, pode desconsiderar** — às vezes o retorno demora a chegar até nós.\n\n' +
     '**O que está pendente**\n' + linhas + '\n\n' +
     `> O preenchimento ${itens.length > 1 ? 'desses formulários é obrigatório' : 'desse formulário é obrigatório'} dentro do Programa de Integração.\n\n` +
+    'O preenchimento costuma levar apenas alguns minutos e é importante para mantermos o acompanhamento atualizado e seguirmos com as próximas etapas.\n\n' +
     porque + '\n\n' +
     'Se aparecer qualquer dificuldade com o link ou com alguma pergunta, é só responder este e-mail que a gente ajuda.' +
     ASSINATURA_EMAIL_INTEGRACAO;
