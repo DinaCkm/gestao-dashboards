@@ -8693,14 +8693,23 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return await db.getManagerIntegracaoConfig(input.userId);
       }),
 
+    getManagerIntegracaoUgpResponsible: adminOrAdmin2Procedure
+      .input(z.object({ programId: z.number().int().positive() }))
+      .query(async ({ input }) => {
+        return await db.getIntegracaoUgpResponsible(input.programId);
+      }),
+
     setManagerIntegracaoConfig: adminOrAdmin2Procedure
       .input(z.object({
         userId: z.number(),
         enabled: z.boolean(),
         programId: z.number().int().positive().nullable(),
-        mode: z.enum(["gestor", "all", "manual", "ugp_restrita"]),
+        accessLevel: z.enum(["gestor", "ugp"]),
+        mode: z.enum(["gestor", "all", "manual"]),
         processIds: z.array(z.number().int().positive()).optional().default([]),
         demoOnly: z.boolean().optional().default(false),
+        ugpResponsible: z.boolean().optional().default(false),
+        replaceUgpResponsible: z.boolean().optional().default(false),
       }))
       .mutation(async ({ input }) => {
         const gerente = (await db.getGerentesEmpresa()).find((g: any) => Number(g.id) === input.userId);
