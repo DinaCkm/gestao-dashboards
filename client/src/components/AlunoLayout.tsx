@@ -180,7 +180,7 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
         ...items,
         {
           label: "Espaço do Anjo",
-          path: "/anjo/formularios",
+          path: "/anjo/orientacoes",
           icon: ClipboardCheck,
           requiresAceite: false,
         },
