@@ -2740,7 +2740,13 @@ function ComposicaoIndice({
   );
 }
 
-function TimelineAlinhamentos({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+function TimelineAlinhamentos({
+  colaborador,
+  onSelect,
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  onSelect?: (aba: AbaAcompanhamentoUgp) => void;
+}) {
   const marcos = [1,2,3,4].map((numero) => {
     const tem = (form:string,papel:string) => colaborador.respostas.some((r) => Number(r.ciclo) === numero && r.form === form && (form === 'pesquisa' || r.papel === papel));
     return { numero, dia:diaDoAlinhamento(numero), c:tem('pesquisa','Colaborador'), g:tem('aval','Gestor'), a:tem('aval','Anjo') };
@@ -2781,7 +2787,15 @@ function TimelineAlinhamentos({ colaborador }: { colaborador: ColaboradorAcompan
                           tabIndex={0}
                           aria-label={`${papel} — ${status}`}
                           className="grid h-7 w-7 cursor-help place-items-center rounded-full border text-[10px] font-black outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-violet-300 focus-visible:ring-offset-2"
-                          style={ok ? {backgroundColor:String(cor),borderColor:String(cor),color:'#fff'} : {borderColor:'#CBD5E1',color:'#94A3B8'}}
+                          style={
+                            status === 'Preenchido'
+                              ? {backgroundColor:String(cor),borderColor:String(cor),color:'#fff'}
+                              : status === 'Atrasado'
+                                ? {backgroundColor:'#FFF1F2',borderColor:'#FB7185',color:'#BE123C',boxShadow:'0 0 0 2px rgba(251,113,133,.12)'}
+                                : status === 'Pendente'
+                                  ? {backgroundColor:'#FFFBEB',borderColor:'#F59E0B',color:'#B45309'}
+                                  : {backgroundColor:'#F8FAFC',borderColor:'#CBD5E1',color:'#94A3B8'}
+                          }
                         >
                           {label}
                         </span>
@@ -2797,6 +2811,17 @@ function TimelineAlinhamentos({ colaborador }: { colaborador: ColaboradorAcompan
             </div>
           ))}
         </div>
+        {onSelect && (
+          <div className="mt-4 flex justify-end border-t border-slate-100 pt-3">
+            <button
+              type="button"
+              onClick={() => onSelect('formularios')}
+              className="group inline-flex items-center gap-1.5 text-sm font-semibold text-violet-700 hover:text-violet-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+            >
+              Ver formulários e respostas <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
