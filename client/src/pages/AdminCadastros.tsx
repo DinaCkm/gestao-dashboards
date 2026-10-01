@@ -4174,26 +4174,56 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Quem este gerente pode acompanhar?</Label>
+                    <Label>Nível de acesso dentro da Integração</Label>
+                    <Select
+                      value={integracaoAccessLevel}
+                      onValueChange={(value) => {
+                        const nivel = value as "gestor" | "ugp";
+                        setIntegracaoAccessLevel(nivel);
+                        if (nivel === "gestor") {
+                          setIntegracaoUgpResponsible(false);
+                          setIntegracaoDemoOnly(false);
+                        }
+                      }}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContentNoPortal>
+                        <SelectItem value="gestor">Gestor — visão gerencial do colaborador</SelectItem>
+                        <SelectItem value="ugp">UGP/RH — visão ampliada de acompanhamento</SelectItem>
+                      </SelectContentNoPortal>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      O nível define quais informações o usuário pode ver. Ele não define quais colaboradores aparecem.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Quais colaboradores este usuário pode visualizar?</Label>
                     <Select
                       value={integracaoMode}
                       onValueChange={(value) => {
-                        setIntegracaoMode(value as "gestor" | "all" | "manual" | "ugp_restrita");
-                        if (value !== "manual" && value !== "ugp_restrita") setIntegracaoProcessIds([]);
-                        if (value !== "ugp_restrita") setIntegracaoDemoOnly(false);
+                        setIntegracaoMode(value as "gestor" | "all" | "manual");
+                        if (value !== "manual") {
+                          setIntegracaoProcessIds([]);
+                          setIntegracaoDemoOnly(false);
+                        }
                       }}
                     >
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContentNoPortal>
                         <SelectItem value="gestor">Somente colaboradores em que é gestor(a)</SelectItem>
                         <SelectItem value="all">Todos os colaboradores ativos desta empresa</SelectItem>
-                          <SelectItem value="manual">Selecionar colaboradores manualmente</SelectItem>
-                        <SelectItem value="ugp_restrita">UGP/RH restrita — colaboradores selecionados</SelectItem>
+                        <SelectItem value="manual">Selecionar colaboradores manualmente</SelectItem>
                       </SelectContentNoPortal>
                     </Select>
+                    {integracaoAccessLevel === "ugp" && integracaoMode === "gestor" && (
+                      <p className="text-xs text-amber-700">
+                        Este usuário terá nível UGP/RH, mas verá somente pessoas em que também esteja cadastrado como gestor direto.
+                      </p>
+                    )}
                   </div>
 
-                  {(integracaoMode === "manual" || integracaoMode === "ugp_restrita") && (
+                  {integracaoMode === "manual" && (
                     <div className="space-y-3 rounded-lg border bg-muted/10 p-3">
                       {integracaoMode === "ugp_restrita" && (
                         <div className="space-y-2 rounded-md border border-violet-200 bg-violet-50/70 p-3">
