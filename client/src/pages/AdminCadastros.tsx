@@ -3163,6 +3163,11 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
     { userId: permissaoOpenId || 0 },
     { enabled: !!permissaoOpenId }
   );
+  const { data: integracaoUgpResponsavelAtual, refetch: refetchIntegracaoUgpResponsavelAtual } =
+    trpc.admin.getManagerIntegracaoUgpResponsible.useQuery(
+      { programId: parseInt(integracaoProgramId || "0") },
+      { enabled: !!permissaoOpenId && !!integracaoProgramId }
+    );
 
   const gerenteSelecionadoConfig = permissaoOpenId
     ? gerentesEmpresa.find((g: any) => Number(g.id) === permissaoOpenId)
