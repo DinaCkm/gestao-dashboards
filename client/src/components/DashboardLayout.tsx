@@ -497,7 +497,7 @@ function DashboardLayoutContent({
       : "";
 
   const sidebarRoleContrast = (isAngelWorkspace || isPureAngel || isGerente)
-    ? "text-white [&_.text-sidebar-foreground]:!text-white [&_.text-foreground]:!text-white [&_.text-muted-foreground]:!text-white/75 [&_[data-sidebar=menu-button]]:!text-white/90 [&_[data-sidebar=menu-button]:hover]:!bg-white/10 [&_[data-sidebar=menu-button][data-active=true]]:!bg-white/15 [&_[data-sidebar=menu-button][data-active=true]]:!text-white [&_[data-sidebar=menu-button]_svg]:!text-white/80 [&_[data-sidebar=menu-button][data-active=true]_svg]:!text-white [&_[data-sidebar=footer]]:!border-white/15 [&_[data-sidebar=header]]:!border-white/15"
+    ? "text-white [&_.text-sidebar-foreground]:!text-white [&_.text-foreground]:!text-white [&_.text-muted-foreground]:!text-white/85 [&_[data-sidebar=menu-button]]:!text-white [&_[data-sidebar=menu-button]:hover]:!bg-white/12 [&_[data-sidebar=menu-button][data-active=true]]:!bg-white/18 [&_[data-sidebar=menu-button][data-active=true]]:!text-white [&_[data-sidebar=menu-button]_svg]:!text-white [&_[data-sidebar=menu-sub-button]]:!text-white/90 [&_[data-sidebar=menu-sub-button]:hover]:!bg-white/10 [&_[data-sidebar=menu-sub-button]_svg]:!text-white/90 [&_[data-sidebar=group-label]]:!text-white/80 [&_[data-sidebar=group-label]_svg]:!text-white/85 [&_[data-sidebar=footer]]:!border-white/20 [&_[data-sidebar=header]]:!border-white/20"
     : "";
 
   // Badge de revisões pendentes para admin e mentor
@@ -721,7 +721,7 @@ function DashboardLayoutContent({
                 className="h-8 w-8 flex items-center justify-center hover:bg-sidebar-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
                 aria-label="Toggle navigation"
               >
-                <PanelLeft className="h-4 w-4 text-muted-foreground" />
+                <PanelLeft className={`h-4 w-4 ${isGerente || isAngelWorkspace || isPureAngel ? "text-white" : "text-muted-foreground"}`} />
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
@@ -742,7 +742,7 @@ function DashboardLayoutContent({
                 />
               )}
               </div>
-              {!isCollapsed && anjoAccessResolved && !isPureAngel && <NotificationBell />}
+              {!isCollapsed && anjoAccessResolved && !isPureAngel && <NotificationBell highContrast={isGerente || isAngelWorkspace} />}
             </div>
           </SidebarHeader>
 
@@ -973,7 +973,7 @@ function DashboardLayoutContent({
             <div className="mb-2 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
               <div className={isCollapsed ? "flex flex-col items-center gap-2" : "flex items-center gap-2 justify-between"}>
                 {!waitingAngelAccess && <RoleSwitcher compact={isCollapsed} />}
-                {!waitingAngelAccess && anjoAccessResolved && !isPureAngel && <NotificationBell />}
+                {!waitingAngelAccess && anjoAccessResolved && !isPureAngel && <NotificationBell highContrast={isGerente || isAngelWorkspace} />}
               </div>
             </div>
             <DropdownMenu>
@@ -996,7 +996,7 @@ function DashboardLayoutContent({
                         {badge.label}
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground truncate mt-1.5">
+                    <p className={`text-xs truncate mt-1.5 ${isGerente || isAngelWorkspace || isPureAngel ? "text-white/80" : "text-muted-foreground"}`}>
                       {user?.email || "-"}
                     </p>
                   </div>
@@ -1063,7 +1063,7 @@ function DashboardLayoutContent({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {!waitingAngelAccess && anjoAccessResolved && !isPureAngel && <NotificationBell />}
+              {!waitingAngelAccess && anjoAccessResolved && !isPureAngel && <NotificationBell highContrast={isGerente || isAngelWorkspace} />}
               {!waitingAngelAccess && <RoleSwitcher />}
             </div>
           </div>
