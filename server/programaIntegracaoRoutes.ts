@@ -1856,7 +1856,10 @@ programaIntegracaoRouter.post("/api/programa-integracao/gestor/cobrancas-formula
     !["bem","pesquisa","aval"].includes(item.formKey) ||
     !["Gestor","Anjo","Colaborador"].includes(item.papel) ||
     item.ciclo < 0 ||
-    item.ciclo > 4
+    item.ciclo > 4 ||
+    (item.formKey === "bem" && (item.papel !== "Gestor" || item.ciclo !== 0)) ||
+    (item.formKey === "pesquisa" && (item.papel !== "Colaborador" || item.ciclo < 1)) ||
+    (item.formKey === "aval" && (!["Gestor","Anjo"].includes(item.papel) || item.ciclo < 1))
   )) {
     return res.status(400).json({ error: "Há formulário inválido na seleção." });
   }
@@ -1953,6 +1956,15 @@ programaIntegracaoRouter.post("/api/programa-integracao/gestor/cobrancas-formula
           tx = false;
           return res.status(403).json({ error: "Um dos processos selecionados não está liberado para esta UGP/RH." });
         }
+        if (
+          modo === "manual" &&
+          Boolean(config.demoOnly) &&
+          !String(estado?.teste?.demoTag || "").startsWith("ugp_demo_")
+        ) {
+          await connection.rollback();
+          tx = false;
+          return res.status(403).json({ error: "Um dos processos selecionados não pertence ao escopo demonstrativo autorizado." });
+        }
 
         if (modo === "gestor") {
           const nomeGestor = normTxt(row.gestor || "");
@@ -1994,6 +2006,23 @@ programaIntegracaoRouter.post("/api/programa-integracao/gestor/cobrancas-formula
         : [];
 
       for (const item of itensProcesso) {
+        const feito = estado?.feito && typeof estado.feito === "object" ? estado.feito : {};
+        const solicitacoes: Record<number, Record<"Gestor" | "Anjo" | "Colaborador", string>> = {
+          1: { Gestor: "pos1-05", Anjo: "pos1-07", Colaborador: "pos1-04" },
+          2: { Gestor: "pos2-05", Anjo: "pos2-07", Colaborador: "pos2-04" },
+          3: { Gestor: "pos3-03", Anjo: "pos3-05", Colaborador: "pos3-02" },
+          4: { Gestor: "pos4-04", Anjo: "pos4-06", Colaborador: "pos4-03" },
+        };
+        const itemSolicitacao = item.formKey === "bem"
+          ? "pre-05"
+          : solicitacoes[item.ciclo]?.[item.papel as "Gestor" | "Anjo" | "Colaborador"];
+        const fichaSolicitacao = itemSolicitacao && feito[itemSolicitacao] && typeof feito[itemSolicitacao] === "object"
+          ? feito[itemSolicitacao]
+          : null;
+
+        // Não registra cobrança de formulário que ainda não foi solicitado.
+        if (!fichaSolicitacao || String(fichaSolicitacao.s || "") !== "ok") continue;
+
         const [respRows] = item.formKey === "pesquisa"
           ? (await connection.execute(
               `SELECT id FROM programa_integracao_respostas
@@ -2002,13 +2031,21 @@ programaIntegracaoRouter.post("/api/programa-integracao/gestor/cobrancas-formula
                LIMIT 1`,
               [processoDbId, item.ciclo],
             )) as any
-          : (await connection.execute(
-              `SELECT id FROM programa_integracao_respostas
-               WHERE processoId=? AND formKey=? AND ciclo=? AND COALESCE(papel,'')=?
-                 AND statusVinculo='vinculada' AND statusResposta<>'excluida'
-               LIMIT 1`,
-              [processoDbId, item.formKey, item.ciclo, item.papel],
-            )) as any;
+          : item.formKey === "bem"
+            ? (await connection.execute(
+                `SELECT id FROM programa_integracao_respostas
+                 WHERE processoId=? AND formKey='bem'
+                   AND statusVinculo='vinculada' AND statusResposta<>'excluida'
+                 LIMIT 1`,
+                [processoDbId],
+              )) as any
+            : (await connection.execute(
+                `SELECT id FROM programa_integracao_respostas
+                 WHERE processoId=? AND formKey=? AND ciclo=? AND COALESCE(papel,'')=?
+                   AND statusVinculo='vinculada' AND statusResposta<>'excluida'
+                 LIMIT 1`,
+                [processoDbId, item.formKey, item.ciclo, item.papel],
+              )) as any;
 
         // Se a resposta chegou entre a abertura da tela e a cobrança, não registra cobrança desnecessária.
         if (respRows?.[0]?.id) continue;
