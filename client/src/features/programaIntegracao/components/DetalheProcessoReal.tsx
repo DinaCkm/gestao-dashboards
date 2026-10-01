@@ -498,7 +498,7 @@ export function DetalheProcessoReal({
 
   const camposEditaveisDados: Array<keyof ProcessoIntegracao> = [
     'nome', 'cpf', 'email', 'emailCorporativo', 'tel', 'nasc', 'cargo', 'unidade',
-    'tipo', 'part', 'inicio', 'ugp', 'horarios', 'gestor', 'gestorEmail', 'gestorTel',
+    'tipo', 'part', 'inicio', 'horarios', 'gestor', 'gestorEmail', 'gestorTel',
     'anjo', 'anjoEmail', 'pendencias', 'notas', 'consideracoes',
   ];
 
@@ -780,7 +780,30 @@ export function DetalheProcessoReal({
               </label>
               {campoTexto('part', 'Participação', 'text', 'Presencial')}
               {campoTexto('inicio', '1º dia na unidade', 'date')}
-              {campoTexto('ugp', 'Destinatário na UGP', 'text', 'nome ou e-mail')}
+
+              <div className="pi-field">
+                <span>Empresa vinculada</span>
+                <div className="pi-read-value">
+                  <LockKeyhole className="h-4 w-4" />
+                  <span>{processo.empresaProgramNome || 'Empresa ainda não identificada com segurança.'}</span>
+                </div>
+              </div>
+
+              <div className="pi-field">
+                <span>UGP/RH responsável oficial</span>
+                <div className="pi-read-value">
+                  <LockKeyhole className="h-4 w-4" />
+                  <span>
+                    {processo.ugpResponsavelConflito
+                      ? 'Conflito de configuração: existe mais de uma UGP/RH oficial para esta empresa. Revise em Parametrização → Cadastros → Gerentes.'
+                      : processo.ugpResponsavelConfigurada
+                        ? [processo.ugpResponsavelNome, processo.ugpResponsavelEmail].filter(Boolean).join(' · ')
+                        : processo.empresaProgramId
+                          ? 'UGP/RH oficial ainda não definida para esta empresa.'
+                          : 'Defina primeiro o vínculo seguro do colaborador com uma empresa.'}
+                  </span>
+                </div>
+              </div>
 
               <div className="pi-field">
                 <span>Status do PDI</span>
