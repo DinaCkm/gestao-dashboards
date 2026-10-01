@@ -268,6 +268,27 @@ function fmtPct1(n: number | null | undefined) {
     : `${Number(n).toFixed(1).replace('.', ',')}%`;
 }
 
+function faixaPercentualVisual(valor: number | null | undefined) {
+  if (valor == null || !Number.isFinite(Number(valor))) {
+    return { fundo: '#F8FAFC', texto: '#64748B', borda: '#E2E8F0', barra: '#94A3B8' };
+  }
+  const n = Math.max(0, Math.min(100, Number(valor)));
+  if (n >= 90) return { fundo: '#DCFCE7', texto: '#166534', borda: '#86EFAC', barra: '#16A34A' };
+  if (n >= 70) return { fundo: '#DBEAFE', texto: '#1D4ED8', borda: '#93C5FD', barra: '#2563EB' };
+  if (n >= 60) return { fundo: '#E0F2FE', texto: '#0369A1', borda: '#7DD3FC', barra: '#60A5FA' };
+  if (n >= 50) return { fundo: '#FEF3C7', texto: '#92400E', borda: '#FCD34D', barra: '#EAB308' };
+  if (n >= 25) return { fundo: '#FFEDD5', texto: '#C2410C', borda: '#FDBA74', barra: '#EA580C' };
+  return { fundo: '#FEE2E2', texto: '#B91C1C', borda: '#FCA5A5', barra: '#DC2626' };
+}
+
+function discVisual(chave: string) {
+  const key = String(chave || '').trim().toUpperCase().charAt(0);
+  if (key === 'D') return { fundo: '#FEE2E2', texto: '#B91C1C', borda: '#FCA5A5', barra: '#DC2626' };
+  if (key === 'I') return { fundo: '#FEF3C7', texto: '#92400E', borda: '#FCD34D', barra: '#EAB308' };
+  if (key === 'S') return { fundo: '#DCFCE7', texto: '#166534', borda: '#86EFAC', barra: '#16A34A' };
+  return { fundo: '#DBEAFE', texto: '#1D4ED8', borda: '#93C5FD', barra: '#2563EB' };
+}
+
 function mediaNumeros(valores: Array<number | null | undefined>): number | null {
   const validos = valores.filter((v): v is number => v != null && Number.isFinite(Number(v))).map(Number);
   return validos.length ? validos.reduce((s, v) => s + v, 0) / validos.length : null;
@@ -654,12 +675,12 @@ function GuiaLeituraUgp({ colaborador }: { colaborador: ColaboradorAcompanhament
   ];
 
   return (
-    <Card className="overflow-hidden rounded-3xl border-0 bg-[linear-gradient(120deg,#171033_0%,#3b1679_48%,#4c35c8_100%)] text-white shadow-[0_14px_35px_rgba(45,24,100,0.18)]">
+    <Card className="group overflow-hidden rounded-3xl border border-cyan-200/20 bg-[linear-gradient(120deg,#0B1F36_0%,#123F5A_48%,#0F766E_100%)] text-white shadow-[0_14px_35px_rgba(15,54,74,0.20)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_44px_rgba(15,54,74,0.28)]">
       <CardContent className="p-5 sm:p-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-violet-200">
-              <Eye className="h-4 w-4" /> Comece por aqui
+            <div className="flex items-center gap-2 text-sm font-black tracking-tight text-cyan-50">
+              <Eye className="h-4 w-4" /> Não sabe por onde começar? Comece por aqui!
             </div>
             <h3 className="mt-2 text-2xl font-black tracking-tight text-white">Leitura rápida para RH / UGP</h3>
             <p className="mt-1 max-w-3xl text-sm leading-relaxed text-white/75">
@@ -679,24 +700,29 @@ function GuiaLeituraUgp({ colaborador }: { colaborador: ColaboradorAcompanhament
         <div className="mt-5 grid gap-3 lg:grid-cols-3">
           {passos.map((passo) => {
             const Icon = passo.icon;
+            const visualPasso = passo.numero === '1'
+              ? { card: 'border-sky-200 bg-sky-50/95 hover:bg-white', icon: 'bg-sky-100 text-sky-800', passo: 'text-sky-700', acao: 'text-sky-800' }
+              : passo.numero === '2'
+                ? { card: 'border-cyan-200 bg-cyan-50/95 hover:bg-white', icon: 'bg-cyan-100 text-cyan-800', passo: 'text-cyan-700', acao: 'text-cyan-800' }
+                : { card: 'border-emerald-200 bg-emerald-50/95 hover:bg-white', icon: 'bg-emerald-100 text-emerald-800', passo: 'text-emerald-700', acao: 'text-emerald-800' };
             return (
               <button
                 key={passo.numero}
                 type="button"
                 onClick={() => navegarPara(passo.destino)}
-                className="group rounded-2xl border border-white/15 bg-white/10 p-4 text-left backdrop-blur-sm transition-all duration-200 hover:-translate-y-1 hover:bg-white/15 hover:shadow-[0_12px_30px_rgba(0,0,0,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                className={`group rounded-2xl border p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(15,23,42,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${visualPasso.card}`}
               >
                 <div className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-violet-950 shadow-sm">
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm ${visualPasso.icon}`}>
                     <Icon className="h-5 w-5" />
                   </span>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-violet-200">Passo {passo.numero}</span>
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${visualPasso.passo}`}>Passo {passo.numero}</span>
                     </div>
-                    <div className="mt-1 font-black text-white">{passo.titulo}</div>
-                    <p className="mt-1 text-sm leading-relaxed text-white/70">{passo.texto}</p>
-                    <span className="mt-3 inline-flex items-center gap-1 text-xs font-black text-violet-100">
+                    <div className="mt-1 font-black text-slate-950">{passo.titulo}</div>
+                    <p className="mt-1 text-sm leading-relaxed text-slate-600">{passo.texto}</p>
+                    <span className={`mt-3 inline-flex items-center gap-1 text-xs font-black ${visualPasso.acao}`}>
                       {passo.acao} <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                     </span>
                   </div>
@@ -1052,6 +1078,7 @@ function PerfilAssessmentResumo({
   const clustersComDado = (perfil?.autoavaliacaoClusters || []).filter((item) => item.percentual != null);
   const temDados = Boolean(disc || clustersComDado.length);
   const perfilPredominanteLetra = String(disc?.perfilPredominante || '').trim().toUpperCase().charAt(0);
+  const visualPredominante = discVisual(perfilPredominanteLetra);
   const maiorAutoavaliacao = clustersComDado.length
     ? Math.max(...clustersComDado.map((item) => Number(item.percentual || 0)))
     : null;
@@ -1089,7 +1116,7 @@ function PerfilAssessmentResumo({
           <div className="mt-5 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
             <div className="rounded-xl border border-slate-200 bg-[#FAFAFD] p-5 shadow-none">
               <div className="text-xs font-black uppercase tracking-wide text-violet-700">Perfil DISC predominante</div>
-              <div className="mt-2 text-4xl font-black text-violet-950">{disc?.perfilPredominante || '—'}</div>
+              <div className="mt-2 inline-flex rounded-xl border px-3 py-2 text-4xl font-black" style={{ borderColor: visualPredominante.borda, backgroundColor: visualPredominante.fundo, color: visualPredominante.texto }}>{disc?.perfilPredominante || '—'}</div>
               <div className="mt-1 text-sm text-slate-600">
                 {disc?.perfilSecundario ? `Perfil secundário: ${disc.perfilSecundario}` : 'Sem perfil secundário disponível'}
               </div>
@@ -1102,14 +1129,18 @@ function PerfilAssessmentResumo({
                 ].map(([label, nome, value]) => {
                   const numero = value == null ? null : Number(value);
                   const predominante = String(label) === perfilPredominanteLetra;
+                  const visual = discVisual(String(label));
                   return (
-                    <div key={String(label)}>
+                    <div key={String(label)} className="rounded-xl border px-3 py-2.5" style={{ borderColor: visual.borda, backgroundColor: predominante ? visual.fundo : '#FFFFFF' }}>
                       <div className="flex items-center justify-between gap-3 text-xs">
-                        <span className={predominante ? 'font-bold text-violet-800' : 'font-semibold text-slate-700'}>{label} · {nome}</span>
-                        <span className={predominante ? 'font-bold tabular-nums text-violet-800' : 'font-semibold tabular-nums text-slate-700'}>{numero == null ? '—' : Math.round(numero)}</span>
+                        <span className="flex items-center gap-2 font-bold" style={{ color: visual.texto }}>
+                          <span className="grid h-6 w-6 place-items-center rounded-md text-[11px] font-black" style={{ backgroundColor: visual.fundo, color: visual.texto }}>{label}</span>
+                          {nome}
+                        </span>
+                        <span className="font-bold tabular-nums" style={{ color: visual.texto }}>{numero == null ? '—' : Math.round(numero)}</span>
                       </div>
-                      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
-                        <div className={'h-full rounded-full transition-all duration-700 ' + (predominante ? 'bg-violet-700' : 'bg-violet-200')} style={{ width: Math.max(0, Math.min(100, numero || 0)) + '%' }} />
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                        <div className="h-full rounded-full transition-all duration-700" style={{ width: Math.max(0, Math.min(100, numero || 0)) + '%', backgroundColor: visual.barra }} />
                       </div>
                     </div>
                   );
@@ -1128,13 +1159,16 @@ function PerfilAssessmentResumo({
                 {clustersComDado.slice(0, 5).map((item) => {
                   const valor = Number(item.percentual || 0);
                   const maior = maiorAutoavaliacao != null && valor === maiorAutoavaliacao;
+                  const visual = faixaPercentualVisual(valor);
                   return (
-                    <div key={item.key} className="px-1 py-2.5">
+                    <div key={item.key} className="rounded-xl border px-3 py-2.5" style={{ borderColor: maior ? visual.borda : '#E2E8F0', backgroundColor: maior ? visual.fundo : '#FFFFFF' }}>
                       <div className="flex items-center justify-between gap-3">
                         <span className={maior ? 'text-sm font-bold text-slate-950' : 'text-sm font-medium text-slate-700'}>{item.nome}</span>
-                        <span className={maior ? 'text-sm font-bold tabular-nums text-violet-800' : 'text-sm font-semibold tabular-nums text-slate-700'}>{Math.round(valor)}%</span>
+                        <span className="rounded-full border px-2 py-0.5 text-sm font-bold tabular-nums" style={{ borderColor: visual.borda, backgroundColor: visual.fundo, color: visual.texto }}>{Math.round(valor)}%</span>
                       </div>
-                      <Progress className="mt-2 h-2 [&>div]:bg-violet-600" value={valor} />
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(0, Math.min(100, valor))}%`, backgroundColor: visual.barra }} />
+                      </div>
                     </div>
                   );
                 })}
@@ -1686,27 +1720,33 @@ function PerfilAssessmentModal({
                   </Alert>
                 ) : (
                   <div className="assessment-stagger grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    {discCards.map((item) => (
-                      <div key={item.key} className={`assessment-card min-w-0 rounded-xl border p-4 sm:p-5 ${item.classes}`}>
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0 text-sm font-bold leading-snug text-slate-800">{item.nome}</div>
-                          <UiTooltip>
-                            <TooltipTrigger asChild>
-                              <button
-                                type="button"
-                                className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
-                                aria-label={`Informações sobre ${item.nome}`}
-                              >
-                                <Info className="h-4 w-4" />
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs text-xs leading-relaxed">{item.descricao}</TooltipContent>
-                          </UiTooltip>
+                    {discCards.map((item) => {
+                      const visual = discVisual(item.key);
+                      return (
+                        <div key={item.key} className={`assessment-card min-w-0 rounded-xl border p-4 sm:p-5 ${item.classes}`}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex min-w-0 items-center gap-2 text-sm font-bold leading-snug" style={{ color: visual.texto }}>
+                              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs font-black" style={{ backgroundColor: visual.fundo, color: visual.texto }}>{item.key}</span>
+                              {item.nome}
+                            </div>
+                            <UiTooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-slate-500 transition-colors hover:bg-white/80 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
+                                  aria-label={`Informações sobre ${item.nome}`}
+                                >
+                                  <Info className="h-4 w-4" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs text-xs leading-relaxed">{item.descricao}</TooltipContent>
+                            </UiTooltip>
+                          </div>
+                          <div className="mt-5 text-[27px] font-bold leading-none tracking-[-0.02em]" style={{ color: visual.texto }}>{fmtPct1(item.score)}</div>
+                          <div className="mt-2 text-sm font-semibold text-slate-600">{item.rotulo}</div>
                         </div>
-                        <div className="mt-5 text-[27px] font-bold leading-none tracking-[-0.02em] text-slate-950">{fmtPct1(item.score)}</div>
-                        <div className="mt-2 text-sm font-semibold text-slate-600">{item.rotulo}</div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </section>
@@ -1723,9 +1763,10 @@ function PerfilAssessmentModal({
                 <div className="assessment-stagger grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
                   {INTEGRACAO_CLUSTERS.map((cluster) => {
                     const dados = autoPorKey.get(cluster.key);
+                    const visual = faixaPercentualVisual(dados?.percentual);
                     const ClusterIcon = CLUSTER_ICONES[cluster.key] || Sparkles;
                     return (
-                      <div key={cluster.key} className="assessment-card relative flex min-w-0 flex-col items-center rounded-xl border border-violet-200 bg-gradient-to-br from-violet-100/80 via-indigo-50/90 to-blue-100/80 p-4 text-center">
+                      <div key={cluster.key} className="assessment-card relative flex min-w-0 flex-col items-center rounded-xl border bg-white p-4 text-center" style={{ borderColor: visual.borda }}>
                         <UiTooltip>
                           <TooltipTrigger asChild>
                             <button
@@ -1744,7 +1785,7 @@ function PerfilAssessmentModal({
                           <ClusterIcon className="h-7 w-7" />
                         </div>
                         <div className="min-h-[40px] text-sm font-semibold leading-snug text-slate-800">{cluster.nome}</div>
-                        <div className="mt-4 text-[27px] font-bold leading-none tracking-[-0.02em] text-slate-950">{fmtPct1(dados?.percentual)}</div>
+                        <div className="mt-4 rounded-full border px-3 py-1 text-[27px] font-bold leading-none tracking-[-0.02em]" style={{ borderColor: visual.borda, backgroundColor: visual.fundo, color: visual.texto }}>{fmtPct1(dados?.percentual)}</div>
                         <div className="mt-2 min-h-[34px] text-xs leading-relaxed text-slate-600">
                           {dados?.totalAvaliadas
                             ? `${dados.totalAvaliadas} de ${dados.totalCompetencias} competências com autoavaliação`
@@ -1752,8 +1793,8 @@ function PerfilAssessmentModal({
                         </div>
                         <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/80">
                           <div
-                            className="assessment-progress-fill h-full rounded-full bg-gradient-to-r from-violet-600 to-blue-600"
-                            style={{ width: `${dados?.percentual ?? 0}%` }}
+                            className="assessment-progress-fill h-full rounded-full"
+                            style={{ width: `${dados?.percentual ?? 0}%`, backgroundColor: visual.barra }}
                           />
                         </div>
                       </div>
@@ -1781,23 +1822,26 @@ function PerfilAssessmentModal({
                         'Ainda não há informações suficientes para comparar o perfil do colaborador com a expectativa do gestor.'}
                     </AlertDescription>
                   </Alert>
-                ) : (
-                  <div className="mb-5 rounded-[14px] border border-white/20 bg-gradient-to-r from-violet-700 via-indigo-600 to-blue-600 p-5 text-center text-white shadow-sm sm:p-6">
-                    <div className="text-sm font-semibold text-white/95">Compatibilidade com a expectativa do gestor</div>
-                    <div className="mt-2 text-[36px] font-bold leading-none tracking-[-0.025em] text-white">
+                ) : (() => {
+                  const visualCompatibilidade = faixaPercentualVisual(perfil.expectativaGestor.compatibilidade);
+                  return (
+                  <div className="mb-5 rounded-[14px] border bg-white p-5 text-center shadow-sm sm:p-6" style={{ borderColor: visualCompatibilidade.borda }}>
+                    <div className="text-sm font-semibold text-slate-700">Compatibilidade com a expectativa do gestor</div>
+                    <div className="mt-2 text-[36px] font-bold leading-none tracking-[-0.025em]" style={{ color: visualCompatibilidade.texto }}>
                       {fmtPct1(perfil.expectativaGestor.compatibilidade)}
                     </div>
-                    <div className="mx-auto mt-4 h-1.5 max-w-2xl overflow-hidden rounded-full bg-white/25">
+                    <div className="mx-auto mt-4 h-2 max-w-2xl overflow-hidden rounded-full bg-slate-100">
                       <div
-                        className="assessment-progress-fill h-full rounded-full bg-white"
-                        style={{ width: `${perfil.expectativaGestor.compatibilidade}%` }}
+                        className="assessment-progress-fill h-full rounded-full"
+                        style={{ width: `${perfil.expectativaGestor.compatibilidade}%`, backgroundColor: visualCompatibilidade.barra }}
                       />
                     </div>
-                    <div className="mx-auto mt-3 max-w-3xl text-xs leading-relaxed text-white/90">
+                    <div className="mx-auto mt-3 max-w-3xl text-xs leading-relaxed text-slate-600">
                       Este índice resume o quanto a autoavaliação do colaborador, nas dimensões priorizadas, está próxima das prioridades registradas pelo gestor no BEM Acolhido.
                     </div>
                   </div>
-                )}
+                  );
+                })()}
 
                 <div className="assessment-stagger grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
                   {INTEGRACAO_CLUSTERS.map((cluster) => {
@@ -1805,6 +1849,8 @@ function PerfilAssessmentModal({
                     const auto = autoPorKey.get(cluster.key);
                     const prioridade = expectativa?.prioridade ?? 0;
                     const leitura = leituraComparacao(prioridade, auto?.percentual);
+                    const visualPrioridade = faixaPercentualVisual(prioridade > 0 ? prioridade : null);
+                    const visualAuto = faixaPercentualVisual(auto?.percentual);
                     const ClusterIcon = CLUSTER_ICONES[cluster.key] || Sparkles;
                     return (
                       <div key={cluster.key} className={`assessment-card min-w-0 rounded-xl border p-4 text-center ${leitura.classes}`}>
@@ -1824,12 +1870,12 @@ function PerfilAssessmentModal({
                             {perfil?.expectativaGestor?.descritoresReconhecidos ? (
                               prioridade > 0 ? (
                                 <>
-                                  <div className="mt-2 text-2xl font-bold leading-none text-violet-950">{fmtPct1(prioridade)}</div>
+                                  <div className="mt-2 text-2xl font-bold leading-none" style={{ color: visualPrioridade.texto }}>{fmtPct1(prioridade)}</div>
                                   <div className="mt-2 min-h-[32px] text-xs leading-relaxed text-violet-800">{expectativa?.nivel}</div>
                                   <div className="mt-3 h-1 overflow-hidden rounded-full bg-violet-100">
                                     <div
-                                      className="assessment-progress-fill h-full rounded-full bg-violet-600"
-                                      style={{ width: `${prioridade}%` }}
+                                      className="assessment-progress-fill h-full rounded-full"
+                                      style={{ width: `${prioridade}%`, backgroundColor: visualPrioridade.barra }}
                                     />
                                   </div>
                                 </>
@@ -1843,12 +1889,12 @@ function PerfilAssessmentModal({
 
                           <div className="min-w-0 text-center sm:pl-3">
                             <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">Autoavaliação do colaborador</div>
-                            <div className="mt-2 text-2xl font-bold leading-none text-slate-950">{fmtPct1(auto?.percentual)}</div>
+                            <div className="mt-2 text-2xl font-bold leading-none" style={{ color: visualAuto.texto }}>{fmtPct1(auto?.percentual)}</div>
                             <div className="mt-2 min-h-[32px] text-xs leading-relaxed text-slate-500">Autoavaliação nesta dimensão</div>
                             <div className="mt-3 h-1 overflow-hidden rounded-full bg-slate-200">
                               <div
-                                className="assessment-progress-fill h-full rounded-full bg-slate-700"
-                                style={{ width: `${auto?.percentual ?? 0}%` }}
+                                className="assessment-progress-fill h-full rounded-full"
+                                style={{ width: `${auto?.percentual ?? 0}%`, backgroundColor: visualAuto.barra }}
                               />
                             </div>
                           </div>
@@ -2735,8 +2781,9 @@ function DesenvolvimentoDetalhe({ colaborador }: { colaborador: ColaboradorAcomp
       <div className="grid gap-4 lg:grid-cols-2">
       {itens.map((item) => {
         const Icon = item.icon;
+        const visual = faixaPercentualVisual(item.percentual);
         return (
-          <Card key={item.titulo} className="rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+          <Card key={item.titulo} className="rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
             <CardContent className="p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -2746,11 +2793,16 @@ function DesenvolvimentoDetalhe({ colaborador }: { colaborador: ColaboradorAcomp
                   </div>
                   <div className="mt-2 text-sm text-slate-500">{item.detalhe}</div>
                 </div>
-                <div className={'tabular-nums ' + (item.percentual == null ? 'text-xl font-medium text-slate-400' : 'text-[28px] font-bold leading-8 text-slate-950')}>
+                <div
+                  className={'rounded-full border px-3 py-1 tabular-nums ' + (item.percentual == null ? 'text-sm font-semibold' : 'text-[28px] font-bold leading-8')}
+                  style={{ borderColor: visual.borda, backgroundColor: visual.fundo, color: visual.texto }}
+                >
                   {item.percentual == null ? 'Sem dados' : Math.round(item.percentual) + '%'}
                 </div>
               </div>
-              <Progress className="mt-5 h-2.5 [&>div]:bg-violet-600" value={item.percentual || 0} />
+              <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-slate-100">
+                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(0, Math.min(100, Number(item.percentual || 0)))}%`, backgroundColor: visual.barra }} />
+              </div>
               <div className="mt-3 text-xs leading-relaxed text-slate-500">
                 Esta aba apresenta somente o avanço percentual. Os cursos e conteúdos individuais não são exibidos aqui.
               </div>
