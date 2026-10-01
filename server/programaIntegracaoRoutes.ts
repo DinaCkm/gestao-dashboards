@@ -1309,7 +1309,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         gestoresDisponiveis: adminView ? gestoresDisponiveisPublicos : [],
         gestorSelecionado: gestorSelecionadoPublico,
         empresaId: adminGlobal ? null : empresaId,
-        usuarioAtualNome: acessoUgpRh ? String(usuarioEfetivo?.name || user?.name || "") : "",
+        usuarioAtualNome: acessoUgpRh ? String(user?.name || user?.email || "") : "",
         atualizadoEm: new Date().toISOString(),
         colaboradores: [],
       });
@@ -1516,9 +1516,18 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       const cobrancasFormularios = Array.isArray(estado?.cobrancasFormularios)
         ? estado.cobrancasFormularios.filter((item: any) => item && typeof item === "object")
         : [];
-      const ultimaCobrancaPara = (chave: string) => {
+      const ultimaCobrancaPara = (chave: string, respondenteEmail = "", respondenteNome = "") => {
+        const emailAtual = String(respondenteEmail || "").trim().toLowerCase();
+        const nomeAtual = normTxt(respondenteNome || "");
         const registros = cobrancasFormularios
-          .filter((item: any) => String(item?.chave || "") === chave)
+          .filter((item: any) => {
+            if (String(item?.chave || "") !== chave) return false;
+            const emailRegistro = String(item?.respondenteEmail || "").trim().toLowerCase();
+            const nomeRegistro = normTxt(item?.respondenteNome || "");
+            if (emailAtual) return !emailRegistro || emailRegistro === emailAtual;
+            if (nomeAtual) return !nomeRegistro || nomeRegistro === nomeAtual;
+            return true;
+          })
           .sort((a: any, b: any) => String(b?.cobradoEm || "").localeCompare(String(a?.cobradoEm || "")));
         const ultima = registros[0];
         return ultima
@@ -1574,7 +1583,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
           respondenteNome: String(row.gestor || ""),
           respondenteEmail: String(row.gestorEmail || ""),
           gestorEmail: String(row.gestorEmail || ""),
-          ultimaCobranca: ultimaCobrancaPara(chaveCobranca),
+          ultimaCobranca: ultimaCobrancaPara(chaveCobranca, String(row.gestorEmail || ""), String(row.gestor || "")),
         });
       }
 
@@ -1634,7 +1643,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
               respondenteNome,
               respondenteEmail,
               gestorEmail: String(row.gestorEmail || ""),
-              ultimaCobranca: ultimaCobrancaPara(chaveCobranca),
+              ultimaCobranca: ultimaCobrancaPara(chaveCobranca, respondenteEmail, respondenteNome),
             });
           }
         });
@@ -1814,7 +1823,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       gestoresDisponiveis: adminView ? gestoresDisponiveisPublicos : [],
       gestorSelecionado: gestorSelecionadoPublico,
       empresaId: adminGlobal ? null : empresaId,
-      usuarioAtualNome: acessoUgpRh ? String(usuarioEfetivo?.name || user?.name || "") : "",
+      usuarioAtualNome: acessoUgpRh ? String(user?.name || user?.email || "") : "",
       atualizadoEm: new Date().toISOString(),
       colaboradores,
     });
