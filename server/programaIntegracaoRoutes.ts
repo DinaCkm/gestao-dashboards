@@ -1006,7 +1006,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     const gestorViewKey = adminView ? String(req.query.gestor || "").trim() : "";
 
     const [processRows] = (await connection.execute(
-      `SELECT id,legacyId,alunoId,nome,email,cpf,cargo,unidade,inicio,situacao,gestor,gestorEmail,anjo,consultora,mentorLegacyId,estado
+      `SELECT id,legacyId,alunoId,nome,email,emailCorporativo,cpf,cargo,unidade,inicio,situacao,gestor,gestorEmail,anjo,anjoEmail,consultora,mentorLegacyId,estado
        FROM programa_integracao_processos
        WHERE situacao='ativo' AND tipo='Onboarding'
        ORDER BY ordem,id`,
@@ -1309,6 +1309,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         gestoresDisponiveis: adminView ? gestoresDisponiveisPublicos : [],
         gestorSelecionado: gestorSelecionadoPublico,
         empresaId: adminGlobal ? null : empresaId,
+        usuarioAtualNome: acessoUgpRh ? String(usuarioEfetivo?.name || user?.name || "") : "",
         atualizadoEm: new Date().toISOString(),
         colaboradores: [],
       });
@@ -1512,6 +1513,22 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
 
       const formulariosPendentes: any[] = [];
       const feito = estado.feito && typeof estado.feito === "object" ? estado.feito : {};
+      const cobrancasFormularios = Array.isArray(estado?.cobrancasFormularios)
+        ? estado.cobrancasFormularios.filter((item: any) => item && typeof item === "object")
+        : [];
+      const ultimaCobrancaPara = (chave: string) => {
+        const registros = cobrancasFormularios
+          .filter((item: any) => String(item?.chave || "") === chave)
+          .sort((a: any, b: any) => String(b?.cobradoEm || "").localeCompare(String(a?.cobradoEm || "")));
+        const ultima = registros[0];
+        return ultima
+          ? {
+              cobradoEm: String(ultima.cobradoEm || ""),
+              cobradoPorNome: String(ultima.cobradoPorNome || ""),
+              cobradoPorUserId: Number(ultima.cobradoPorUserId || 0) || null,
+            }
+          : null;
+      };
 
       // O Programa de Integração possui 95 ações reais no plano.
       // Para a carteira executiva, o percentual do processo considera somente
@@ -1542,6 +1559,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         const prazoBem = /^\d{4}-\d{2}-\d{2}$/.test(dataSolicitacaoBem)
           ? addDiasIso(dataSolicitacaoBem, 2)
           : "";
+        const chaveCobranca = "bem|0|Gestor";
         formulariosPendentes.push({
           ciclo: 0,
           etapa: "Pré-integração",
@@ -1552,6 +1570,11 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
           prazo: prazoBem,
           solicitadoEm: dataSolicitacaoBem || null,
           atrasado: Boolean(prazoBem && prazoBem < hoje),
+          chaveCobranca,
+          respondenteNome: String(row.gestor || ""),
+          respondenteEmail: String(row.gestorEmail || ""),
+          gestorEmail: String(row.gestorEmail || ""),
+          ultimaCobranca: ultimaCobrancaPara(chaveCobranca),
         });
       }
 
@@ -1587,6 +1610,17 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
             const cycleValue = item.form === "pesquisa"
               ? ({ 1: "15", 2: "45", 3: "75", 4: "150" } as Record<number, string>)[ciclo] || String(ciclo)
               : String(ciclo);
+            const chaveCobranca = `${item.form}|${ciclo}|${item.papel}`;
+            const respondenteNome = item.papel === "Gestor"
+              ? String(row.gestor || "")
+              : item.papel === "Anjo"
+                ? String(row.anjo || "")
+                : String(row.nome || "");
+            const respondenteEmail = item.papel === "Gestor"
+              ? String(row.gestorEmail || "")
+              : item.papel === "Anjo"
+                ? String(row.anjoEmail || "")
+                : String(row.emailCorporativo || row.email || "");
             formulariosPendentes.push({
               ciclo,
               formKey: item.form,
@@ -1596,6 +1630,11 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
               prazo,
               solicitadoEm: dataSolicitacao || null,
               atrasado: Boolean(prazo && prazo < hoje),
+              chaveCobranca,
+              respondenteNome,
+              respondenteEmail,
+              gestorEmail: String(row.gestorEmail || ""),
+              ultimaCobranca: ultimaCobrancaPara(chaveCobranca),
             });
           }
         });
@@ -1693,6 +1732,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
 
       return {
         id: row.legacyId || `p${row.id}`,
+        processoDbId: acessoUgpRh ? Number(row.id) : null,
         nome: row.nome || "",
         cargo: row.cargo || "",
         unidade: row.unidade || "",
@@ -1774,12 +1814,248 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       gestoresDisponiveis: adminView ? gestoresDisponiveisPublicos : [],
       gestorSelecionado: gestorSelecionadoPublico,
       empresaId: adminGlobal ? null : empresaId,
+      usuarioAtualNome: acessoUgpRh ? String(usuarioEfetivo?.name || user?.name || "") : "",
       atualizadoEm: new Date().toISOString(),
       colaboradores,
     });
   } catch (error) {
     console.error("[ProgramaIntegracao] acompanhamento gestor:", error);
     return res.status(500).json({ error: "Não foi possível carregar o acompanhamento da Integração." });
+  }
+});
+
+
+programaIntegracaoRouter.post("/api/programa-integracao/gestor/cobrancas-formularios/marcar", requireAcompanharIntegracao, async (req, res) => {
+  const connection = await getConnectionOr503(res);
+  if (!connection) return;
+
+  const user = (req as any).authenticatedUser || {};
+  const config = (req as any).integracaoConfig || {};
+  if (user.role !== "admin" && String(config.accessLevel || "gestor") !== "ugp") {
+    return res.status(403).json({ error: "Registro de cobrança disponível somente para UGP/RH." });
+  }
+
+  const itensBrutos = Array.isArray(req.body?.itens) ? req.body.itens : [];
+  if (!itensBrutos.length || itensBrutos.length > 200) {
+    return res.status(400).json({ error: "Selecione de 1 a 200 formulários para registrar a cobrança." });
+  }
+
+  const itens = itensBrutos.map((item: any) => ({
+    processoDbId: Number(item?.processoDbId || 0),
+    formKey: String(item?.formKey || "").trim(),
+    ciclo: Number(item?.ciclo || 0),
+    papel: String(item?.papel || "").trim(),
+    formulario: String(item?.formulario || "").trim().slice(0, 200),
+    respondenteNome: String(item?.respondenteNome || "").trim().slice(0, 200),
+    respondenteEmail: String(item?.respondenteEmail || "").trim().slice(0, 320),
+  }));
+
+  if (itens.some((item: any) =>
+    !Number.isInteger(item.processoDbId) ||
+    item.processoDbId <= 0 ||
+    !["bem","pesquisa","aval"].includes(item.formKey) ||
+    !["Gestor","Anjo","Colaborador"].includes(item.papel) ||
+    item.ciclo < 0 ||
+    item.ciclo > 4
+  )) {
+    return res.status(400).json({ error: "Há formulário inválido na seleção." });
+  }
+
+  const ids = [...new Set(itens.map((item: any) => item.processoDbId))];
+  let tx = false;
+  try {
+    await connection.beginTransaction();
+    tx = true;
+
+    const placeholders = ids.map(() => "?").join(",");
+    const [processRows] = (await connection.execute(
+      `SELECT id,legacyId,alunoId,nome,email,emailCorporativo,gestor,gestorEmail,anjo,anjoEmail,estado,situacao,tipo
+       FROM programa_integracao_processos
+       WHERE id IN (${placeholders})
+       FOR UPDATE`,
+      ids,
+    )) as any;
+
+    if ((processRows || []).length !== ids.length) {
+      await connection.rollback();
+      tx = false;
+      return res.status(409).json({ error: "Um dos processos não está mais disponível. Atualize a tela e tente novamente." });
+    }
+
+    const rowsPorId = new Map<number, any>((processRows || []).map((row: any) => [Number(row.id), row]));
+
+    // UGP comum: valida empresa e escopo antes de permitir gravação.
+    if (user.role !== "admin") {
+      const programId = Number(config.programId || user.programId || 0);
+      if (!programId) {
+        await connection.rollback();
+        tx = false;
+        return res.status(403).json({ error: "A UGP/RH não possui empresa configurada para esta ação." });
+      }
+
+      const candidatoAlunoIds = new Set<number>();
+      for (const row of processRows || []) {
+        const estado = asJson<Record<string, any>>(row.estado, {});
+        const idsPossiveis = [
+          ecoAlunoVinculoEmpresaConfiavel(estado),
+          Number(row.alunoId || 0),
+          Number(estado?.teste?.ecoAlunoId || 0),
+        ].filter((id) => Number.isInteger(id) && id > 0);
+        idsPossiveis.forEach((id) => candidatoAlunoIds.add(id));
+      }
+
+      const idsAlunos = [...candidatoAlunoIds];
+      const alunoPrograma = new Map<number, number>();
+      if (idsAlunos.length) {
+        const ph = idsAlunos.map(() => "?").join(",");
+        const [alunoRows] = (await connection.execute(
+          `SELECT id,programId FROM alunos WHERE id IN (${ph}) AND COALESCE(isActive,1)=1`,
+          idsAlunos,
+        )) as any;
+        for (const aluno of alunoRows || []) {
+          alunoPrograma.set(Number(aluno.id), Number(aluno.programId || 0));
+        }
+      }
+
+      const modo = String(config.mode || "gestor");
+      const manualIds = new Set<number>(
+        Array.isArray(config.processIds)
+          ? config.processIds.map((id: any) => Number(id)).filter((id: number) => Number.isInteger(id) && id > 0)
+          : [],
+      );
+      const nomeUgp = normTxt(user.name || "");
+      const emailUgp = String(user.email || "").trim().toLowerCase();
+
+      for (const row of processRows || []) {
+        const estado = asJson<Record<string, any>>(row.estado, {});
+        const empresaTesteId = Number(estado?.teste?.empresaProgramId || 0);
+        let pertenceEmpresa = empresaTesteId > 0
+          ? empresaTesteId === programId
+          : false;
+
+        if (!pertenceEmpresa) {
+          const idsPossiveis = [
+            ecoAlunoVinculoEmpresaConfiavel(estado),
+            Number(row.alunoId || 0),
+            Number(estado?.teste?.ecoAlunoId || 0),
+          ].filter((id) => Number.isInteger(id) && id > 0);
+          pertenceEmpresa = idsPossiveis.some((id) => alunoPrograma.get(id) === programId);
+        }
+
+        if (!pertenceEmpresa) {
+          await connection.rollback();
+          tx = false;
+          return res.status(403).json({ error: "Um dos processos selecionados não pertence à empresa autorizada." });
+        }
+
+        if (modo === "manual" && !manualIds.has(Number(row.id))) {
+          await connection.rollback();
+          tx = false;
+          return res.status(403).json({ error: "Um dos processos selecionados não está liberado para esta UGP/RH." });
+        }
+
+        if (modo === "gestor") {
+          const nomeGestor = normTxt(row.gestor || "");
+          const emailGestor = String(row.gestorEmail || "").trim().toLowerCase();
+          const ehGestor = Boolean(
+            (emailUgp && emailGestor && emailUgp === emailGestor) ||
+            (nomeUgp && nomeGestor && nomeUgp === nomeGestor)
+          );
+          if (!ehGestor) {
+            await connection.rollback();
+            tx = false;
+            return res.status(403).json({ error: "Um dos processos selecionados não está no escopo deste acesso." });
+          }
+        }
+      }
+    }
+
+    const agora = new Date().toISOString();
+    const cobradoPorUserId = Number(user.id || 0) || null;
+    const cobradoPorNome = String(user.name || user.email || "UGP/RH").trim();
+    let registrados = 0;
+
+    const itensPorProcesso = new Map<number, typeof itens>();
+    for (const item of itens) {
+      const lista = itensPorProcesso.get(item.processoDbId) || [];
+      const chave = `${item.formKey}|${item.ciclo}|${item.papel}`;
+      if (!lista.some((existente: any) => `${existente.formKey}|${existente.ciclo}|${existente.papel}` === chave)) {
+        lista.push(item);
+      }
+      itensPorProcesso.set(item.processoDbId, lista);
+    }
+
+    for (const [processoDbId, itensProcesso] of itensPorProcesso.entries()) {
+      const row = rowsPorId.get(processoDbId);
+      if (!row || row.situacao !== "ativo" || row.tipo !== "Onboarding") continue;
+      const estado = asJson<Record<string, any>>(row.estado, {});
+      const cobrancas = Array.isArray(estado.cobrancasFormularios)
+        ? [...estado.cobrancasFormularios]
+        : [];
+
+      for (const item of itensProcesso) {
+        const [respRows] = item.formKey === "pesquisa"
+          ? (await connection.execute(
+              `SELECT id FROM programa_integracao_respostas
+               WHERE processoId=? AND formKey='pesquisa' AND ciclo=?
+                 AND statusVinculo='vinculada' AND statusResposta<>'excluida'
+               LIMIT 1`,
+              [processoDbId, item.ciclo],
+            )) as any
+          : (await connection.execute(
+              `SELECT id FROM programa_integracao_respostas
+               WHERE processoId=? AND formKey=? AND ciclo=? AND COALESCE(papel,'')=?
+                 AND statusVinculo='vinculada' AND statusResposta<>'excluida'
+               LIMIT 1`,
+              [processoDbId, item.formKey, item.ciclo, item.papel],
+            )) as any;
+
+        // Se a resposta chegou entre a abertura da tela e a cobrança, não registra cobrança desnecessária.
+        if (respRows?.[0]?.id) continue;
+
+        const chave = `${item.formKey}|${item.ciclo}|${item.papel}`;
+        cobrancas.push({
+          id: `cob_${Date.now()}_${processoDbId}_${cobrancas.length + 1}`,
+          chave,
+          formKey: item.formKey,
+          ciclo: item.ciclo,
+          papel: item.papel,
+          formulario: item.formulario,
+          respondenteNome: item.respondenteNome,
+          respondenteEmail: item.respondenteEmail,
+          cobradoEm: agora,
+          cobradoPorUserId,
+          cobradoPorNome,
+        });
+        registrados += 1;
+
+        await audit(
+          connection,
+          req,
+          "formulario_cobranca_registrada",
+          `Cobrança registrada para ${item.formulario || item.formKey} · ${item.papel}.`,
+          processoDbId,
+          null,
+          { chave, ciclo: item.ciclo, papel: item.papel, respondenteEmail: item.respondenteEmail },
+        );
+      }
+
+      estado.cobrancasFormularios = cobrancas;
+      await connection.execute(
+        `UPDATE programa_integracao_processos SET estado=?,updatedAt=CURRENT_TIMESTAMP WHERE id=?`,
+        [JSON.stringify(estado), processoDbId],
+      );
+    }
+
+    await connection.commit();
+    tx = false;
+    return res.json({ ok: true, registrados });
+  } catch (error) {
+    if (tx) {
+      try { await connection.rollback(); } catch {}
+    }
+    console.error("[ProgramaIntegracao] registrar cobrança de formulários:", error);
+    return res.status(500).json({ error: "Não foi possível registrar a cobrança. Nenhuma alteração parcial deve ser considerada concluída." });
   }
 });
 
@@ -2414,6 +2690,9 @@ programaIntegracaoRouter.put("/api/programa-integracao/processos/:legacyId", req
     delete estado.ugpResponsavelConflito;
     if (Array.isArray(estadoAtualServidor.registrosIntegracao)) {
       estado.registrosIntegracao = estadoAtualServidor.registrosIntegracao;
+    }
+    if (Array.isArray(estadoAtualServidor.cobrancasFormularios)) {
+      estado.cobrancasFormularios = estadoAtualServidor.cobrancasFormularios;
     }
 
     // Chaves gerenciadas exclusivamente pelo backend da Avaliação de Potencial.
