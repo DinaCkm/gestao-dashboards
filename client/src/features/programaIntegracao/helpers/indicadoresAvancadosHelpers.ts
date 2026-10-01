@@ -438,7 +438,12 @@ export function calcularIndicadoresAvancados(
   let formulariosPosColaborador = 0;
   let alinhamentosPrevistosAtivos = 0;
   let alinhamentosRealizadosAtivos = 0;
-  const etapasPosAlinhamento = new Set(['pos1', 'pos2', 'pos3', 'pos4']);
+  const alinhamentoPorEtapaPos: Record<string, 1 | 2 | 3 | 4> = {
+    pos1: 1,
+    pos2: 2,
+    pos3: 3,
+    pos4: 4,
+  };
 
   processosAtivos.forEach((processo) => {
     const cronograma = cronogramaReal(processo, feriados, hojeRef);
@@ -446,24 +451,33 @@ export function calcularIndicadoresAvancados(
     cronograma.forEach((etapa) => {
       etapa.itens.forEach((item) => {
         if (!formKeyForItem(item.id)) return;
-        if (dependenciaItemPendente(processo, item.id)) return;
-        const dataItem = dataPrevistaItemCronograma(etapa, item);
-        if (dataItem > hoje) return;
 
         const status = statusSalvo(processo, item.id);
         if (status === 'na' || status === 'wont') return;
 
-        formulariosEsperadosAtivos++;
+        const dependenciaPendente = dependenciaItemPendente(processo, item.id);
         const respondido = Boolean(respostaDoItem(processo, item.id));
-        if (respondido) {
-          formulariosRespondidosAtivos++;
-          return;
+        const numeroAlinhamento = alinhamentoPorEtapaPos[etapa.et.id];
+        const alinhamentoConcluido = numeroAlinhamento
+          ? Boolean((processo.alin as any)?.[numeroAlinhamento]?.realizado)
+          : false;
+
+        // Pós-alinhamento: passa a ser pendente assim que estiver realmente liberado,
+        // mesmo que o prazo de resposta ainda esteja no futuro.
+        // "Liberado" exige alinhamento concluído + dependência/e-mail anterior concluído.
+        if (numeroAlinhamento && alinhamentoConcluido && !dependenciaPendente && !respondido) {
+          if (item.r === 'Gestor') formulariosPosGestor++;
+          else if (item.r === 'Anjo') formulariosPosAnjo++;
+          else if (item.r === 'Colaborador') formulariosPosColaborador++;
         }
 
-        if (!etapasPosAlinhamento.has(etapa.et.id)) return;
-        if (item.r === 'Gestor') formulariosPosGestor++;
-        else if (item.r === 'Anjo') formulariosPosAnjo++;
-        else if (item.r === 'Colaborador') formulariosPosColaborador++;
+        // Mantém a métrica geral histórica de formulários previstos até hoje.
+        if (dependenciaPendente) return;
+        const dataItem = dataPrevistaItemCronograma(etapa, item);
+        if (dataItem > hoje) return;
+
+        formulariosEsperadosAtivos++;
+        if (respondido) formulariosRespondidosAtivos++;
       });
     });
 
