@@ -8704,11 +8704,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         userId: z.number(),
         enabled: z.boolean(),
         programId: z.number().int().positive().nullable(),
-        accessLevel: z.enum(["gestor", "ugp"]),
-        mode: z.enum(["gestor", "all", "manual"]),
+        // Compatibilidade de deploy: abas abertas antes da separação entre
+        // nível de acesso e escopo não enviam accessLevel.
+        accessLevel: z.enum(["gestor", "ugp"]).optional(),
+        // "ugp_restrita" existia na interface anterior e equivale hoje a
+        // nível UGP/RH + seleção manual.
+        mode: z.enum(["gestor", "all", "manual", "ugp_restrita"]),
         processIds: z.array(z.number().int().positive()).optional().default([]),
-        demoOnly: z.boolean().optional().default(false),
-        ugpResponsible: z.boolean().optional().default(false),
+        demoOnly: z.boolean().optional(),
+        ugpResponsible: z.boolean().optional(),
         replaceUgpResponsible: z.boolean().optional().default(false),
         confirmResponsibilityChange: z.boolean().optional().default(false),
       }))
@@ -8718,7 +8722,29 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         if (input.enabled && !input.programId) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Selecione a empresa acompanhada no Programa de Integração.' });
         }
-        return await db.setManagerIntegracaoConfig(input);
+
+        const atual = await db.getManagerIntegracaoConfig(input.userId);
+        const modoLegadoUgp = input.mode === "ugp_restrita";
+        const mode = modoLegadoUgp ? "manual" : input.mode;
+        const accessLevel =
+          input.accessLevel ??
+          (modoLegadoUgp
+            ? "ugp"
+            : atual.enabled
+              ? atual.accessLevel
+              : input.mode === "all"
+                ? "ugp"
+                : "gestor");
+
+        return await db.setManagerIntegracaoConfig({
+          ...input,
+          accessLevel,
+          mode,
+          // Campo omitido por cliente antigo não pode retirar a UGP oficial
+          // nem alterar a restrição de demonstração já existente.
+          ugpResponsible: input.ugpResponsible ?? atual.ugpResponsible,
+          demoOnly: input.demoOnly ?? atual.demoOnly,
+        });
       }),
 
     configureSpecialManager: adminOrAdmin2Procedure
