@@ -458,14 +458,27 @@ export function calcularIndicadoresAvancados(
         const dependenciaPendente = dependenciaItemPendente(processo, item.id);
         const respondido = Boolean(respostaDoItem(processo, item.id));
         const numeroAlinhamento = alinhamentoPorEtapaPos[etapa.et.id];
+        const itemRealizacaoPorAlinhamento: Record<number, string> = {
+          1: 'd15-01',
+          2: 'd45-01',
+          3: 'd75-01',
+          4: 'd150-01',
+        };
         const alinhamentoConcluido = numeroAlinhamento
-          ? Boolean((processo.alin as any)?.[numeroAlinhamento]?.realizado)
+          ? Boolean((processo.alin as any)?.[numeroAlinhamento]?.realizado) ||
+            statusSalvo(processo, itemRealizacaoPorAlinhamento[numeroAlinhamento]) === 'ok'
           : false;
 
-        // Pós-alinhamento: passa a ser pendente assim que estiver realmente liberado,
-        // mesmo que o prazo de resposta ainda esteja no futuro.
-        // "Liberado" exige alinhamento concluído + dependência/e-mail anterior concluído.
-        if (numeroAlinhamento && alinhamentoConcluido && !dependenciaPendente && !respondido) {
+        // Pós-alinhamento: o formulário entra como pendente assim que estiver liberado,
+        // mesmo que ainda esteja dentro do prazo.
+        // Gestor/Colaborador: a dependência (e-mail correspondente) concluída já libera.
+        // Anjo: além do e-mail, preservamos a proteção do formulário público,
+        // que exige o alinhamento efetivamente concluído.
+        const liberadoParaResposta = !dependenciaPendente && (
+          item.r === 'Anjo' ? alinhamentoConcluido : true
+        );
+
+        if (numeroAlinhamento && liberadoParaResposta && !respondido) {
           if (item.r === 'Gestor') formulariosPosGestor++;
           else if (item.r === 'Anjo') formulariosPosAnjo++;
           else if (item.r === 'Colaborador') formulariosPosColaborador++;
