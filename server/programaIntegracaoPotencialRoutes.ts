@@ -158,6 +158,22 @@ async function carregarAlunoEcoElegivel(connection: any, alunoId: number) {
   return rows?.[0] || null;
 }
 
+function alunoHistoricoDerivados(estado: Record<string, any>): { alunoId: number | null; conflito: boolean } {
+  const teste = estado?.teste || {};
+  const ids = [
+    Number(teste?.tarefasIntegracaoPadrao?.alunoId || 0),
+    Number(teste?.tarefasCompetencias?.alunoId || 0),
+    Number(teste?.sugestoesDesenvolvimento?.alunoId || 0),
+    Number(teste?.avaliacaoPotencialIntegrada?.alunoId || 0),
+  ].filter((id) => Number.isInteger(id) && id > 0);
+
+  const unicos = [...new Set(ids)];
+  return {
+    alunoId: unicos.length === 1 ? unicos[0] : null,
+    conflito: unicos.length > 1,
+  };
+}
+
 function bloquearAlteracaoVinculoComDerivados(estado: Record<string, any>) {
   const teste = estado?.teste || {};
   const tarefas = teste.tarefasIntegracaoPadrao;
@@ -927,7 +943,21 @@ programaIntegracaoPotencialRouter.post(
 
       await connection.beginTransaction(); tx = true;
       const ctx = await contexto(connection, legacyId, true);
-      bloquearAlteracaoVinculoComDerivados(ctx.estado);
+
+      // Se o vínculo sumiu por um salvamento antigo, permitimos restaurar SOMENTE
+      // o mesmo aluno já referenciado de forma consistente pelos derivados existentes.
+      // Trocar para outro aluno continua bloqueado para preservar histórico.
+      const historicoDerivados = alunoHistoricoDerivados(ctx.estado);
+      const vinculoAtualAusente = !Number(ctx.estado?.teste?.ecoAlunoId || 0);
+      const restaurandoMesmoAluno =
+        vinculoAtualAusente &&
+        !historicoDerivados.conflito &&
+        historicoDerivados.alunoId != null &&
+        historicoDerivados.alunoId === novoAlunoId;
+
+      if (!restaurandoMesmoAluno) {
+        bloquearAlteracaoVinculoComDerivados(ctx.estado);
+      }
 
       ctx.estado.teste = ctx.estado.teste || {};
       const anteriorAlunoId = Number(ctx.estado.teste.ecoAlunoId || 0) || null;
@@ -987,6 +1017,7 @@ programaIntegracaoPotencialRouter.post(
           nomeAnterior: anteriorNome,
           alunoIdNovo: Number(novoAluno.id),
           nomeNovo: String(novoAluno.name || ""),
+          restauracaoMesmoAlunoHistorico: restaurandoMesmoAluno,
         },
       );
       await connection.commit(); tx = false;

@@ -2411,10 +2411,21 @@ programaIntegracaoRouter.put("/api/programa-integracao/processos/:legacyId", req
       : {};
     estado.teste = { ...testeRecebido };
     [
+      // Vínculo ECO é gerenciado pelos fluxos próprios de vinculação.
+      // Uma ficha antiga aberta no navegador nunca pode removê-lo por acidente.
+      "ecoAlunoId",
+      "ecoAlunoNome",
+      "ecoAlunoEmail",
+      "ecoVinculoModo",
+      "ecoVinculoMotivo",
+      "ecoVinculoScore",
+      "ecoVinculoEm",
+      "ecoPerfil",
       "ecoAutomacaoConfirmada",
       "avaliacaoPotencialIntegrada",
       "sugestoesDesenvolvimento",
       "tarefasIntegracaoPadrao",
+      "tarefasCompetencias",
     ].forEach((chave) => {
       if (Object.prototype.hasOwnProperty.call(testeServidor, chave)) {
         estado.teste[chave] = testeServidor[chave];

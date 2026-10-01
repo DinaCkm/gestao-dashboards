@@ -605,13 +605,14 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
             const ecoAlunoId = Number((pessoa.teste as any)?.ecoAlunoId || 0);
             const andamentoEco = ecoAlunoId ? statusEco[String(ecoAlunoId)] : null;
             const resolucaoPessoa = pessoa.id ? resolucaoEco[String(pessoa.id)] : null;
-            const precisaVinculoEco = !ecoAlunoId && Boolean(
-              resolucaoPessoa && (resolucaoPessoa.match.status === 'ambiguo' || resolucaoPessoa.match.status === 'nao_encontrado')
-            );
+            const precisaVinculoEco = !ecoAlunoId;
             const ecoVinculoModo = String((pessoa.teste as any)?.ecoVinculoModo || '');
             const vinculoManualExistente = ecoAlunoId > 0 && ecoVinculoModo === 'manual';
             const vinculoExistente = ecoAlunoId > 0;
-            const mostrarBotaoVinculoEco = precisaVinculoEco || vinculoExistente;
+            // O Admin precisa conseguir abrir o seletor mesmo quando a resolução
+            // automática encontrou uma sugestão segura. A sugestão não substitui
+            // a confirmação manual do vínculo.
+            const mostrarBotaoVinculoEco = Boolean(pessoa.id);
             const manualAberto = Boolean(pessoa.id && vinculoManualAberto === pessoa.id);
             const ehDemonstracao = String(pessoa.id || '').startsWith('demo') ||
               pessoa.nome === 'Mariana Alves Teixeira (demonstração)';
@@ -815,7 +816,9 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
                       }`}>
                         {vinculoExistente
                           ? 'Vínculo atual existente. Selecione outro aluno para alterar com confirmação.'
-                          : 'Selecione o aluno correspondente em Alunos Autônomos → Evolução por aluno.'}
+                          : resolucaoPessoa?.match?.status === 'automatico_seguro' && resolucaoPessoa?.match?.aluno
+                            ? `Sugestão localizada: ${resolucaoPessoa.match.aluno.nome}. Confirme manualmente o aluno correto abaixo.`
+                            : 'Selecione o aluno correspondente em Alunos Autônomos → Evolução por aluno.'}
                       </p>
                       <select
                         defaultValue={vinculoExistente ? String(ecoAlunoId) : ''}
