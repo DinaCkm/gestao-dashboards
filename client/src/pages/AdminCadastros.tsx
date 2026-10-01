@@ -4323,6 +4323,44 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                       )}
                     </div>
                   )}
+
+                  {integracaoAccessLevel === "ugp" && (
+                    <div className="space-y-3 rounded-lg border border-violet-200 bg-violet-50/40 p-3">
+                      <div>
+                        <p className="text-sm font-semibold text-violet-950">Responsabilidade UGP/RH da empresa</p>
+                        <p className="mt-1 text-xs text-violet-800">
+                          Esta definição é independente de quantos colaboradores o usuário pode visualizar.
+                        </p>
+                      </div>
+
+                      <label className="flex items-start gap-3">
+                        <Checkbox
+                          checked={integracaoUgpResponsible}
+                          onCheckedChange={(checked) => setIntegracaoUgpResponsible(Boolean(checked))}
+                        />
+                        <span>
+                          <span className="block text-sm font-medium">Este usuário é a UGP/RH responsável oficial desta empresa</span>
+                          <span className="mt-1 block text-xs text-muted-foreground">
+                            O responsável oficial será usado como referência da UGP dos colaboradores vinculados a esta empresa.
+                          </span>
+                        </span>
+                      </label>
+
+                      {integracaoUgpResponsavelAtual?.responsavel && (
+                        <div className="rounded-md border bg-background px-3 py-2 text-xs">
+                          UGP/RH oficial atual: <strong>{integracaoUgpResponsavelAtual.responsavel.name}</strong>
+                          {integracaoUgpResponsavelAtual.responsavel.email ? ` · ${integracaoUgpResponsavelAtual.responsavel.email}` : ""}
+                          {Number(integracaoUgpResponsavelAtual.responsavel.id) === Number(permissaoOpenId) ? " · este usuário" : ""}
+                        </div>
+                      )}
+
+                      {integracaoUgpResponsible && integracaoMode === "manual" && (
+                        <p className="text-xs font-medium text-amber-700">
+                          Atenção: restringir a visualização a pessoas selecionadas não retira a responsabilidade UGP/RH. Este usuário continuará sendo a UGP oficial da empresa inteira.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
