@@ -3122,7 +3122,9 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
 
   const [integracaoEnabled, setIntegracaoEnabled] = useState(false);
   const [integracaoProgramId, setIntegracaoProgramId] = useState("");
-  const [integracaoMode, setIntegracaoMode] = useState<"gestor" | "all" | "manual" | "ugp_restrita">("gestor");
+  const [integracaoAccessLevel, setIntegracaoAccessLevel] = useState<"gestor" | "ugp">("gestor");
+  const [integracaoMode, setIntegracaoMode] = useState<"gestor" | "all" | "manual">("gestor");
+  const [integracaoUgpResponsible, setIntegracaoUgpResponsible] = useState(false);
   const [integracaoDemoOnly, setIntegracaoDemoOnly] = useState(false);
   const [integracaoProcessIds, setIntegracaoProcessIds] = useState<number[]>([]);
   const [integracaoProcessos, setIntegracaoProcessos] = useState<any[]>([]);
