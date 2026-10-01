@@ -8197,6 +8197,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
               taskMode: s.taskMode || 'sem_tarefa',
               taskName,
               taskCompetencia,
+              taskDescription: s.customTaskDescription || task?.resumo || '',
               taskDeadline: s.taskDeadline,
               taskStatus: s.taskStatus,
               evidenceLink: s.evidenceLink,
@@ -8244,7 +8245,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           taskName: session.customTaskTitle || task?.nome || '',
           taskCompetencia: task?.competencia || '',
           taskResumo: session.customTaskDescription || task?.resumo || '',
-          taskOQueFazer: task?.oQueFazer || session.customTaskDescription || '',
+          taskOQueFazer: session.customTaskDescription || task?.oQueFazer || '',
           customTaskTitle: session.customTaskTitle,
           customTaskDescription: session.customTaskDescription,
           taskDeadline: session.taskDeadline,
@@ -8258,6 +8259,62 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           relatoAluno: session.relatoAluno,
           createdAt: session.createdAt,
           comments,
+        };
+      }),
+
+    // Somente Admin: corrigir os dados da atividade que o aluno também visualiza.
+    // Atualiza o mesmo registro de mentoring_sessions; não altera status, evidências,
+    // validação, aluno ou mentor.
+    updateActivity: protectedProcedure
+      .input(z.object({
+        sessionId: z.number(),
+        customTaskTitle: z.string().trim().min(1).max(500),
+        customTaskDescription: z.string().max(10000).nullable(),
+        taskDeadline: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).nullable(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Somente administradores podem editar atividades práticas' });
+        }
+
+        const session = await db.getMentoringSessionById(input.sessionId);
+        if (!session) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Atividade não encontrada' });
+        }
+
+        const temAtividade = Boolean(
+          session.taskId ||
+          session.customTaskTitle ||
+          (session.taskMode && session.taskMode !== 'sem_tarefa')
+        );
+        if (!temAtividade) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Esta sessão não possui atividade prática para edição' });
+        }
+
+        const success = await db.updateMentoringSession(input.sessionId, {
+          customTaskTitle: input.customTaskTitle.trim(),
+          customTaskDescription: input.customTaskDescription?.trim() || null,
+          taskDeadline: input.taskDeadline,
+        });
+        if (!success) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Não foi possível atualizar a atividade' });
+        }
+
+        const updated = await db.getMentoringSessionById(input.sessionId);
+        console.info('[PracticalActivities] Atividade editada por administrador', {
+          sessionId: input.sessionId,
+          adminUserId: ctx.user.id,
+        });
+
+        return {
+          success: true,
+          activity: updated ? {
+            sessionId: updated.id,
+            customTaskTitle: updated.customTaskTitle,
+            customTaskDescription: updated.customTaskDescription,
+            taskDeadline: updated.taskDeadline,
+            taskStatus: updated.taskStatus,
+          } : null,
         };
       }),
 
@@ -10800,7 +10857,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
             
             // Determinar descrição: customTaskDescription > biblioteca resumo
             const taskResumo = s.customTaskDescription || task?.resumo || '';
-            const taskOQueFazer = task?.oQueFazer || s.customTaskDescription || '';
+            const taskOQueFazer = s.customTaskDescription || task?.oQueFazer || '';
             const taskOQueGanha = task?.oQueGanha || '';
             const taskCompetencia = task?.competencia || '';
             

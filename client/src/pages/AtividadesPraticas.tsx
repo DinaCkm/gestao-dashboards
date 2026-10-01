@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import {
   ClipboardCheck, Search, Filter, Eye, Calendar, User, Award,
   CheckCircle2, Clock, XCircle, ExternalLink, MessageSquare,
-  Send, FileText, Image as ImageIcon, AlertTriangle, Minus, Zap, Loader2
+  Send, FileText, Image as ImageIcon, AlertTriangle, Minus, Zap, Loader2, Pencil
 } from "lucide-react";
 
 export default function AtividadesPraticas() {
@@ -33,6 +33,12 @@ export default function AtividadesPraticas() {
   const [searchText, setSearchText] = useState<string>("");
   const [viewingSubmission, setViewingSubmission] = useState<number | null>(null);
   const [commentText, setCommentText] = useState<string>("");
+
+  // Edição administrativa da atividade
+  const [editingSubmission, setEditingSubmission] = useState<number | null>(null);
+  const [editTitulo, setEditTitulo] = useState("");
+  const [editDescricao, setEditDescricao] = useState("");
+  const [editPrazo, setEditPrazo] = useState("");
 
   // Modal de Criar Ação
   const [showModalAcao, setShowModalAcao] = useState(false);
@@ -125,6 +131,38 @@ export default function AtividadesPraticas() {
       toast.error(`Erro: ${error.message}`);
     }
   });
+
+  const updateActivityMutation = trpc.practicalActivities.updateActivity.useMutation({
+    onSuccess: () => {
+      toast.success("Atividade atualizada. O aluno verá a alteração no mesmo registro.");
+      setEditingSubmission(null);
+      refetchSubmissions();
+    },
+    onError: (error: { message: string }) => {
+      toast.error(error.message || "Erro ao atualizar atividade.");
+    },
+  });
+
+  function abrirEdicao(sub: any) {
+    setEditingSubmission(sub.sessionId);
+    setEditTitulo(sub.taskName || "");
+    setEditDescricao(sub.taskDescription || "");
+    setEditPrazo(sub.taskDeadline ? String(sub.taskDeadline).slice(0, 10) : "");
+  }
+
+  function salvarEdicao() {
+    if (!editingSubmission) return;
+    if (!editTitulo.trim()) {
+      toast.error("Informe o título da atividade.");
+      return;
+    }
+    updateActivityMutation.mutate({
+      sessionId: editingSubmission,
+      customTaskTitle: editTitulo.trim(),
+      customTaskDescription: editDescricao.trim() || null,
+      taskDeadline: editPrazo || null,
+    });
+  }
 
   // Mentores únicos da lista de submissions
   const mentors = useMemo(() => {
@@ -404,9 +442,26 @@ export default function AtividadesPraticas() {
                             )}
                           </div>
                         </div>
-                        <Button variant="ghost" size="sm" className="text-gray-500">
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          {isAdmin && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8 gap-1.5 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                abrirEdicao(sub);
+                              }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              Editar
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="sm" className="text-gray-500">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -421,6 +476,76 @@ export default function AtividadesPraticas() {
             )}
           </CardContent>
         </Card>
+
+        {/* Dialog de edição — somente administrador */}
+        <Dialog
+          open={isAdmin && !!editingSubmission}
+          onOpenChange={(open) => {
+            if (!open) setEditingSubmission(null);
+          }}
+        >
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Pencil className="h-5 w-5 text-[#0A1E3E]" />
+                Editar atividade prática
+              </DialogTitle>
+              <DialogDescription>
+                Altere apenas os dados da atividade. A atualização será refletida no mesmo registro que o aluno visualiza.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Título da atividade *</Label>
+                <Input
+                  value={editTitulo}
+                  onChange={(e) => setEditTitulo(e.target.value)}
+                  maxLength={500}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Descrição / instruções</Label>
+                <Textarea
+                  value={editDescricao}
+                  onChange={(e) => setEditDescricao(e.target.value)}
+                  rows={5}
+                  maxLength={10000}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Prazo de entrega</Label>
+                <Input
+                  type="date"
+                  value={editPrazo}
+                  onChange={(e) => setEditPrazo(e.target.value)}
+                />
+                <p className="text-[11px] leading-relaxed text-gray-500">
+                  Alterar o prazo muda a data exibida ao aluno e a referência usada para sinalizar atraso. Status, evidências e validações não são alterados.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setEditingSubmission(null)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={salvarEdicao}
+                disabled={updateActivityMutation.isPending || !editTitulo.trim()}
+                className="bg-[#0A1E3E] hover:bg-[#2D5A87]"
+              >
+                {updateActivityMutation.isPending ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...</>
+                ) : (
+                  "Salvar alterações"
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Dialog de Detalhe */}
         <Dialog open={!!viewingSubmission} onOpenChange={(open) => { if (!open) setTimeout(() => setViewingSubmission(null), 100); }}>
