@@ -31,12 +31,14 @@ import {
 } from '../helpers/respostaItemHelpers';
 import { linkIntegracaoPorChave } from '../helpers/emailLinksHelpers';
 import { formKeyForItem } from '../helpers/registrarRespostasParser';
+import { PAPEL_ORDEM_COBRANCA, type PapelCobranca } from '../helpers/cobrancaFormulariosHelpers';
 import { formatarData } from '../helpers/dateHelpers';
 import {
   TUTORIAL_PRIMEIRO_ACESSO_NOME,
   TUTORIAL_PRIMEIRO_ACESSO_URL,
 } from '../helpers/tutorialPrimeiroAcesso';
 import { EmailActionButtons } from './EmailActionButtons';
+import { CobrancaFormulariosDialog } from './CobrancaFormulariosDialog';
 import { MicroImportacaoAcao } from './MicroImportacaoAcao';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -62,6 +64,7 @@ interface PainelSemanaProps {
   onRemoverNotaAcao?: (processId: string, itemId: string, indice: number) => void;
   onConcluirGrupo?: (itemId: string, processIds: string[]) => Promise<void> | void;
   onAplicarStatusGrupo?: (itemId: string, processIds: string[], status: StatusGrupo) => Promise<void> | void;
+  onSalvarProcesso: (processo: ProcessoIntegracao) => Promise<void> | void;
   onEditarModeloEmail?: (chave: string) => void;
 }
 
@@ -185,6 +188,7 @@ export function PainelSemana({
   onRemoverNotaAcao,
   onConcluirGrupo,
   onAplicarStatusGrupo,
+  onSalvarProcesso,
   onEditarModeloEmail,
 }: PainelSemanaProps) {
   const [filtro, setFiltro] = useState<FiltroPainel>('');
@@ -194,6 +198,7 @@ export function PainelSemana({
   const [salvandoAcao, setSalvandoAcao] = useState<string | null>(null);
   const [salvandoGrupo, setSalvandoGrupo] = useState<string | null>(null);
   const [feedbackGrupo, setFeedbackGrupo] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
+  const [cobrancaAberta, setCobrancaAberta] = useState<{ processo: ProcessoIntegracao; papel: PapelCobranca } | null>(null);
 
   const executarGrupo = async (
     chave: string,
@@ -494,6 +499,16 @@ export function PainelSemana({
                   const respostaVisivel = respostaAberta === chave && resposta;
                   const ehEmail = Boolean(grupo.item.mail || (grupo.item.mails && grupo.item.mails.length));
                   const temRespostaFormulario = Boolean(formKeyForItem(grupo.itemId));
+                  const papelCobranca = PAPEL_ORDEM_COBRANCA.includes(grupo.item.r as PapelCobranca)
+                    ? grupo.item.r as PapelCobranca
+                    : null;
+                  const podeCobrarFormulario = Boolean(
+                    temRespostaFormulario &&
+                    !resposta &&
+                    acao.st.k === 'late' &&
+                    acao.lado === 'eles' &&
+                    papelCobranca,
+                  );
                   const relN = ciclosRelatorioEvolucao(grupo.itemId);
                   const temRelatorioEvolucao = relN ? temDadosRelatorioEvolucao(acao.p, relN) : false;
                   const linkAcao = grupo.item.link
@@ -603,6 +618,16 @@ export function PainelSemana({
                             {grupo.item.pdf && <Button type="button" size="sm" variant="outline" onClick={() => handleGerarAgenda(acao.p)}>Agenda PDF</Button>}
                             {relN && <Button type="button" size="sm" variant={temRelatorioEvolucao ? 'outline' : 'ghost'} onClick={() => handleGerarRelatorioEvolucao(acao.p, relN)} title={temRelatorioEvolucao ? (relN === 5 ? 'Gera o PDF com a evolução completa do 1º ao 4º alinhamento' : 'Gera o PDF de evolução do formulário do gestor para anexar neste e-mail') : 'Ainda não há formulário do gestor registrado para este relatório'}>{relN === 5 ? 'Relatório de evolução (completo)' : 'Relatório de evolução'}</Button>}
                             {resposta && <Button type="button" size="sm" variant="outline" onClick={() => { setRespostaAberta(respostaVisivel ? null : chave); if (!respostaVisivel) setFichaAberta(null); }}>{respostaVisivel ? 'Ocultar resposta' : 'Resposta'}</Button>}
+                            {podeCobrarFormulario && papelCobranca && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="default"
+                                onClick={() => setCobrancaAberta({ processo: acao.p, papel: papelCobranca })}
+                              >
+                                Cobrar formulário por e-mail
+                              </Button>
+                            )}
                             {temRespostaFormulario && !resposta && <Button type="button" size="sm" variant="outline" onClick={() => { setFichaAberta(chave); setRespostaAberta(null); }}>Registrar resposta</Button>}
                             <Button type="button" size="sm" variant="ghost" onClick={() => { setFichaAberta(aberta ? null : chave); if (!aberta) setRespostaAberta(null); }}>{ficha.notas.length ? `✎ ${ficha.notas.length}` : '⋯ ficha'}</Button>
                           </div>
@@ -681,6 +706,21 @@ export function PainelSemana({
       <div className="space-y-4"><h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{filtro ? 'Processos desta seleção' : 'Processos ativos'}</h3>{cardsAtivosVisiveis.length > 0 ? <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">{cardsAtivosVisiveis.map(renderCardProcesso)}</div> : <Card><CardContent className="py-8 text-center text-sm text-muted-foreground">Nenhum processo nessa seleção.</CardContent></Card>}</div>
 
       {!filtro && cardsProcessosEncerrados.length > 0 && <div className="space-y-4"><h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Encerrados</h3><div className="grid grid-cols-1 xl:grid-cols-2 gap-4">{cardsProcessosEncerrados.map(renderCardProcesso)}</div></div>}
+
+      {cobrancaAberta && (
+        <CobrancaFormulariosDialog
+          open
+          onOpenChange={(open) => { if (!open) setCobrancaAberta(null); }}
+          processo={cobrancaAberta.processo}
+          config={config}
+          feriados={feriados}
+          initialPapel={cobrancaAberta.papel}
+          onSalvarProcesso={async (processo) => {
+            await onSalvarProcesso({ ...processo, id: cobrancaAberta.processo.id });
+            setCobrancaAberta(null);
+          }}
+        />
+      )}
     </div>
   );
 }

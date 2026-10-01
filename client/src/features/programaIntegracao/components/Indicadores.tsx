@@ -42,10 +42,11 @@ interface FiltrosIndicadores {
   situacao: '' | 'ativo' | 'encerrado';
   status: '' | StatusPrioritarioIndicadores;
   etapa: string;
+  empresa: string;
+  ugp: string;
   unidade: string;
   gestor: string;
   mentora: string;
-  pessoa: string;
 }
 
 const FILTRO_VAZIO: FiltrosIndicadores = {
@@ -54,10 +55,11 @@ const FILTRO_VAZIO: FiltrosIndicadores = {
   situacao: '',
   status: '',
   etapa: '',
+  empresa: '',
+  ugp: '',
   unidade: '',
   gestor: '',
   mentora: '',
-  pessoa: '',
 };
 
 const CORES_STATUS: Record<string, string> = {
@@ -119,6 +121,8 @@ export function Indicadores({
   onProcessoClick,
 }: IndicadoresProps) {
   const [filtros, setFiltros] = useState<FiltrosIndicadores>(FILTRO_VAZIO);
+  const [pessoasSelecionadas, setPessoasSelecionadas] = useState<string[]>([]);
+  const [buscaPessoa, setBuscaPessoa] = useState('');
   const [ecoStatus, setEcoStatus] = useState<Record<string, EcoLiderAndamento>>({});
   const [ecoCarregando, setEcoCarregando] = useState(false);
   const [ecoErro, setEcoErro] = useState('');
@@ -160,12 +164,35 @@ export function Indicadores({
   }, [alunoIds.join(',')]);
 
   const opcoes = useMemo(() => ({
+    empresas: opcoesUnicas(todos.map((p) => p.empresaProgramNome)),
+    ugps: opcoesUnicas(todos.map((p) => p.ugp)),
     unidades: opcoesUnicas(todos.map((p) => p.unidade)),
     gestores: opcoesUnicas(todos.map((p) => p.gestor)),
     mentoras: opcoesUnicas(todos.map((p) => mentoraVinculada(p, config)?.nome || p.consultora)),
-    pessoas: opcoesUnicas(todos.map((p) => p.nome)),
     etapas: opcoesUnicas(todos.map((p) => etapaAtualProcesso(p, feriados))),
   }), [todos, config, feriados]);
+
+  const pessoasOpcoes = useMemo(
+    () => todos
+      .map((p) => ({ id: p.id || p.nome, nome: p.nome, empresa: p.empresaProgramNome || '', unidade: p.unidade || '' }))
+      .filter((p, indice, lista) => lista.findIndex((x) => x.id === p.id) === indice)
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
+    [todos],
+  );
+
+  const pessoasVisiveis = useMemo(() => {
+    const busca = buscaPessoa.trim().toLocaleLowerCase('pt-BR');
+    if (!busca) return pessoasOpcoes;
+    return pessoasOpcoes.filter((p) =>
+      `${p.nome} ${p.empresa} ${p.unidade}`.toLocaleLowerCase('pt-BR').includes(busca)
+    );
+  }, [pessoasOpcoes, buscaPessoa]);
+
+  const alternarPessoa = (id: string) => {
+    setPessoasSelecionadas((atual) =>
+      atual.includes(id) ? atual.filter((item) => item !== id) : [...atual, id],
+    );
+  };
 
   const processosFiltrados = useMemo(() => {
     return todos.filter((p) => {
@@ -180,15 +207,17 @@ export function Indicadores({
       if (filtros.situacao === 'encerrado' && !encerrado) return false;
       if (filtros.status && status !== filtros.status) return false;
       if (filtros.etapa && etapa !== filtros.etapa) return false;
+      if (filtros.empresa && p.empresaProgramNome !== filtros.empresa) return false;
+      if (filtros.ugp && p.ugp !== filtros.ugp) return false;
       if (filtros.unidade && p.unidade !== filtros.unidade) return false;
       if (filtros.gestor && p.gestor !== filtros.gestor) return false;
       if (filtros.mentora && mentora !== filtros.mentora) return false;
-      if (filtros.pessoa && p.nome !== filtros.pessoa) return false;
+      if (pessoasSelecionadas.length && !pessoasSelecionadas.includes(String(id))) return false;
       if (filtros.inicioDe && (!inicio || inicio < filtros.inicioDe)) return false;
       if (filtros.inicioAte && (!inicio || inicio > filtros.inicioAte)) return false;
       return Boolean(id);
     });
-  }, [todos, filtros, feriados, config]);
+  }, [todos, filtros, pessoasSelecionadas, feriados, config]);
 
   const ativosFiltrados = useMemo(
     () => processosFiltrados.filter((p) => p.situacao !== 'encerrado'),
@@ -204,7 +233,7 @@ export function Indicadores({
     [ativosFiltrados, encerradosFiltrados, feriados, ecoStatus],
   );
 
-  const filtrosAtivos = Object.values(filtros).filter(Boolean).length;
+  const filtrosAtivos = Object.values(filtros).filter(Boolean).length + (pessoasSelecionadas.length ? 1 : 0);
 
   const statusPessoas = useMemo(() => {
     const mapa = new Map<string, number>();
@@ -381,7 +410,7 @@ export function Indicadores({
               <CardDescription>Cards, gráficos e tabela são atualizados juntos.</CardDescription>
             </div>
             {filtrosAtivos > 0 && (
-              <Button type="button" size="sm" variant="ghost" onClick={() => setFiltros(FILTRO_VAZIO)}>
+              <Button type="button" size="sm" variant="ghost" onClick={() => { setFiltros(FILTRO_VAZIO); setPessoasSelecionadas([]); setBuscaPessoa(''); }}>
                 Limpar {filtrosAtivos} filtro{filtrosAtivos === 1 ? '' : 's'}
               </Button>
             )}
@@ -405,10 +434,53 @@ export function Indicadores({
             </select>
           </label>
           {renderSelect('Etapa atual', filtros.etapa, opcoes.etapas, (v) => setFiltros((f) => ({ ...f, etapa: v })))}
+          {renderSelect('Empresa', filtros.empresa, opcoes.empresas, (v) => setFiltros((f) => ({ ...f, empresa: v })))}
+          {renderSelect('UGP', filtros.ugp, opcoes.ugps, (v) => setFiltros((f) => ({ ...f, ugp: v })))}
           {renderSelect('Regional / Unidade', filtros.unidade, opcoes.unidades, (v) => setFiltros((f) => ({ ...f, unidade: v })))}
           {renderSelect('Gestor', filtros.gestor, opcoes.gestores, (v) => setFiltros((f) => ({ ...f, gestor: v })))}
           {renderSelect('Mentora', filtros.mentora, opcoes.mentoras, (v) => setFiltros((f) => ({ ...f, mentora: v })))}
-          {renderSelect('Pessoa', filtros.pessoa, opcoes.pessoas, (v) => setFiltros((f) => ({ ...f, pessoa: v })))}
+          <details className="rounded-lg border bg-background p-3 md:col-span-2 xl:col-span-4">
+            <summary className="cursor-pointer text-sm font-medium">
+              Colaboradores {pessoasSelecionadas.length ? `(${pessoasSelecionadas.length} selecionado${pessoasSelecionadas.length === 1 ? '' : 's'})` : '(todos)'}
+            </summary>
+            <div className="mt-3 space-y-3">
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  type="search"
+                  value={buscaPessoa}
+                  onChange={(e) => setBuscaPessoa(e.target.value)}
+                  placeholder="Buscar colaborador..."
+                  className="h-9 min-w-0 flex-1 rounded-lg border border-input bg-background px-3 text-sm"
+                />
+                {pessoasSelecionadas.length > 0 && (
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setPessoasSelecionadas([])}>
+                    Limpar seleção
+                  </Button>
+                )}
+              </div>
+              <div className="grid max-h-56 gap-2 overflow-y-auto rounded-md border p-2 sm:grid-cols-2 xl:grid-cols-3">
+                {pessoasVisiveis.map((pessoa) => (
+                  <label key={pessoa.id} className="flex cursor-pointer items-start gap-2 rounded-md px-2 py-2 text-sm hover:bg-muted/40">
+                    <input
+                      type="checkbox"
+                      checked={pessoasSelecionadas.includes(pessoa.id)}
+                      onChange={() => alternarPessoa(pessoa.id)}
+                      className="mt-0.5 h-4 w-4"
+                    />
+                    <span className="min-w-0">
+                      <span className="block font-medium">{pessoa.nome}</span>
+                      {(pessoa.empresa || pessoa.unidade) && (
+                        <span className="block text-[11px] text-muted-foreground">
+                          {[pessoa.empresa, pessoa.unidade].filter(Boolean).join(' · ')}
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                ))}
+                {!pessoasVisiveis.length && <p className="p-2 text-sm text-muted-foreground">Nenhum colaborador encontrado.</p>}
+              </div>
+            </div>
+          </details>
         </CardContent>
       </Card>
 

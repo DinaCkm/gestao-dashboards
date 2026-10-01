@@ -761,10 +761,42 @@ programaIntegracaoRouter.get("/api/programa-integracao/bootstrap", requireAdmin,
     const config = configRows?.[0] ? asJson(configRows[0].valor, {}) : {};
     const [processRows] = (await connection.execute(`SELECT * FROM programa_integracao_processos WHERE situacao <> 'removido' ORDER BY ordem,id`)) as any;
     const [responseRows] = (await connection.execute(`SELECT r.*, p.legacyId AS processoLegacyId FROM programa_integracao_respostas r LEFT JOIN programa_integracao_processos p ON p.id=r.processoId WHERE r.statusVinculo IN ('vinculada','pendente') ORDER BY r.id`)) as any;
+
+    // Empresa é contexto derivado somente para leitura/filtros administrativos.
+    // Não cria vínculo novo e não altera os dados do processo.
+    const alunosAtivosGlobais = await listarAlunosAtivosParaResolucaoEmpresa(connection);
+    const alunoPorId = new Map(alunosAtivosGlobais.map((aluno: any) => [Number(aluno.id), aluno]));
+    const [programRows] = (await connection.execute(
+      `SELECT id,name FROM programs WHERE COALESCE(isActive,1)=1 ORDER BY name ASC,id ASC`,
+    )) as any;
+    const nomeProgramaPorId = new Map<number, string>(
+      (programRows || []).map((programa: any) => [Number(programa.id), String(programa.name || "")]),
+    );
+
     const processos: Record<string, any> = {};
     (processRows || []).forEach((row: any) => {
       const id = row.legacyId || `p${row.id}`;
       const estado = asJson<Record<string, any>>(row.estado, {});
+      const empresaTesteId = Number(estado?.teste?.empresaProgramId || 0);
+      const alunoDireto = alunoPorId.get(Number(row.alunoId || 0));
+      const alunoEco = alunoPorId.get(Number(estado?.teste?.ecoAlunoId || 0));
+      const correspondenciaSegura = empresaTesteId || alunoDireto || alunoEco
+        ? null
+        : escolherCorrespondenciaEmpresaSegura(
+            String(row.nome || ""),
+            String(row.email || ""),
+            alunosAtivosGlobais,
+          );
+      const empresaProgramId =
+        empresaTesteId ||
+        Number(alunoDireto?.programId || 0) ||
+        Number(alunoEco?.programId || 0) ||
+        Number(correspondenciaSegura?.programId || 0) ||
+        0;
+      const empresaProgramNome =
+        String(estado?.teste?.empresaProgramNome || "").trim() ||
+        (empresaProgramId ? (nomeProgramaPorId.get(empresaProgramId) || "") : "");
+
       processos[id] = { ...estado,
         nome: row.nome || "", cpf: row.cpf || "", nasc: sqlDateToIso(row.nasc),
         email: row.email || "", emailCorporativo: row.emailCorporativo || "", tel: row.tel || "", cargo: row.cargo || "", unidade: row.unidade || "",
@@ -772,6 +804,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/bootstrap", requireAdmin,
         gestor: row.gestor || "", gestorEmail: row.gestorEmail || "", gestorTel: row.gestorTel || "", anjo: row.anjo || "", anjoEmail: row.anjoEmail || "",
         consultora: row.consultora || "", mentorId: row.mentorLegacyId || "", ugp: row.ugp || "", horarios: row.horarios || "",
         statusPdi: row.statusPdi || "", pendencias: row.pendencias || "", statusCursos: row.statusCursos || "", consideracoes: row.consideracoes || "", notas: row.notas || "", cor: row.cor || "",
+        empresaProgramId: empresaProgramId || null, empresaProgramNome,
         feito: estado.feito || {}, alin: estado.alin || {}, bem: estado.bem || {}, teste: estado.teste || {}, resp: [],
       };
     });
@@ -2268,6 +2301,9 @@ programaIntegracaoRouter.put("/api/programa-integracao/processos/:legacyId", req
     )) as any;
     const estadoAtualServidor = estadoRows?.[0] ? asJson<Record<string, any>>(estadoRows[0].estado, {}) : {};
     const estado = { ...p };
+    // Campos calculados no bootstrap são somente de leitura e nunca são persistidos no JSON do processo.
+    delete estado.empresaProgramId;
+    delete estado.empresaProgramNome;
     if (Array.isArray(estadoAtualServidor.registrosIntegracao)) {
       estado.registrosIntegracao = estadoAtualServidor.registrosIntegracao;
     }

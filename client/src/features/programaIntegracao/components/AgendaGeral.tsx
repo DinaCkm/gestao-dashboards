@@ -85,6 +85,7 @@ export function AgendaGeral({
 }: AgendaGeralProps) {
   const [filtroStatus, setFiltroStatus] = useState<FiltroStatusAgenda>('aberto');
   const [filtroResponsavel, setFiltroResponsavel] = useState<ResponsavelIntegracao | ''>('');
+  const [filtroEmpresa, setFiltroEmpresa] = useState('');
   const [filtroPessoa, setFiltroPessoa] = useState('');
   const [emailAberto, setEmailAberto] = useState<{ linha: LinhaAgendaReal; processo: ProcessoIntegracao } | null>(null);
 
@@ -92,10 +93,16 @@ export function AgendaGeral({
     () => linhasAgendaReal(
       processos,
       feriados,
-      { status: filtroStatus, responsavel: filtroResponsavel, pessoa: filtroPessoa },
+      { status: filtroStatus, responsavel: filtroResponsavel, empresa: filtroEmpresa, pessoa: filtroPessoa },
       config,
     ),
-    [processos, feriados, filtroStatus, filtroResponsavel, filtroPessoa, config],
+    [processos, feriados, filtroStatus, filtroResponsavel, filtroEmpresa, filtroPessoa, config],
+  );
+
+  const empresas = useMemo(
+    () => [...new Set(processos.map((p) => String(p.empresaProgramNome || '').trim()).filter(Boolean))]
+      .sort((x, y) => x.localeCompare(y, 'pt-BR')),
+    [processos],
   );
 
   const previewEmail = useMemo(() => {
@@ -144,7 +151,7 @@ export function AgendaGeral({
 
       <Card>
         <CardContent className="pt-5">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             <label className="space-y-1">
               <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Situação</span>
               <select
@@ -153,6 +160,18 @@ export function AgendaGeral({
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 {STATUS.map(([valor, label]) => <option key={valor || 'todas'} value={valor}>{label}</option>)}
+              </select>
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Empresa</span>
+              <select
+                value={filtroEmpresa}
+                onChange={(e) => setFiltroEmpresa(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Todas</option>
+                {empresas.map((empresa) => <option key={empresa} value={empresa}>{empresa}</option>)}
               </select>
             </label>
 
