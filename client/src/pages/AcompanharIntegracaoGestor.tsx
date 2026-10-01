@@ -3028,15 +3028,10 @@ function SinaisCompactos({ colaborador }: { colaborador: ColaboradorAcompanhamen
 
 function AlertasOperacionaisUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
   const alertas = alertasDoColaborador(colaborador);
-  const pendencias = colaborador.formulariosPendentes || [];
-  const atrasados = pendencias.filter((p) => p.atrasado).length;
+  const alertaFormulario = alertaFormularioOperacional(colaborador);
 
-  if (pendencias.length > 0) {
-    alertas.unshift(
-      atrasados > 0
-        ? atrasados + ' formulário(s) está(ão) atrasado(s) e precisa(m) de acompanhamento.'
-        : pendencias.length + ' formulário(s) está(ão) pendente(s) de preenchimento.'
-    );
+  if (alertaFormulario) {
+    alertas.unshift(alertaFormulario.mensagem);
   }
 
   if (!alertas.length) return null;
