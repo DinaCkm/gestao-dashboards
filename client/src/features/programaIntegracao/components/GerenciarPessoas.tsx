@@ -848,6 +848,18 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
                       <span className="truncate">{pessoa.email || 'E-mail não informado'}</span>
                     </div>
                     <div className="flex min-w-0 items-center gap-2">
+                      <Flag className="h-3.5 w-3.5 flex-shrink-0 text-violet-500" />
+                      <span className="truncate">Empresa: <strong className="font-medium text-slate-700 dark:text-slate-200">{pessoa.empresaProgramNome || 'Não identificada'}</strong></span>
+                    </div>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <UserRound className="h-3.5 w-3.5 flex-shrink-0 text-violet-500" />
+                      <span className="truncate">UGP/RH: <strong className="font-medium text-slate-700 dark:text-slate-200">{
+                        pessoa.ugpResponsavelConflito
+                          ? 'Conflito de configuração'
+                          : pessoa.ugpResponsavelNome || 'Não definida'
+                      }</strong></span>
+                    </div>
+                    <div className="flex min-w-0 items-center gap-2">
                       <UserRound className="h-3.5 w-3.5 flex-shrink-0 text-violet-500" />
                       <span className="truncate">Gestor: <strong className="font-medium text-slate-700 dark:text-slate-200">{pessoa.gestor || 'Não informado'}</strong></span>
                     </div>
