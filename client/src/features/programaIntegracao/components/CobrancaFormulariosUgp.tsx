@@ -1,0 +1,621 @@
+import React, { useMemo, useState } from 'react';
+import { AlertTriangle, Search } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
+
+type FiltroRapido = 'all' | 'atraso' | 'vence3' | 'pendentes' | 'nao_cobrados';
+
+type UltimaCobranca = {
+  cobradoEm: string;
+  cobradoPorNome: string;
+  cobradoPorUserId?: number | null;
+} | null;
+
+type Pendencia = {
+  ciclo: number;
+  etapa?: string;
+  formKey?: string;
+  cycleValue?: string;
+  papel: string;
+  formulario: string;
+  prazo: string;
+  atrasado: boolean;
+  solicitadoEm?: string | null;
+  respondenteNome?: string;
+  respondenteEmail?: string;
+  gestorEmail?: string;
+  ultimaCobranca?: UltimaCobranca;
+};
+
+type Colaborador = {
+  id: string;
+  processoDbId?: number | null;
+  nome: string;
+  cargo?: string;
+  unidade: string;
+  dia: number;
+  gestor: string;
+  anjo: string;
+  formulariosPendentes: Pendencia[];
+  statusAcompanhamento?: { chave: string; rotulo: string };
+};
+
+type ItemCobranca = {
+  id: string;
+  processoId: string;
+  processoDbId: number;
+  colaboradorNome: string;
+  unidade: string;
+  papel: 'Gestor' | 'Anjo' | 'Colaborador';
+  respondenteNome: string;
+  respondenteEmail: string;
+  gestorEmail: string;
+  formulario: string;
+  formKey: string;
+  ciclo: number;
+  alinhamento: number;
+  prazo: string;
+  atrasado: boolean;
+  ultimaCobranca: UltimaCobranca;
+  link: string;
+};
+
+type Mensagem = {
+  id: string;
+  papel: ItemCobranca['papel'];
+  para: string;
+  ccGestor: string;
+  copiarGestor: boolean;
+  assunto: string;
+  corpo: string;
+  itens: ItemCobranca[];
+};
+
+function hojeIsoLocal(data = new Date()) {
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, '0');
+  const dia = String(data.getDate()).padStart(2, '0');
+  return ano + '-' + mes + '-' + dia;
+}
+
+function dataBr(iso: string) {
+  if (!iso) return '—';
+  const data = new Date(String(iso).slice(0, 10) + 'T12:00:00');
+  return Number.isNaN(data.getTime()) ? '—' : data.toLocaleDateString('pt-BR');
+}
+
+function diasAte(prazo: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(prazo || ''))) return null;
+  const hoje = new Date(hojeIsoLocal() + 'T12:00:00');
+  const data = new Date(prazo + 'T12:00:00');
+  if (Number.isNaN(data.getTime())) return null;
+  return Math.round((data.getTime() - hoje.getTime()) / 86400000);
+}
+
+function cobradoHoje(ultima: UltimaCobranca) {
+  if (!ultima?.cobradoEm) return false;
+  const data = new Date(ultima.cobradoEm);
+  if (Number.isNaN(data.getTime())) return false;
+  return hojeIsoLocal(data) === hojeIsoLocal();
+}
+
+function situacao(item: ItemCobranca) {
+  const dias = diasAte(item.prazo);
+  if (dias == null) return { texto: 'No prazo', classes: 'border-slate-200 bg-slate-50 text-slate-700', ordem: 9999 };
+  if (dias < 0) {
+    const n = Math.abs(dias);
+    return {
+      texto: n + (n === 1 ? ' dia atrasado' : ' dias atrasado'),
+      classes: 'border-red-200 bg-red-50 text-red-700',
+      ordem: dias,
+    };
+  }
+  if (dias === 0) return { texto: 'Vence hoje', classes: 'border-amber-200 bg-amber-50 text-amber-800', ordem: 0 };
+  if (dias === 1) return { texto: 'Vence amanhã', classes: 'border-amber-200 bg-amber-50 text-amber-800', ordem: 1 };
+  if (dias <= 3) return { texto: 'Vence em ' + dias + ' dias', classes: 'border-amber-200 bg-amber-50 text-amber-800', ordem: dias };
+  return { texto: 'No prazo', classes: 'border-slate-200 bg-slate-50 text-slate-700', ordem: dias };
+}
+
+function primeiroNome(nome: string) {
+  return String(nome || '').trim().split(/\s+/).filter(Boolean)[0] || 'Olá';
+}
+
+function linkFormulario(colaborador: Colaborador, pendencia: Pendencia) {
+  const formKey = String(pendencia.formKey || '');
+  const slug = formKey === 'aval'
+    ? 'avaliacao-programa'
+    : formKey === 'pesquisa'
+      ? 'pesquisa-integracao'
+      : formKey === 'bem'
+        ? 'bem-acolhido'
+        : '';
+
+  if (!slug) return new URL('/gestor/integracao', window.location.origin).toString();
+
+  const params = new URLSearchParams();
+  params.set('nome', colaborador.nome);
+  if (colaborador.unidade) params.set('unidade', colaborador.unidade);
+
+  if (formKey !== 'bem') {
+    params.set('ciclo', pendencia.cycleValue || String(pendencia.ciclo));
+  }
+
+  if (formKey === 'bem') {
+    if (colaborador.gestor) params.set('respondente', colaborador.gestor);
+  } else if (formKey === 'aval') {
+    params.set('papel', pendencia.papel);
+    const respondente = pendencia.papel === 'Gestor'
+      ? colaborador.gestor
+      : pendencia.papel === 'Anjo'
+        ? colaborador.anjo
+        : '';
+    if (respondente) params.set('respondente', respondente);
+  }
+
+  return new URL('/formularios/' + slug + '?' + params.toString(), window.location.origin).toString();
+}
+
+function escaparCsv(valor: unknown) {
+  return '"' + String(valor ?? '').replace(/"/g, '""') + '"';
+}
+
+function montarMensagem(itens: ItemCobranca[], assinatura: string): Mensagem {
+  const primeiro = itens[0];
+  const nome = primeiroNome(primeiro.respondenteNome);
+  const papel = primeiro.papel;
+
+  const linhas = itens.map((item) => {
+    const sobreQuem = item.formKey === 'pesquisa' && item.papel === 'Colaborador'
+      ? ''
+      : ' · ' + item.colaboradorNome;
+    const alinhamento = item.alinhamento ? ' · alinhamento de ' + item.alinhamento + ' dias' : '';
+    const atraso = item.atrasado ? ' · em atraso' : '';
+    return '• ' + item.formulario + sobreQuem + alinhamento + ' · prazo ' + dataBr(item.prazo) + atraso + '\n  ' + item.link;
+  }).join('\n');
+
+  const abertura = papel === 'Gestor'
+    ? 'Olá, ' + nome + ', tudo bem?\n\nHá formulário(s) do Programa de Integração aguardando sua resposta:'
+    : papel === 'Anjo'
+      ? 'Olá, ' + nome + ', tudo bem?\n\nSeu papel de apoio é muito importante para a integração. Há formulário(s) aguardando sua resposta:'
+      : 'Olá, ' + nome + ', tudo bem?\n\nQueremos saber como está sendo sua experiência de integração. Há formulário(s) aguardando sua resposta:';
+
+  const fechamento = papel === 'Gestor'
+    ? 'Sua resposta é importante para mantermos o acompanhamento da integração atualizado.'
+    : papel === 'Anjo'
+      ? 'Sua percepção ajuda a organização a acompanhar o apoio e a adaptação ao longo da integração.'
+      : 'Sua resposta é muito importante para acompanharmos como está sendo sua experiência de integração.';
+
+  return {
+    id: papel + '|' + String(primeiro.respondenteEmail || primeiro.respondenteNome).toLowerCase(),
+    papel,
+    para: primeiro.respondenteEmail,
+    ccGestor: primeiro.gestorEmail,
+    copiarGestor: false,
+    assunto: 'Programa de Integração · ' + itens.length + ' formulário(s) aguardando sua resposta',
+    corpo: abertura + '\n\n' + linhas + '\n\n' + fechamento + '\nQualquer dúvida, estou à disposição.\n\n' + (assinatura || 'UGP/RH'),
+    itens,
+  };
+}
+
+export function CobrancaFormulariosUgp({
+  colaboradores,
+  busca,
+  setBusca,
+  unidade,
+  setUnidade,
+  fase,
+  status,
+  filtroRapido,
+  setFiltroRapido,
+  onAbrir,
+  onRecarregar,
+  assinatura,
+}: {
+  colaboradores: Colaborador[];
+  busca: string;
+  setBusca: (valor: string) => void;
+  unidade: string;
+  setUnidade: (valor: string) => void;
+  fase: string;
+  status: string;
+  filtroRapido: string;
+  setFiltroRapido: (valor: string) => void;
+  onAbrir: (id: string) => void;
+  onRecarregar: () => Promise<void> | void;
+  assinatura: string;
+}) {
+  const filtro = filtroRapido as FiltroRapido;
+  const ativo = filtro !== 'all';
+  const [papel, setPapel] = useState('all');
+  const [alinhamento, setAlinhamento] = useState('all');
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
+  const [mensagens, setMensagens] = useState<Mensagem[]>([]);
+  const [mensagemIndice, setMensagemIndice] = useState(0);
+  const [mensagensOpen, setMensagensOpen] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+
+  const colaboradoresBase = useMemo(() => colaboradores.filter((item) => {
+    const okUnidade = unidade === 'all' || item.unidade === unidade;
+    const okFase = fase === 'all'
+      || (fase === 'ate15' && item.dia <= 15)
+      || (fase === '16a45' && item.dia > 15 && item.dia <= 45)
+      || (fase === '46a75' && item.dia > 45 && item.dia <= 75)
+      || (fase === '76a150' && item.dia > 75);
+    const chaveStatus = String(item.statusAcompanhamento?.chave || '');
+    const okStatus = status === 'all' || chaveStatus === status;
+    return okUnidade && okFase && okStatus;
+  }), [colaboradores, unidade, fase, status]);
+
+  const todosItens = useMemo(() => colaboradoresBase.flatMap((colaborador): ItemCobranca[] => {
+    if (!colaborador.processoDbId) return [];
+    return (colaborador.formulariosPendentes || []).map((pendencia) => {
+      const ciclo = Number(pendencia.ciclo || 0);
+      const marco = ciclo ? ({ 1: 15, 2: 45, 3: 75, 4: 150 } as Record<number, number>)[ciclo] || ciclo : 0;
+      return {
+        id: colaborador.id + '|' + String(pendencia.formKey || 'form') + '|' + ciclo + '|' + pendencia.papel,
+        processoId: colaborador.id,
+        processoDbId: Number(colaborador.processoDbId),
+        colaboradorNome: colaborador.nome,
+        unidade: colaborador.unidade,
+        papel: pendencia.papel as ItemCobranca['papel'],
+        respondenteNome: String(pendencia.respondenteNome || (
+          pendencia.papel === 'Gestor' ? colaborador.gestor :
+          pendencia.papel === 'Anjo' ? colaborador.anjo :
+          colaborador.nome
+        ) || ''),
+        respondenteEmail: String(pendencia.respondenteEmail || ''),
+        gestorEmail: String(pendencia.gestorEmail || ''),
+        formulario: pendencia.formulario,
+        formKey: String(pendencia.formKey || ''),
+        ciclo,
+        alinhamento: marco,
+        prazo: pendencia.prazo,
+        atrasado: Boolean(pendencia.atrasado),
+        ultimaCobranca: pendencia.ultimaCobranca || null,
+        link: linkFormulario(colaborador, pendencia),
+      };
+    });
+  }), [colaboradoresBase]);
+
+  const termo = busca.trim().toLowerCase();
+  const itensBusca = useMemo(() => todosItens.filter((item) => !termo || [
+    item.respondenteNome,
+    item.respondenteEmail,
+    item.colaboradorNome,
+    item.unidade,
+    item.formulario,
+    item.papel,
+  ].some((valor) => String(valor || '').toLowerCase().includes(termo))), [todosItens, termo]);
+
+  const filtraRapido = (item: ItemCobranca, tipo: FiltroRapido) => {
+    const dias = diasAte(item.prazo);
+    if (tipo === 'atraso') return dias != null && dias < 0;
+    if (tipo === 'vence3') return dias != null && dias >= 0 && dias <= 3;
+    if (tipo === 'pendentes') return true;
+    if (tipo === 'nao_cobrados') return !cobradoHoje(item.ultimaCobranca);
+    return true;
+  };
+
+  const contador = (tipo: FiltroRapido) => itensBusca.filter((item) => filtraRapido(item, tipo)).length;
+
+  const itensVisiveis = useMemo(() => itensBusca
+    .filter((item) => papel === 'all' || item.papel === papel)
+    .filter((item) => alinhamento === 'all' || String(item.alinhamento) === alinhamento)
+    .filter((item) => filtraRapido(item, filtro))
+    .sort((a, b) => situacao(a).ordem - situacao(b).ordem || a.respondenteNome.localeCompare(b.respondenteNome, 'pt-BR')),
+    [itensBusca, papel, alinhamento, filtro]
+  );
+
+  const selecionadosItens = itensVisiveis.filter((item) => selecionados.has(item.id));
+
+  const alterarSelecao = (id: string, valor: boolean) => {
+    setSelecionados((atual) => {
+      const proximo = new Set(atual);
+      if (valor) proximo.add(id); else proximo.delete(id);
+      return proximo;
+    });
+  };
+
+  const registrarCobranca = async (itens: ItemCobranca[]) => {
+    if (!itens.length) return;
+    setSalvando(true);
+    try {
+      const res = await fetch('/api/programa-integracao/gestor/cobrancas-formularios/marcar', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          itens: itens.map((item) => ({
+            processoDbId: item.processoDbId,
+            formKey: item.formKey,
+            ciclo: item.ciclo,
+            papel: item.papel,
+            formulario: item.formulario,
+            respondenteNome: item.respondenteNome,
+            respondenteEmail: item.respondenteEmail,
+          })),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.ok) throw new Error(json?.error || 'Não foi possível registrar a cobrança.');
+      toast.success(String(json.registrados || 0) + ' cobrança(s) registrada(s).');
+      setSelecionados(new Set());
+      await onRecarregar();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível registrar a cobrança.');
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const gerarMensagens = (itens: ItemCobranca[]) => {
+    const validos = itens.filter((item) => item.respondenteEmail.includes('@'));
+    if (!validos.length) {
+      toast.error('Nenhum dos itens selecionados possui e-mail válido.');
+      return;
+    }
+    const grupos = new Map<string, ItemCobranca[]>();
+    validos.forEach((item) => {
+      const chave = item.papel + '|' + item.respondenteEmail.trim().toLowerCase();
+      const grupo = grupos.get(chave) || [];
+      grupo.push(item);
+      grupos.set(chave, grupo);
+    });
+    setMensagens([...grupos.values()].map((grupo) => montarMensagem(grupo, assinatura)));
+    setMensagemIndice(0);
+    setMensagensOpen(true);
+  };
+
+  const copiarEmails = async () => {
+    const emails = [...new Set(selecionadosItens.map((item) => item.respondenteEmail.trim()).filter((email) => email.includes('@')))];
+    if (!emails.length) {
+      toast.error('Nenhum e-mail válido entre os selecionados.');
+      return;
+    }
+    await navigator.clipboard.writeText(emails.join('; '));
+    toast.success(String(emails.length) + ' e-mail(s) copiado(s).');
+  };
+
+  const exportar = () => {
+    const cabecalho = ['Quem responde', 'Papel', 'E-mail', 'Formulário', 'Sobre quem', 'Alinhamento', 'Prazo', 'Situação', 'Última cobrança'];
+    const linhas = selecionadosItens.map((item) => [
+      item.respondenteNome,
+      item.papel,
+      item.respondenteEmail,
+      item.formulario,
+      item.colaboradorNome,
+      item.alinhamento ? item.alinhamento + ' dias' : 'Pré-integração',
+      dataBr(item.prazo),
+      situacao(item).texto,
+      item.ultimaCobranca?.cobradoEm
+        ? 'Cobrado em ' + new Date(item.ultimaCobranca.cobradoEm).toLocaleDateString('pt-BR') + ' por ' + (item.ultimaCobranca.cobradoPorNome || 'UGP/RH')
+        : 'Não cobrado',
+    ]);
+    const csv = '\uFEFF' + [cabecalho, ...linhas].map((linha) => linha.map(escaparCsv).join(';')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'formularios-pendentes-' + hojeIsoLocal() + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const mensagemAtual = mensagens[mensagemIndice] || null;
+  const atualizarMensagem = (campo: 'para' | 'assunto' | 'corpo' | 'copiarGestor', valor: string | boolean) => {
+    setMensagens((atuais) => atuais.map((mensagem, indice) => indice === mensagemIndice ? { ...mensagem, [campo]: valor } : mensagem));
+  };
+
+  const abrirEmail = () => {
+    if (!mensagemAtual) return;
+    const params = new URLSearchParams();
+    params.set('subject', mensagemAtual.assunto);
+    params.set('body', mensagemAtual.corpo);
+    if (mensagemAtual.copiarGestor && mensagemAtual.ccGestor) params.set('cc', mensagemAtual.ccGestor);
+    window.location.href = 'mailto:' + encodeURIComponent(mensagemAtual.para) + '?' + params.toString();
+  };
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          {([
+            ['atraso', 'Atrasados', contador('atraso')],
+            ['vence3', 'Vencem em 3 dias', contador('vence3')],
+            ['pendentes', 'Todos pendentes', contador('pendentes')],
+            ['nao_cobrados', 'Ainda não cobrados', contador('nao_cobrados')],
+          ] as Array<[FiltroRapido, string, number]>).map(([valor, rotulo, total]) => (
+            <Button
+              key={valor}
+              size="sm"
+              variant={filtro === valor ? 'default' : 'outline'}
+              className={filtro === valor ? 'bg-violet-700 hover:bg-violet-800' : ''}
+              onClick={() => setFiltroRapido(filtro === valor ? 'all' : valor)}
+            >
+              {rotulo} ({total})
+            </Button>
+          ))}
+        </div>
+        {!ativo && (
+          <button
+            type="button"
+            onClick={() => setFiltroRapido('atraso')}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 hover:shadow-sm"
+          >
+            <AlertTriangle className="h-4 w-4" />
+            Filtrar processos com formulários em atraso
+          </button>
+        )}
+      </div>
+
+      {ativo && (
+        <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+          <div className="border-b bg-white p-4">
+            <div className="mb-3 flex flex-col gap-3 rounded-xl border border-violet-100 bg-violet-50/50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-sm font-bold text-violet-950">Modo cobrança de formulários</div>
+                <div className="text-xs text-violet-700">Uma linha por formulário pendente. Nenhum conteúdo de resposta é exibido.</div>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => setFiltroRapido('all')}>Voltar para a carteira</Button>
+            </div>
+
+            <div className="grid gap-3 lg:grid-cols-[1fr_200px_180px_180px]">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input className="pl-9" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por respondente ou colaborador..." />
+              </div>
+              <Select value={unidade} onValueChange={setUnidade}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as unidades</SelectItem>
+                  {[...new Set(colaboradores.map((item) => item.unidade).filter(Boolean))].sort().map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={papel} onValueChange={setPapel}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os papéis</SelectItem>
+                  <SelectItem value="Colaborador">Colaborador</SelectItem>
+                  <SelectItem value="Gestor">Gestor</SelectItem>
+                  <SelectItem value="Anjo">Anjo</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={alinhamento} onValueChange={setAlinhamento}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os alinhamentos</SelectItem>
+                  {[15, 45, 75, 150].map((dia) => <SelectItem key={dia} value={String(dia)}>{dia} dias</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1500px] text-sm">
+              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-3 py-3 text-center">
+                    <Checkbox
+                      checked={itensVisiveis.length > 0 && selecionadosItens.length === itensVisiveis.length}
+                      onCheckedChange={(valor) => setSelecionados(valor ? new Set(itensVisiveis.map((item) => item.id)) : new Set())}
+                      aria-label="Selecionar todos os formulários filtrados"
+                    />
+                  </th>
+                  <th className="px-3 py-3 text-left">Quem responde</th>
+                  <th className="px-3 py-3 text-left">Papel</th>
+                  <th className="px-3 py-3 text-left">E-mail</th>
+                  <th className="px-3 py-3 text-left">Formulário</th>
+                  <th className="px-3 py-3 text-left">Sobre quem</th>
+                  <th className="px-3 py-3 text-center">Alinhamento</th>
+                  <th className="px-3 py-3 text-center">Prazo</th>
+                  <th className="px-3 py-3 text-center">Situação</th>
+                  <th className="px-3 py-3 text-left">Última cobrança</th>
+                  <th className="px-3 py-3 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {itensVisiveis.map((item) => {
+                  const visual = situacao(item);
+                  const semEmail = !item.respondenteEmail.includes('@');
+                  const ultima = item.ultimaCobranca?.cobradoEm
+                    ? 'Cobrado em ' + new Date(item.ultimaCobranca.cobradoEm).toLocaleDateString('pt-BR') + ' por ' + (item.ultimaCobranca.cobradoPorNome || 'UGP/RH')
+                    : 'Ainda não cobrado';
+                  return (
+                    <tr key={item.id} className="border-t align-top hover:bg-slate-50/70">
+                      <td className="px-3 py-4 text-center">
+                        <Checkbox checked={selecionados.has(item.id)} onCheckedChange={(valor) => alterarSelecao(item.id, Boolean(valor))} aria-label={'Selecionar ' + item.formulario} />
+                      </td>
+                      <td className="px-3 py-4 font-semibold text-slate-900">{item.respondenteNome || 'Nome não informado'}</td>
+                      <td className="px-3 py-4"><Badge variant="outline">{item.papel}</Badge></td>
+                      <td className="px-3 py-4">{semEmail ? <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">Sem e-mail</Badge> : <span className="text-slate-700">{item.respondenteEmail}</span>}</td>
+                      <td className="px-3 py-4 font-medium text-slate-900">{item.formulario}</td>
+                      <td className="px-3 py-4 text-slate-600">{item.colaboradorNome}</td>
+                      <td className="px-3 py-4 text-center">{item.alinhamento ? item.alinhamento + ' dias' : 'Pré'}</td>
+                      <td className="px-3 py-4 text-center tabular-nums">{dataBr(item.prazo)}</td>
+                      <td className="px-3 py-4 text-center"><Badge variant="outline" className={visual.classes}>{visual.texto}</Badge></td>
+                      <td className="px-3 py-4 text-xs text-slate-600">{ultima}</td>
+                      <td className="px-3 py-4">
+                        <div className="flex justify-end gap-1">
+                          <Button size="sm" variant="outline" disabled={semEmail} onClick={() => gerarMensagens([item])}>Gerar mensagem</Button>
+                          <Button size="sm" variant="ghost" onClick={() => onAbrir(item.processoId)}>Abrir processo</Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!itensVisiveis.length && <tr><td colSpan={11} className="px-4 py-12 text-center text-slate-500">Nenhum formulário pendente encontrado com os filtros atuais.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {ativo && selecionadosItens.length > 0 && (
+        <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-violet-200 bg-white/95 px-4 py-3 shadow-xl backdrop-blur">
+          <div className="font-bold text-slate-900">{selecionadosItens.length} selecionado(s)</div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" className="bg-violet-700 hover:bg-violet-800" onClick={() => gerarMensagens(selecionadosItens)}>Gerar mensagens</Button>
+            <Button size="sm" variant="outline" onClick={() => void copiarEmails()}>Copiar e-mails</Button>
+            <Button size="sm" variant="outline" onClick={exportar}>Exportar planilha</Button>
+            <Button size="sm" variant="outline" disabled={salvando} onClick={() => void registrarCobranca(selecionadosItens)}>Marcar como cobrado</Button>
+          </div>
+        </div>
+      )}
+
+      <Dialog open={mensagensOpen} onOpenChange={setMensagensOpen}>
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Mensagens de cobrança</DialogTitle>
+            <DialogDescription>{mensagens.length ? 'Mensagem ' + (mensagemIndice + 1) + ' de ' + mensagens.length : 'Nenhuma mensagem'}</DialogDescription>
+          </DialogHeader>
+
+          {mensagemAtual && (
+            <div className="space-y-4">
+              <div>
+                <div className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Para</div>
+                <Input value={mensagemAtual.para} onChange={(e) => atualizarMensagem('para', e.target.value)} />
+              </div>
+              <div>
+                <div className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Assunto</div>
+                <Input value={mensagemAtual.assunto} onChange={(e) => atualizarMensagem('assunto', e.target.value)} />
+              </div>
+              <div>
+                <div className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Corpo</div>
+                <Textarea className="min-h-[320px]" value={mensagemAtual.corpo} onChange={(e) => atualizarMensagem('corpo', e.target.value)} />
+              </div>
+
+              {(mensagemAtual.papel === 'Anjo' || mensagemAtual.papel === 'Colaborador') && mensagemAtual.ccGestor && (
+                <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <Checkbox checked={mensagemAtual.copiarGestor} onCheckedChange={(valor) => atualizarMensagem('copiarGestor', Boolean(valor))} />
+                  Copiar o gestor ({mensagemAtual.ccGestor})
+                </label>
+              )}
+
+              <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex gap-2">
+                  <Button variant="outline" disabled={mensagemIndice === 0} onClick={() => setMensagemIndice((indice) => Math.max(0, indice - 1))}>Anterior</Button>
+                  <Button variant="outline" disabled={mensagemIndice >= mensagens.length - 1} onClick={() => setMensagemIndice((indice) => Math.min(mensagens.length - 1, indice + 1))}>Próxima</Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={async () => {
+                    await navigator.clipboard.writeText(mensagemAtual.assunto + '\n\n' + mensagemAtual.corpo);
+                    toast.success('Mensagem copiada.');
+                  }}>Copiar</Button>
+                  <Button variant="outline" onClick={abrirEmail}>Abrir no e-mail</Button>
+                  <Button className="bg-violet-700 hover:bg-violet-800" disabled={salvando} onClick={() => void registrarCobranca(mensagemAtual.itens)}>Marcar como cobrado</Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}

@@ -36,6 +36,7 @@ import {
 import { gerarAcompanhamentoIntegracaoPdf } from '@/features/programaIntegracao/helpers/acompanhamentoIntegracaoPdf';
 import { gerarDocumentoAtaRelatorio } from '@/features/programaIntegracao/helpers/atasRelatoriosHelpers';
 import { FormulariosEvolucaoUgp } from '@/features/programaIntegracao/components/FormulariosEvolucaoUgp';
+import { CobrancaFormulariosUgp } from '@/features/programaIntegracao/components/CobrancaFormulariosUgp';
 
 interface Pendencia {
   ciclo: number;
@@ -46,6 +47,16 @@ interface Pendencia {
   formulario: string;
   prazo: string;
   atrasado: boolean;
+  solicitadoEm?: string | null;
+  chaveCobranca?: string;
+  respondenteNome?: string;
+  respondenteEmail?: string;
+  gestorEmail?: string;
+  ultimaCobranca?: {
+    cobradoEm: string;
+    cobradoPorNome: string;
+    cobradoPorUserId?: number | null;
+  } | null;
 }
 
 interface GestorDisponivel {
@@ -108,6 +119,7 @@ interface PerfilAssessment {
 
 interface ColaboradorAcompanhamento {
   id: string;
+  processoDbId?: number | null;
   nome: string;
   cargo: string;
   unidade: string;
@@ -208,6 +220,7 @@ interface AcompanhamentoResponse {
   gestoresDisponiveis?: GestorDisponivel[];
   gestorSelecionado?: GestorDisponivel | null;
   atualizadoEm: string;
+  usuarioAtualNome?: string;
   colaboradores: ColaboradorAcompanhamento[];
 }
 
@@ -3175,7 +3188,7 @@ function TabelaFormulariosPendentesUgp({ colaborador }: { colaborador: Colaborad
 }
 
 function CarteiraUgp({
-  colaboradores,busca,setBusca,unidade,setUnidade,fase,setFase,status,setStatus,radarFiltro,setRadarFiltro,onAbrir
+  colaboradores,busca,setBusca,unidade,setUnidade,fase,setFase,status,setStatus,radarFiltro,setRadarFiltro,onAbrir,onRecarregar,assinatura
 }: {
   colaboradores: ColaboradorAcompanhamento[];
   busca:string; setBusca:(v:string)=>void;
@@ -3184,6 +3197,8 @@ function CarteiraUgp({
   status:string; setStatus:(v:string)=>void;
   radarFiltro:string; setRadarFiltro:(v:string)=>void;
   onAbrir:(id:string)=>void;
+  onRecarregar:()=>Promise<void>|void;
+  assinatura:string;
 }) {
   const unidades=Array.from(new Set(colaboradores.map((x)=>x.unidade).filter(Boolean))).sort();
   const lista=colaboradores.filter((x)=>{
@@ -3197,8 +3212,7 @@ function CarteiraUgp({
       || (fase==='76a150' && x.dia>75);
     const st=statusCarteira(x);
     const okStatus=status==='all'||st.chave===status;
-    const okAtraso=radarFiltro!=='atraso'||temFormularioEmAtrasoOperacional(x);
-    return okBusca&&okUnidade&&okFase&&okStatus&&okAtraso;
+    return okBusca&&okUnidade&&okFase&&okStatus;
   });
   const indices=colaboradores.map((x)=>indiceIntegracao(x).indice).filter((v):v is number=>v!=null);
   const indiceMedio=indices.length?Math.round(indices.reduce((s,v)=>s+v,0)/indices.length):null;
@@ -3226,17 +3240,22 @@ function CarteiraUgp({
         ))}
       </div>
 
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={()=>setRadarFiltro(radarFiltro==='atraso'?'all':'atraso')}
-          className={'inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-all hover:shadow-sm '+(radarFiltro==='atraso'?'border-amber-300 bg-amber-50 text-amber-900':'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}
-        >
-          <AlertTriangle className="h-4 w-4" />
-          {radarFiltro==='atraso'?'Mostrando processos com formulários em atraso':'Filtrar processos com formulários em atraso'}
-        </button>
-      </div>
+      <CobrancaFormulariosUgp
+        colaboradores={colaboradores}
+        busca={busca}
+        setBusca={setBusca}
+        unidade={unidade}
+        setUnidade={setUnidade}
+        fase={fase}
+        status={status}
+        filtroRapido={radarFiltro}
+        setFiltroRapido={setRadarFiltro}
+        onAbrir={onAbrir}
+        onRecarregar={onRecarregar}
+        assinatura={assinatura}
+      />
 
+      {radarFiltro==='all' && (
       <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
         <div className="border-b bg-white p-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
@@ -3261,6 +3280,7 @@ function CarteiraUgp({
           </table>
         </div>
       </Card>
+      )}
     </div>
   );
 }
@@ -4676,6 +4696,8 @@ export default function AcompanharIntegracaoGestor() {
                 radarFiltro={radarFiltro}
                 setRadarFiltro={setRadarFiltro}
                 onAbrir={abrirDetalhe}
+                onRecarregar={() => carregar(gestorView)}
+                assinatura={dados?.usuarioAtualNome || 'UGP/RH'}
               />
             )
           ) : modoDetalhe && colaborador ? (
