@@ -2669,13 +2669,19 @@ function resumoExecutivoTexto(colaborador: ColaboradorAcompanhamento) {
   return partes.length ? partes.join('. ') + '.' : 'Ainda não há dados suficientes para produzir uma síntese executiva da integração.';
 }
 
-function ComposicaoIndice({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+function ComposicaoIndice({
+  colaborador,
+  onSelect,
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  onSelect?: (aba: AbaAcompanhamentoUgp) => void;
+}) {
   const indice = indiceIntegracao(colaborador);
   const comps = [
-    { nome:'Experiência', valor:indice.experiencia, peso:40, cor:PAPEL_CORES.colaborador },
-    { nome:'Adaptação', valor:indice.adaptacao, peso:35, cor:PAPEL_CORES.gestor },
-    { nome:'Desenvolvimento', valor:indice.desenvolvimento, peso:25, cor:'#7C3AED' },
-  ].filter((x) => x.valor != null) as Array<{nome:string; valor:number; peso:number; cor:string}>;
+    { nome:'Experiência', valor:indice.experiencia, peso:40, cor:PAPEL_CORES.colaborador, aba:'trajetoria' as const },
+    { nome:'Adaptação', valor:indice.adaptacao, peso:35, cor:PAPEL_CORES.gestor, aba:'formularios' as const },
+    { nome:'Desenvolvimento', valor:indice.desenvolvimento, peso:25, cor:'#7C3AED', aba:'desenvolvimento' as const },
+  ].filter((x) => x.valor != null) as Array<{nome:string; valor:number; peso:number; cor:string; aba:AbaAcompanhamentoUgp}>;
   const somaPesos = comps.reduce((s,x) => s + x.peso, 0) || 1;
   const contribs = comps.map((x) => ({ ...x, contribuicao:x.valor * x.peso / somaPesos }));
   return (
@@ -2700,10 +2706,19 @@ function ComposicaoIndice({ colaborador }: { colaborador: ColaboradorAcompanhame
         </div>
         <div className="mt-3 grid gap-2 sm:grid-cols-3">
           {contribs.map((x) => (
-            <div key={x.nome} className="rounded-xl bg-slate-50 px-3 py-2 text-xs">
+            <button
+              key={x.nome}
+              type="button"
+              onClick={() => onSelect?.(x.aba)}
+              className="group rounded-xl border border-transparent bg-slate-50 px-3 py-2 text-left text-xs transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:bg-white hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+              aria-label={`Ver detalhes de ${x.nome}`}
+            >
               <div className="flex items-center gap-2 font-semibold text-slate-800"><span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor:x.cor}} />{x.nome}</div>
-              <div className="mt-1 font-bold tabular-nums text-slate-950">{Math.round(x.valor)}%</div>
-            </div>
+              <div className="mt-1 flex items-end justify-between gap-2">
+                <span className="font-bold tabular-nums text-slate-950">{Math.round(x.valor)}%</span>
+                {onSelect && <span className="inline-flex items-center gap-1 font-semibold text-violet-700 opacity-80">Ver detalhes <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" /></span>}
+              </div>
+            </button>
           ))}
         </div>
 
