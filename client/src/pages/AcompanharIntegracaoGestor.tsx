@@ -3816,6 +3816,275 @@ function EvolucaoFormulariosUgp({ colaborador }: { colaborador: ColaboradorAcomp
   );
 }
 
+
+function PontosAtencaoExecutivosUgp({
+  colaborador,
+  onSelect,
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  onSelect: (aba: AbaAcompanhamentoUgp) => void;
+}) {
+  const alertas = pontosAtencaoExecutivosUgp(colaborador);
+
+  if (!alertas.length) {
+    return (
+      <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3 text-sm text-emerald-900">
+        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+        <span>Nenhum ponto objetivo de atenção identificado neste momento.</span>
+      </div>
+    );
+  }
+
+  const visual = (severidade: SeveridadeAlertaUgp) => {
+    if (severidade === 'atencao') return { borda:'border-rose-200', fundo:'bg-rose-50/55', icone:'bg-rose-100 text-rose-700', texto:'text-rose-950' };
+    if (severidade === 'acompanhar') return { borda:'border-amber-200', fundo:'bg-amber-50/55', icone:'bg-amber-100 text-amber-700', texto:'text-amber-950' };
+    return { borda:'border-blue-200', fundo:'bg-blue-50/55', icone:'bg-blue-100 text-blue-700', texto:'text-blue-950' };
+  };
+
+  const rotuloTipo: Record<AlertaExecutivoUgp['tipo'], string> = {
+    trajetoria: 'Trajetória',
+    formularios: 'Formulários',
+    desenvolvimento: 'Desenvolvimento',
+    perfil: 'Perfil',
+    registros: 'Registros',
+    operacional: 'Operacional',
+  };
+
+  return (
+    <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+      <CardContent className="p-5">
+        <div className="flex items-start gap-3">
+          <span className="rounded-xl bg-amber-100 p-2 text-amber-700"><AlertTriangle className="h-5 w-5" /></span>
+          <div>
+            <h3 className="font-bold text-slate-950">Pontos de atenção</h3>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">Sinais objetivos que merecem acompanhamento, sem substituir a análise detalhada de cada área.</p>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          {alertas.map((alerta) => {
+            const estilo = visual(alerta.severidade);
+            const conteudo = (
+              <>
+                <div className="flex items-start gap-3">
+                  <span className={`mt-0.5 rounded-lg p-1.5 ${estilo.icone}`}><AlertTriangle className="h-4 w-4" /></span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">{rotuloTipo[alerta.tipo]}</div>
+                    <div className={`mt-1 text-sm font-bold ${estilo.texto}`}>{alerta.titulo}</div>
+                    <p className="mt-1 text-sm leading-relaxed text-slate-700">{alerta.mensagem}</p>
+                    {alerta.abaDestino && alerta.acao && (
+                      <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-violet-700">
+                        {alerta.acao} <ChevronRight className="h-3.5 w-3.5" />
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </>
+            );
+
+            return alerta.abaDestino ? (
+              <button
+                key={alerta.chave}
+                type="button"
+                onClick={() => onSelect(alerta.abaDestino!)}
+                className={`rounded-xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 ${estilo.borda} ${estilo.fundo}`}
+              >
+                {conteudo}
+              </button>
+            ) : (
+              <div key={alerta.chave} className={`rounded-xl border p-4 ${estilo.borda} ${estilo.fundo}`}>
+                {conteudo}
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function PreviewTrajetoriaUgp({
+  colaborador,
+  onSelect,
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  onSelect: (aba: AbaAcompanhamentoUgp) => void;
+}) {
+  const momentos = evolucaoPesquisaColaborador(colaborador.respostas);
+  const ultimo = momentos[momentos.length - 1];
+  const anterior = momentos[momentos.length - 2];
+  const valorUltimo = mediaMomentoPesquisa(ultimo);
+  const valorAnterior = mediaMomentoPesquisa(anterior);
+  const variacao = variacaoPercentual(valorAnterior, valorUltimo);
+  const maiorMudanca = mudancasDimensoes(colaborador.respostas).find((item) => item.delta != null);
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect('trajetoria')}
+      className="group w-full rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-[0_1px_2px_rgba(16,24,40,.05)] transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 font-bold text-slate-950"><Route className="h-5 w-5 text-blue-700" /> Trajetória da experiência</div>
+        <ChevronRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5" />
+      </div>
+
+      {momentos.length >= 2 && valorAnterior != null && valorUltimo != null ? (
+        <div className="mt-4">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+            <div>
+              <div className="text-xs text-slate-500">{diaDoAlinhamento(anterior.ciclo)} dias</div>
+              <div className="mt-1 text-2xl font-black tabular-nums text-slate-900">{Math.round(valorAnterior)}%</div>
+            </div>
+            <ArrowRight className="h-5 w-5 text-slate-300" />
+            <div className="text-right">
+              <div className="text-xs text-slate-500">{diaDoAlinhamento(ultimo.ciclo)} dias</div>
+              <div className="mt-1 text-2xl font-black tabular-nums text-blue-800">{Math.round(valorUltimo)}%</div>
+            </div>
+          </div>
+          <div className="mt-3 text-sm font-semibold text-slate-700">
+            {variacao == null
+              ? 'Comparação disponível entre os dois alinhamentos mais recentes.'
+              : variacao < 0
+                ? `↓ ${Math.round(Math.abs(variacao))}% menor que no alinhamento anterior`
+                : variacao > 0
+                  ? `↑ ${Math.round(Math.abs(variacao))}% maior que no alinhamento anterior`
+                  : '→ Estável em relação ao alinhamento anterior'}
+          </div>
+          {maiorMudanca && (
+            <div className="mt-3 rounded-xl bg-blue-50/60 px-3 py-2 text-xs text-slate-700">
+              <span className="font-semibold">Maior mudança recente:</span> {maiorMudanca.nome}
+            </div>
+          )}
+        </div>
+      ) : momentos.length === 1 && valorUltimo != null ? (
+        <div className="mt-4">
+          <div className="text-xs text-slate-500">Primeira medição disponível</div>
+          <div className="mt-1 text-2xl font-black tabular-nums text-blue-800">{diaDoAlinhamento(ultimo.ciclo)} dias — {Math.round(valorUltimo)}%</div>
+          <p className="mt-3 text-sm leading-relaxed text-slate-600">Ainda não há outro alinhamento com Pesquisa de Integração para comparar a evolução.</p>
+        </div>
+      ) : (
+        <p className="mt-4 text-sm leading-relaxed text-slate-500">Ainda não existem respostas da Pesquisa de Integração para analisar a trajetória.</p>
+      )}
+
+      <div className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-violet-700">Ver trajetória completa <ChevronRight className="h-4 w-4" /></div>
+    </button>
+  );
+}
+
+function PreviewDesenvolvimentoUgp({
+  colaborador,
+  onSelect,
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  onSelect: (aba: AbaAcompanhamentoUgp) => void;
+}) {
+  const registros = [...(colaborador.registrosAlinhamentos || [])].sort((a,b) => Number(a.marco || 0) - Number(b.marco || 0));
+  const realizados = registros.filter((item) => item.realizado);
+  const ultimo = realizados[realizados.length - 1];
+  const proximo = registros.find((item) => !item.realizado);
+  const parecer = ultimo ? [ultimo.conclusao, ultimo.consultora, ultimo.lider, ultimo.colab].find((texto) => String(texto || '').trim()) : null;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect('desenvolvimento')}
+      className="group w-full rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-[0_1px_2px_rgba(16,24,40,.05)] transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 font-bold text-slate-950"><Target className="h-5 w-5 text-violet-700" /> Desenvolvimento e alinhamentos</div>
+        <ChevronRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5" />
+      </div>
+      {ultimo ? (
+        <div className="mt-4 space-y-2 text-sm text-slate-700">
+          <div><span className="text-slate-500">Último alinhamento:</span> <b>{ultimo.marco || diaDoAlinhamento(ultimo.numero)} dias</b></div>
+          <div><span className="text-slate-500">Realizado em:</span> <b>{ultimo.data ? dataBr(ultimo.data) : 'data não informada'}</b></div>
+          <div className="text-xs font-semibold text-emerald-700">{ultimo.temConteudo ? 'Registro completo disponível.' : 'Alinhamento realizado.'}</div>
+          {parecer && <p className="line-clamp-2 rounded-xl bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-600">“{parecer}”</p>}
+          <div><span className="text-slate-500">Próximo marco:</span> <b>{proximo ? (proximo.marco || diaDoAlinhamento(proximo.numero)) + ' dias' : 'todos os marcos previstos concluídos'}</b></div>
+        </div>
+      ) : (
+        <div className="mt-4 text-sm text-slate-600">
+          <p>Nenhum alinhamento realizado até o momento.</p>
+          <p className="mt-2"><span className="text-slate-500">Próximo marco previsto:</span> <b>{proximo ? (proximo.marco || diaDoAlinhamento(proximo.numero)) + ' dias' : '15 dias'}</b></p>
+        </div>
+      )}
+      <div className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-violet-700">Ver alinhamentos e desenvolvimento <ChevronRight className="h-4 w-4" /></div>
+    </button>
+  );
+}
+
+function PreviewPerfilUgp({
+  colaborador,
+  onSelect,
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  onSelect: (aba: AbaAcompanhamentoUgp) => void;
+}) {
+  const concluido = colaborador.assessmentPotencialConcluido === true;
+  const disc = colaborador.perfilAssessment?.disc?.perfilPredominante;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect('perfil')}
+      className="group w-full rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-[0_1px_2px_rgba(16,24,40,.05)] transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 font-bold text-slate-950"><Brain className="h-5 w-5 text-violet-700" /> Perfil</div>
+        <ChevronRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5" />
+      </div>
+      <div className="mt-4 text-sm text-slate-700">
+        <div className="text-xs text-slate-500">Assessment/Avaliação de Potencial</div>
+        <div className={`mt-1 font-bold ${concluido ? 'text-emerald-700' : 'text-slate-700'}`}>{concluido ? 'Concluído' : 'Ainda não concluído'}</div>
+        {disc && <div className="mt-3"><span className="text-slate-500">Perfil DISC predominante:</span> <b>{disc}</b></div>}
+      </div>
+      <div className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-violet-700">Ver perfil <ChevronRight className="h-4 w-4" /></div>
+    </button>
+  );
+}
+
+function PreviewRegistrosUgp({
+  colaborador,
+  onSelect,
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  onSelect: (aba: AbaAcompanhamentoUgp) => void;
+}) {
+  const registros = [...(colaborador.registrosIntegracao || [])].sort((a,b) => {
+    const dataB = Date.parse(String(b.dataAcontecimento || b.cadastradoEm || '')) || 0;
+    const dataA = Date.parse(String(a.dataAcontecimento || a.cadastradoEm || '')) || 0;
+    return dataB - dataA;
+  });
+  const ultimo = registros[0];
+  const rotuloTipo = ultimo
+    ? ultimo.tipo === 'foto' ? 'Foto' : ultimo.tipo === 'documento' ? 'Documento' : ultimo.tipo === 'relato' ? 'Relato' : 'Registro'
+    : '';
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect('registros')}
+      className="group w-full rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-[0_1px_2px_rgba(16,24,40,.05)] transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 font-bold text-slate-950"><Paperclip className="h-5 w-5 text-slate-600" /> Registros da integração</div>
+        <ChevronRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5" />
+      </div>
+      {ultimo ? (
+        <div className="mt-4 text-sm text-slate-700">
+          <div><b>{registros.length}</b> evidência(s) complementar(es) registrada(s).</div>
+          <div className="mt-3 text-xs text-slate-500">Último registro</div>
+          <div className="mt-1 font-bold text-slate-900">{rotuloTipo} — {ultimo.titulo || 'Sem título'}</div>
+          <div className="mt-1 text-xs text-slate-500">{ultimo.dataAcontecimento ? dataBr(ultimo.dataAcontecimento) : ultimo.cadastradoEm ? dataBr(ultimo.cadastradoEm) : 'Data não informada'}</div>
+        </div>
+      ) : (
+        <p className="mt-4 text-sm leading-relaxed text-slate-500">Nenhuma evidência complementar registrada até o momento.</p>
+      )}
+      <div className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-violet-700">Ver registros <ChevronRight className="h-4 w-4" /></div>
+    </button>
+  );
+}
+
 function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:ColaboradorAcompanhamento; onVoltar:()=>void; onPerfil:()=>void }) {
   const st=statusCarteira(colaborador);
   const [aba, setAba] = useState('visao');
