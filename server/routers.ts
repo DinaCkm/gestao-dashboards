@@ -8270,7 +8270,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         sessionId: z.number(),
         customTaskTitle: z.string().trim().min(1).max(500),
         customTaskDescription: z.string().max(10000).nullable(),
-        taskDeadline: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).nullable(),
+        taskDeadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
       }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== 'admin') {
