@@ -3248,6 +3248,7 @@ function CarteiraUgp({
         busca={busca}
         setBusca={setBusca}
         unidade={unidade}
+        setUnidade={setUnidade}
         fase={fase}
         status={status}
         filtroRapido={radarFiltro}
