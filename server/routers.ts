@@ -8710,6 +8710,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         demoOnly: z.boolean().optional().default(false),
         ugpResponsible: z.boolean().optional().default(false),
         replaceUgpResponsible: z.boolean().optional().default(false),
+        confirmResponsibilityChange: z.boolean().optional().default(false),
       }))
       .mutation(async ({ input }) => {
         const gerente = (await db.getGerentesEmpresa()).find((g: any) => Number(g.id) === input.userId);
