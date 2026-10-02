@@ -1,7 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import AnjoRouteGuard from "@/features/programaIntegracao/components/AnjoRouteGuard";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { HeartHandshake, Route, Users, MessageCircle, CalendarCheck, ArrowRight, ShieldCheck, Sunrise, Handshake, Compass, Coffee, Milestone, Heart, Lightbulb, Headphones, Eye, Network, Sprout, Sparkles, Check, X, CheckCircle2 } from "lucide-react";
+import { HeartHandshake, Route, Users, MessageCircle, CalendarCheck, ArrowRight, ShieldCheck, Sunrise, Handshake, Compass, Coffee, Milestone, Heart, Lightbulb, Headphones, Eye, Network, Sprout, AlertTriangle, Check, X, CheckCircle2 } from "lucide-react";
 import { useLocation } from "wouter";
 import "@/features/programaIntegracao/styles/acompanhamentoIntegracao.css";
 
@@ -82,7 +82,7 @@ export default function AnjoOrientacoes() {
           <header className="pi-hero pi-anjo-hero-simple">
             <div className="pi-hero-top">
               <div>
-                <span className="pi-eyebrow pi-eyebrow--icon"><Sparkles /> Espaço do Anjo</span>
+                <span className="pi-eyebrow pi-eyebrow--icon"><AlertTriangle /> Espaço do Anjo</span>
                 <h1>Cartilha e Orientações do Anjo</h1>
                 <p className="pi-hero-subtitle">Tudo o que você precisa saber para apoiar o colaborador durante sua integração.</p>
               </div>
@@ -186,7 +186,7 @@ export default function AnjoOrientacoes() {
               <p className="pi-anjo-footer-title">Precisa conferir seus formulários?</p>
               <p className="pi-anjo-footer-subtitle">Veja seus formulários e a evolução das avaliações que você já respondeu.</p>
             </div>
-            <button type="button" className="pi-btn pi-btn--white" onClick={() => setLocation("/anjo/formularios")}>
+            <button type="button" className="pi-btn pi-btn--primary" onClick={() => setLocation("/anjo/formularios")}>
               <Users className="h-4 w-4" /> Acompanhar integração <ArrowRight />
             </button>
           </article>
