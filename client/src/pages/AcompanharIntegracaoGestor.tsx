@@ -12,7 +12,7 @@ import { Tooltip as UiTooltip, TooltipContent, TooltipProvider, TooltipTrigger }
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Activity, AlertTriangle, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, Brain, Camera, CheckCircle2, ChevronDown, ChevronRight, ClipboardList, Download, Eye, FileText, Filter, Gauge, Handshake, Heart, Info, LayoutDashboard, Lightbulb, ListChecks, Maximize2, MessageSquareText, Minimize2, MousePointerClick, Network, Paperclip, Puzzle, RefreshCw, Route, Search, Sparkles, Sprout, Star, Target, UserCheck, Users } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, Brain, CalendarDays, Camera, CheckCircle2, ChevronDown, ChevronRight, ClipboardList, Download, Eye, FileText, Filter, Flag, Gauge, Handshake, Heart, Info, LayoutDashboard, Lightbulb, ListChecks, Maximize2, MessageSquareText, Minimize2, MousePointerClick, Network, Paperclip, Puzzle, RefreshCw, Route, Search, ShieldCheck, Sparkles, Sprout, Star, Target, UserCheck, Users } from 'lucide-react';
 import { DISC_PERFIL_RESUMO, INTEGRACAO_CLUSTERS } from '@shared/integracaoAssessment';
 import { competenciaConsultoriaPorNome } from '@shared/competenciasConsultoria';
 import {
@@ -3172,6 +3172,7 @@ function ComposicaoIndice({
   );
 }
 
+
 function TimelineAlinhamentos({
   colaborador,
   onSelect,
@@ -3179,83 +3180,118 @@ function TimelineAlinhamentos({
   colaborador: ColaboradorAcompanhamento;
   onSelect?: (aba: AbaAcompanhamentoUgp) => void;
 }) {
-  const marcos = [1,2,3,4].map((numero) => {
-    const tem = (form:string,papel:string) => colaborador.respostas.some((r) => Number(r.ciclo) === numero && r.form === form && (form === 'pesquisa' || r.papel === papel));
-    return { numero, dia:diaDoAlinhamento(numero), c:tem('pesquisa','Colaborador'), g:tem('aval','Gestor'), a:tem('aval','Anjo') };
+  const marcos = [1, 2, 3, 4].map((numero) => {
+    const tem = (form: string, papel: string) =>
+      colaborador.respostas.some(
+        (r) => Number(r.ciclo) === numero && r.form === form && (form === 'pesquisa' || r.papel === papel),
+      );
+    const dia = diaDoAlinhamento(numero);
+    return {
+      numero,
+      dia,
+      liberado: colaborador.dia >= dia,
+      c: tem('pesquisa', 'Colaborador'),
+      g: tem('aval', 'Gestor'),
+      a: tem('aval', 'Anjo'),
+    };
   });
 
-  const statusFormulario = (ciclo:number, papel:'Colaborador'|'Gestor'|'Anjo', preenchido:boolean) => {
-    if (preenchido) return 'Preenchido';
-    const pendencia = (colaborador.formulariosPendentes || []).find(
-      (p) => Number(p.ciclo) === ciclo && p.papel === papel,
-    );
-    if (pendencia?.atrasado) return 'Atrasado';
-    if (pendencia) return 'Pendente';
-    return 'Ainda não solicitado';
+  const proximoMarco = marcos.find((marco) => !marco.liberado)?.numero ?? null;
+  const diaAtual = Math.max(0, Number(colaborador.dia || 0));
+  const progresso = (() => {
+    if (diaAtual <= 15) return 0;
+    if (diaAtual >= 150) return 100;
+    if (diaAtual < 45) return ((diaAtual - 15) / 30) * (100 / 3);
+    if (diaAtual < 75) return (100 / 3) + ((diaAtual - 45) / 30) * (100 / 3);
+    return (200 / 3) + ((diaAtual - 75) / 75) * (100 / 3);
+  })();
+  const hojeLeft = 12.5 + (progresso * 0.75);
+
+  const statusRespondente = (papel: 'Colaborador' | 'Gestor' | 'Anjo', preenchido: boolean, liberado: boolean) => {
+    if (preenchido) return { classe: 'is-ok', texto: 'respondido' };
+    if (liberado) return { classe: 'is-pending', texto: 'aguardando resposta' };
+    return { classe: 'is-future', texto: 'formulário ainda não liberado' };
   };
 
   return (
-    <Card className="rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
-      <CardContent className="p-5">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div><div className="font-bold text-slate-950">Status dos formulários por alinhamento</div><div className="mt-1 text-xs leading-relaxed text-slate-500">Veja, em cada alinhamento de 15, 45, 75 e 150 dias, se Colaborador (C), Gestor (G) e Anjo (A) já responderam os formulários previstos.</div></div>
-          <div className="flex gap-3 text-[11px]"><span style={{color:PAPEL_CORES.colaborador}} className="font-semibold">● Colaborador</span><span style={{color:PAPEL_CORES.gestor}} className="font-semibold">● Gestor</span><span style={{color:PAPEL_CORES.anjo}} className="font-semibold">● Anjo</span></div>
+    <section className="pi-form-card" aria-labelledby="status-formularios-titulo">
+      <div className="pi-form-head">
+        <span className="pi-soft-ic"><CalendarDays /></span>
+        <div>
+          <h2 id="status-formularios-titulo">Status dos formulários por alinhamento</h2>
+          <p>Quem já respondeu em cada marco: Colaborador (C), Gestor (G) e Anjo (A).</p>
         </div>
-        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-          {marcos.map((m) => (
-            <div key={m.numero} className="rounded-2xl border bg-white p-3 text-center">
-              <div className="text-sm font-black text-slate-900">{m.dia} dias</div>
-              <div className="mt-3 flex justify-center gap-2">
-                {([
-                  ['C','Colaborador',m.c,PAPEL_CORES.colaborador],
-                  ['G','Gestor',m.g,PAPEL_CORES.gestor],
-                  ['A','Anjo',m.a,PAPEL_CORES.anjo],
-                ] as const).map(([label,papel,ok,cor]) => {
-                  const status = statusFormulario(m.numero, papel, ok);
-                  return (
-                    <UiTooltip key={label}>
-                      <TooltipTrigger asChild>
-                        <span
-                          tabIndex={0}
-                          aria-label={`${papel} — ${status}`}
-                          className="grid h-7 w-7 cursor-help place-items-center rounded-full border text-[10px] font-black outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-violet-300 focus-visible:ring-offset-2"
-                          style={
-                            status === 'Preenchido'
-                              ? {backgroundColor:String(cor),borderColor:String(cor),color:'#fff'}
-                              : status === 'Atrasado'
-                                ? {backgroundColor:'#FFF1F2',borderColor:'#FB7185',color:'#BE123C',boxShadow:'0 0 0 2px rgba(251,113,133,.12)'}
-                                : status === 'Pendente'
-                                  ? {backgroundColor:'#FFFBEB',borderColor:'#F59E0B',color:'#B45309'}
-                                  : {backgroundColor:'#F8FAFC',borderColor:'#CBD5E1',color:'#94A3B8'}
-                          }
-                        >
-                          {label}
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="font-semibold">
-                        {papel} — {status}
-                      </TooltipContent>
-                    </UiTooltip>
-                  );
-                })}
+        <div className="pi-form-legend" aria-label="Legenda dos respondentes">
+          <span><i className="is-c" />Colaborador</span>
+          <span><i className="is-g" />Gestor</span>
+          <span><i className="is-a" />Anjo</span>
+          <span><i className="is-pending" />Pendente</span>
+        </div>
+      </div>
+
+      <div className="pi-form-tl">
+        <div className="pi-form-tl-line" aria-hidden="true">
+          <span style={{ width: progresso + '%' }} />
+        </div>
+        <div className="pi-form-tl-today" style={{ left: hojeLeft + '%' }}>
+          Hoje · dia {diaAtual}
+        </div>
+
+        {marcos.map((marco) => {
+          const estadoMarco = marco.liberado ? 'is-done' : proximoMarco === marco.numero ? 'is-next' : '';
+          const diasRestantes = Math.max(0, marco.dia - diaAtual);
+          const respondentes = [
+            { sigla: 'C', papel: 'Colaborador' as const, ok: marco.c, classePapel: 'is-c' },
+            { sigla: 'G', papel: 'Gestor' as const, ok: marco.g, classePapel: 'is-g' },
+            { sigla: 'A', papel: 'Anjo' as const, ok: marco.a, classePapel: 'is-a' },
+          ];
+
+          return (
+            <div key={marco.numero} className={['pi-form-ms', estadoMarco].filter(Boolean).join(' ')}>
+              <span className="pi-form-ms-dot" aria-hidden="true" />
+              <div className="pi-form-ms-box">
+                <div className="pi-form-ms-day">
+                  {marco.dia} dias
+                  <small>{marco.liberado ? 'Liberado' : 'Em ' + diasRestantes + (diasRestantes === 1 ? ' dia' : ' dias')}</small>
+                </div>
+                <div className="pi-form-who">
+                  {respondentes.map((item) => {
+                    const status = statusRespondente(item.papel, item.ok, marco.liberado);
+                    return (
+                      <UiTooltip key={item.sigla}>
+                        <TooltipTrigger asChild>
+                          <span
+                            tabIndex={0}
+                            aria-label={item.papel + ': ' + status.texto}
+                            className={['pi-form-av', item.classePapel, status.classe].join(' ')}
+                          >
+                            {item.sigla}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="font-semibold">
+                          {item.papel}: {status.texto}
+                        </TooltipContent>
+                      </UiTooltip>
+                    );
+                  })}
+                </div>
+                {marco.numero === 1 && (
+                  <span className="pi-form-pdi"><Flag /> PDI pode iniciar após este alinhamento</span>
+                )}
               </div>
-              {m.numero === 1 && <div className="mt-3 text-[10px] font-semibold text-violet-700">▲ PDI pode iniciar após este alinhamento</div>}
             </div>
-          ))}
+          );
+        })}
+      </div>
+
+      {onSelect && (
+        <div className="pi-form-footer">
+          <button type="button" className="pi-form-footer-link" onClick={() => onSelect('formularios')}>
+            Ver formulários e respostas <ArrowRight />
+          </button>
         </div>
-        {onSelect && (
-          <div className="mt-4 flex justify-end border-t border-slate-100 pt-3">
-            <button
-              type="button"
-              onClick={() => onSelect('formularios')}
-              className="group inline-flex items-center gap-1.5 text-sm font-semibold text-violet-700 hover:text-violet-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
-            >
-              Ver formulários e respostas <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      )}
+    </section>
   );
 }
 
@@ -4355,6 +4391,7 @@ function EvolucaoFormulariosUgp({ colaborador }: { colaborador: ColaboradorAcomp
 }
 
 
+
 function PontosAtencaoExecutivosUgp({
   colaborador,
   onSelect,
@@ -4363,82 +4400,52 @@ function PontosAtencaoExecutivosUgp({
   onSelect: (aba: AbaAcompanhamentoUgp) => void;
 }) {
   const alertas = pontosAtencaoExecutivosUgp(colaborador);
+  const pendentes = (colaborador.formulariosPendentes || []).length;
+  const textoPendentes = pendentes === 1
+    ? '1 formulário pendente de preenchimento'
+    : pendentes + ' formulários pendentes de preenchimento';
 
   if (!alertas.length) {
     return (
-      <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/45 px-4 py-3 text-sm text-emerald-900">
-        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-        <span>Nenhum ponto objetivo de atenção identificado neste momento.</span>
-      </div>
+      <section className="pi-overview-alerts is-clear" aria-label="Pontos de atenção">
+        <div className="pi-overview-alert">
+          <span className="pi-overview-alert-icon"><ShieldCheck /></span>
+          <span className="pi-overview-alert-tag">Tudo em dia</span>
+          <span className="pi-overview-alert-text"><b>Nenhum ponto de atenção</b> no momento.</span>
+          <span aria-hidden="true" />
+        </div>
+      </section>
     );
   }
 
-  const visual = (severidade: SeveridadeAlertaUgp) => {
-    if (severidade === 'atencao') return { borda:'border-rose-200', fundo:'bg-rose-50/55', icone:'bg-rose-100 text-rose-700', texto:'text-rose-950' };
-    if (severidade === 'acompanhar') return { borda:'border-amber-200', fundo:'bg-amber-50/55', icone:'bg-amber-100 text-amber-700', texto:'text-amber-950' };
-    return { borda:'border-blue-200', fundo:'bg-blue-50/55', icone:'bg-blue-100 text-blue-700', texto:'text-blue-950' };
-  };
-
-  const rotuloTipo: Record<AlertaExecutivoUgp['tipo'], string> = {
-    trajetoria: 'Trajetória',
-    formularios: 'Formulários',
-    desenvolvimento: 'Desenvolvimento',
-    perfil: 'Perfil',
-    registros: 'Registros',
-    operacional: 'Operacional',
-  };
-
   return (
-    <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
-      <CardContent className="p-5">
-        <div className="flex items-start gap-3">
-          <span className="rounded-xl bg-amber-100 p-2 text-amber-700"><AlertTriangle className="h-5 w-5" /></span>
-          <div>
-            <h3 className="font-bold text-slate-950">Pontos de atenção</h3>
-            <p className="mt-1 text-xs leading-relaxed text-slate-500">Sinais objetivos que merecem acompanhamento, sem substituir a análise detalhada de cada área.</p>
-          </div>
-        </div>
-        <div className="mt-4 grid gap-3 lg:grid-cols-2">
-          {alertas.map((alerta) => {
-            const estilo = visual(alerta.severidade);
-            const conteudo = (
-              <>
-                <div className="flex items-start gap-3">
-                  <span className={`mt-0.5 rounded-lg p-1.5 ${estilo.icone}`}><AlertTriangle className="h-4 w-4" /></span>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">{rotuloTipo[alerta.tipo]}</div>
-                    <div className={`mt-1 text-sm font-bold ${estilo.texto}`}>{alerta.titulo}</div>
-                    <p className="mt-1 text-sm leading-relaxed text-slate-700">{alerta.mensagem}</p>
-                    {alerta.abaDestino && alerta.acao && (
-                      <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-violet-700">
-                        {alerta.acao} <ChevronRight className="h-3.5 w-3.5" />
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </>
-            );
+    <section className="pi-overview-alerts" aria-label="Pontos de atenção">
+      {alertas.map((alerta) => {
+        const mensagem = alerta.chave === 'formularios-pendentes' && pendentes > 0
+          ? textoPendentes
+          : alerta.mensagem;
 
-            return alerta.abaDestino ? (
+        return (
+          <div className="pi-overview-alert" key={alerta.chave}>
+            <span className="pi-overview-alert-icon"><AlertTriangle /></span>
+            <span className="pi-overview-alert-tag">Ponto de atenção</span>
+            <span className="pi-overview-alert-text"><b>{alerta.titulo}</b> · {mensagem}</span>
+            {alerta.abaDestino ? (
               <button
-                key={alerta.chave}
                 type="button"
+                className="pi-overview-alert-link"
                 onClick={() => onSelect(alerta.abaDestino!)}
-                className={`rounded-xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 ${estilo.borda} ${estilo.fundo}`}
               >
-                {conteudo}
+                {alerta.acao || 'Ver detalhes'} <ArrowRight />
               </button>
-            ) : (
-              <div key={alerta.chave} className={`rounded-xl border p-4 ${estilo.borda} ${estilo.fundo}`}>
-                {conteudo}
-              </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+            ) : <span aria-hidden="true" />}
+          </div>
+        );
+      })}
+    </section>
   );
 }
+
 
 function PreviewTrajetoriaUgp({
   colaborador,
@@ -4448,66 +4455,61 @@ function PreviewTrajetoriaUgp({
   onSelect: (aba: AbaAcompanhamentoUgp) => void;
 }) {
   const momentos = evolucaoPesquisaColaborador(colaborador.respostas);
-  const ultimo = momentos[momentos.length - 1];
-  const anterior = momentos[momentos.length - 2];
-  const valorUltimo = mediaMomentoPesquisa(ultimo);
-  const valorAnterior = mediaMomentoPesquisa(anterior);
-  const variacao = variacaoPercentual(valorAnterior, valorUltimo);
-  const maiorMudanca = mudancasDimensoes(colaborador.respostas).find((item) => item.delta != null);
+  const medidas = [1, 2, 3, 4].map((ciclo) => {
+    const momento = momentos.find((item) => Number(item.ciclo) === ciclo);
+    return {
+      ciclo,
+      dia: diaDoAlinhamento(ciclo),
+      valor: momento ? mediaMomentoPesquisa(momento) : null,
+    };
+  });
+  const primeira = medidas.find((item) => item.valor != null);
 
   return (
-    <button
-      type="button"
-      onClick={() => onSelect('trajetoria')}
-      className="group w-full rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-[0_1px_2px_rgba(16,24,40,.05)] transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+    <a
+      href="#acompanhamento-abas"
+      className="pi-area-cell"
+      onClick={(event) => {
+        event.preventDefault();
+        onSelect('trajetoria');
+      }}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2 font-bold text-slate-950"><Route className="h-5 w-5 text-blue-700" /> Trajetória da experiência</div>
-        <ChevronRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5" />
+      <div className="pi-area-head">
+        <span className="pi-soft-ic"><Route /></span>
+        <h2>Trajetória da experiência</h2>
+        <span className="pi-area-go"><ArrowRight /></span>
       </div>
 
-      {momentos.length >= 2 && valorAnterior != null && valorUltimo != null ? (
-        <div className="mt-4">
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-            <div>
-              <div className="text-xs text-slate-500">{diaDoAlinhamento(anterior.ciclo)} dias</div>
-              <div className="mt-1 text-2xl font-black tabular-nums text-slate-900">{Math.round(valorAnterior)}%</div>
-            </div>
-            <ArrowRight className="h-5 w-5 text-slate-300" />
-            <div className="text-right">
-              <div className="text-xs text-slate-500">{diaDoAlinhamento(ultimo.ciclo)} dias</div>
-              <div className="mt-1 text-2xl font-black tabular-nums text-blue-800">{Math.round(valorUltimo)}%</div>
-            </div>
+      {primeira && primeira.valor != null ? (
+        <>
+          <div>
+            <div className="pi-area-label">Primeira medição disponível</div>
+            <div className="pi-area-big">{Math.round(primeira.valor)}% <small>aos {primeira.dia} dias</small></div>
           </div>
-          <div className="mt-3 text-sm font-semibold text-slate-700">
-            {variacao == null
-              ? 'Comparação disponível entre os dois alinhamentos mais recentes.'
-              : variacao < 0
-                ? `↓ ${Math.round(Math.abs(variacao))}% menor que no alinhamento anterior`
-                : variacao > 0
-                  ? `↑ ${Math.round(Math.abs(variacao))}% maior que no alinhamento anterior`
-                  : '→ Estável em relação ao alinhamento anterior'}
+          <div className="pi-area-marks" aria-label="Medições da trajetória">
+            {medidas.map((medida, index) => (
+              <React.Fragment key={medida.ciclo}>
+                <span className={['pi-area-mark', medida.valor != null ? 'is-on' : ''].filter(Boolean).join(' ')}>
+                  <i>{medida.valor == null ? '–' : Math.round(medida.valor)}</i>
+                  {medida.dia}d
+                </span>
+                {index < medidas.length - 1 && <span className="pi-area-mark-line" aria-hidden="true" />}
+              </React.Fragment>
+            ))}
           </div>
-          {maiorMudanca && (
-            <div className="mt-3 rounded-xl bg-blue-50/60 px-3 py-2 text-xs text-slate-700">
-              <span className="font-semibold">Maior mudança recente:</span> {maiorMudanca.nome}
-            </div>
+          {momentos.length === 1 && (
+            <div className="pi-area-muted">Ainda não há outro alinhamento para comparar a evolução.</div>
           )}
-        </div>
-      ) : momentos.length === 1 && valorUltimo != null ? (
-        <div className="mt-4">
-          <div className="text-xs text-slate-500">Primeira medição disponível</div>
-          <div className="mt-1 text-2xl font-black tabular-nums text-blue-800">{diaDoAlinhamento(ultimo.ciclo)} dias — {Math.round(valorUltimo)}%</div>
-          <p className="mt-3 text-sm leading-relaxed text-slate-600">Ainda não há outro alinhamento com Pesquisa de Integração para comparar a evolução.</p>
-        </div>
+        </>
       ) : (
-        <p className="mt-4 text-sm leading-relaxed text-slate-500">Ainda não existem respostas da Pesquisa de Integração para analisar a trajetória.</p>
+        <div className="pi-area-muted">Ainda não existem respostas da Pesquisa de Integração para analisar a trajetória.</div>
       )}
 
-      <div className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-violet-700">Ver trajetória completa <ChevronRight className="h-4 w-4" /></div>
-    </button>
+      <span className="pi-area-link">Ver trajetória completa <ArrowRight /></span>
+    </a>
   );
 }
+
 
 function PreviewDesenvolvimentoUgp({
   colaborador,
@@ -4516,40 +4518,55 @@ function PreviewDesenvolvimentoUgp({
   colaborador: ColaboradorAcompanhamento;
   onSelect: (aba: AbaAcompanhamentoUgp) => void;
 }) {
-  const registros = [...(colaborador.registrosAlinhamentos || [])].sort((a,b) => Number(a.marco || 0) - Number(b.marco || 0));
+  const registros = [...(colaborador.registrosAlinhamentos || [])].sort((a, b) => Number(a.marco || 0) - Number(b.marco || 0));
   const realizados = registros.filter((item) => item.realizado);
   const ultimo = realizados[realizados.length - 1];
   const proximo = registros.find((item) => !item.realizado);
-  const parecer = ultimo ? [ultimo.conclusao, ultimo.consultora, ultimo.lider, ultimo.colab].find((texto) => String(texto || '').trim()) : null;
+  const parecer = ultimo
+    ? [ultimo.conclusao, ultimo.consultora, ultimo.lider, ultimo.colab].find((texto) => String(texto || '').trim())
+    : null;
+  const registroCompleto = Boolean(ultimo?.temConteudo);
 
   return (
-    <button
-      type="button"
-      onClick={() => onSelect('desenvolvimento')}
-      className="group w-full rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-[0_1px_2px_rgba(16,24,40,.05)] transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+    <a
+      href="#acompanhamento-abas"
+      className="pi-area-cell"
+      onClick={(event) => {
+        event.preventDefault();
+        onSelect('desenvolvimento');
+      }}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2 font-bold text-slate-950"><Target className="h-5 w-5 text-violet-700" /> Desenvolvimento e alinhamentos</div>
-        <ChevronRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5" />
+      <div className="pi-area-head">
+        <span className="pi-soft-ic"><Target /></span>
+        <h2>Desenvolvimento e alinhamentos</h2>
+        <span className="pi-area-go"><ArrowRight /></span>
       </div>
-      {ultimo ? (
-        <div className="mt-4 space-y-2 text-sm text-slate-700">
-          <div><span className="text-slate-500">Último alinhamento:</span> <b>{ultimo.marco || diaDoAlinhamento(ultimo.numero)} dias</b></div>
-          <div><span className="text-slate-500">Realizado em:</span> <b>{ultimo.data ? dataBr(ultimo.data) : 'data não informada'}</b></div>
-          <div className="text-xs font-semibold text-emerald-700">{ultimo.temConteudo ? 'Registro completo disponível.' : 'Alinhamento realizado.'}</div>
-          {parecer && <p className="line-clamp-2 rounded-xl bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-600">“{parecer}”</p>}
-          <div><span className="text-slate-500">Próximo marco:</span> <b>{proximo ? (proximo.marco || diaDoAlinhamento(proximo.numero)) + ' dias' : 'todos os marcos previstos concluídos'}</b></div>
+
+      <div className="pi-area-row">
+        <div>
+          <div className="pi-area-label">Último alinhamento</div>
+          <div className="pi-area-big is-small">
+            {ultimo ? (ultimo.marco || diaDoAlinhamento(ultimo.numero)) + ' dias' : '—'}
+            {ultimo && <small>em {ultimo.data ? dataBr(ultimo.data) : 'data não informada'}</small>}
+          </div>
         </div>
-      ) : (
-        <div className="mt-4 text-sm text-slate-600">
-          <p>Nenhum alinhamento realizado até o momento.</p>
-          <p className="mt-2"><span className="text-slate-500">Próximo marco previsto:</span> <b>{proximo ? (proximo.marco || diaDoAlinhamento(proximo.numero)) + ' dias' : '15 dias'}</b></p>
-        </div>
-      )}
-      <div className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-violet-700">Ver alinhamentos e desenvolvimento <ChevronRight className="h-4 w-4" /></div>
-    </button>
+        <span className={['pi-area-pill', registroCompleto ? 'is-ok' : 'is-warn'].join(' ')}>
+          {registroCompleto ? <CheckCircle2 /> : <AlertTriangle />}
+          {registroCompleto ? 'Registro completo' : 'Registro pendente'}
+        </span>
+      </div>
+
+      {parecer && <p className="pi-area-quote"><span>“{parecer}”</span></p>}
+
+      <div className="pi-area-row">
+        <span className="pi-area-pill is-muted"><Flag /> Próximo marco: {proximo ? (proximo.marco || diaDoAlinhamento(proximo.numero)) + ' dias' : 'concluído'}</span>
+      </div>
+
+      <span className="pi-area-link">Ver alinhamentos e desenvolvimento <ArrowRight /></span>
+    </a>
   );
 }
+
 
 function PreviewPerfilUgp({
   colaborador,
@@ -4559,30 +4576,58 @@ function PreviewPerfilUgp({
   onSelect: (aba: AbaAcompanhamentoUgp) => void;
 }) {
   const statusAssessment = colaborador.assessmentPotencialConcluido;
-  const concluido = statusAssessment === true;
-  const disc = colaborador.perfilAssessment?.disc?.perfilPredominante;
+  const disc = String(colaborador.perfilAssessment?.disc?.perfilPredominante || '').toUpperCase();
+  const nomesDisc: Record<string, string> = {
+    D: 'Dominância',
+    I: 'Influência',
+    S: 'Estabilidade',
+    C: 'Conformidade',
+  };
+  const nomeDisc = nomesDisc[disc] || 'Ainda não disponível';
+  const statusClasse = statusAssessment === true ? 'is-ok' : statusAssessment === false ? 'is-warn' : 'is-muted';
+  const statusLabel = statusAssessment === true
+    ? 'Concluído'
+    : statusAssessment === false
+      ? 'Ainda não concluído'
+      : 'Situação indisponível';
 
   return (
-    <button
-      type="button"
-      onClick={() => onSelect('perfil')}
-      className="group w-full rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-[0_1px_2px_rgba(16,24,40,.05)] transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+    <a
+      href="#acompanhamento-abas"
+      className="pi-area-cell"
+      onClick={(event) => {
+        event.preventDefault();
+        onSelect('perfil');
+      }}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2 font-bold text-slate-950"><Brain className="h-5 w-5 text-violet-700" /> Perfil</div>
-        <ChevronRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5" />
+      <div className="pi-area-head">
+        <span className="pi-soft-ic"><Brain /></span>
+        <h2>Perfil</h2>
+        <span className="pi-area-go"><ArrowRight /></span>
       </div>
-      <div className="mt-4 text-sm text-slate-700">
-        <div className="text-xs text-slate-500">Assessment/Avaliação de Potencial</div>
-        <div className={`mt-1 font-bold ${concluido ? 'text-emerald-700' : 'text-slate-700'}`}>
-          {concluido ? 'Concluído' : statusAssessment === false ? 'Ainda não concluído' : 'Situação ainda não disponível'}
+
+      <div className="pi-area-row is-start">
+        <span className="pi-area-disc">{disc || '–'}</span>
+        <div>
+          <div className="pi-area-label">Perfil DISC predominante</div>
+          <div className="pi-area-profile-name">{nomeDisc}</div>
         </div>
-        {disc && <div className="mt-3"><span className="text-slate-500">Perfil DISC predominante:</span> <b>{disc}</b></div>}
       </div>
-      <div className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-violet-700">Ver perfil <ChevronRight className="h-4 w-4" /></div>
-    </button>
+
+      <div className="pi-area-row">
+        <span className="pi-area-label">Assessment / Avaliação de Potencial</span>
+        <span className={['pi-area-pill', statusClasse].join(' ')}>
+          {statusAssessment === true && <CheckCircle2 />}
+          {statusAssessment === false && <AlertTriangle />}
+          {statusLabel}
+        </span>
+      </div>
+
+      <span className="pi-area-link">Ver perfil <ArrowRight /></span>
+    </a>
   );
 }
+
 
 function PreviewRegistrosUgp({
   colaborador,
@@ -4591,40 +4636,54 @@ function PreviewRegistrosUgp({
   colaborador: ColaboradorAcompanhamento;
   onSelect: (aba: AbaAcompanhamentoUgp) => void;
 }) {
-  const registros = [...(colaborador.registrosIntegracao || [])].sort((a,b) => {
+  const registros = [...(colaborador.registrosIntegracao || [])].sort((a, b) => {
     const dataB = Date.parse(String(b.dataAcontecimento || b.cadastradoEm || '')) || 0;
     const dataA = Date.parse(String(a.dataAcontecimento || a.cadastradoEm || '')) || 0;
     return dataB - dataA;
   });
   const ultimo = registros[0];
-  const rotuloTipo = ultimo
-    ? ultimo.tipo === 'foto' ? 'Foto' : ultimo.tipo === 'documento' ? 'Documento' : ultimo.tipo === 'relato' ? 'Relato' : 'Registro'
-    : '';
+  const quantidadeLabel = registros.length === 1 ? 'evidência complementar' : 'evidências complementares';
 
   return (
-    <button
-      type="button"
-      onClick={() => onSelect('registros')}
-      className="group w-full rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-[0_1px_2px_rgba(16,24,40,.05)] transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+    <a
+      href="#acompanhamento-abas"
+      className="pi-area-cell"
+      onClick={(event) => {
+        event.preventDefault();
+        onSelect('registros');
+      }}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2 font-bold text-slate-950"><Paperclip className="h-5 w-5 text-slate-600" /> Registros da integração</div>
-        <ChevronRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5" />
+      <div className="pi-area-head">
+        <span className="pi-soft-ic"><Paperclip /></span>
+        <h2>Registros da integração</h2>
+        <span className="pi-area-go"><ArrowRight /></span>
       </div>
+
+      <div className="pi-area-big">{registros.length} <small>{quantidadeLabel}</small></div>
+
       {ultimo ? (
-        <div className="mt-4 text-sm text-slate-700">
-          <div><b>{registros.length}</b> evidência(s) complementar(es) registrada(s).</div>
-          <div className="mt-3 text-xs text-slate-500">Último registro</div>
-          <div className="mt-1 font-bold text-slate-900">{rotuloTipo} — {ultimo.titulo || 'Sem título'}</div>
-          <div className="mt-1 text-xs text-slate-500">{ultimo.dataAcontecimento ? dataBr(ultimo.dataAcontecimento) : ultimo.cadastradoEm ? dataBr(ultimo.cadastradoEm) : 'Data não informada'}</div>
+        <div className="pi-area-record">
+          <FileText />
+          <div>
+            <b>{ultimo.titulo || 'Registro sem título'}</b>
+            <span>
+              Por {ultimo.cadastradoPorNome || 'autor não informado'} · {ultimo.dataAcontecimento
+                ? dataBr(ultimo.dataAcontecimento)
+                : ultimo.cadastradoEm
+                  ? dataBr(ultimo.cadastradoEm)
+                  : 'data não informada'}
+            </span>
+          </div>
         </div>
       ) : (
-        <p className="mt-4 text-sm leading-relaxed text-slate-500">Nenhuma evidência complementar registrada até o momento.</p>
+        <div className="pi-area-muted">Nenhuma evidência complementar registrada até o momento.</div>
       )}
-      <div className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-violet-700">Ver registros <ChevronRight className="h-4 w-4" /></div>
-    </button>
+
+      <span className="pi-area-link">Ver registros <ArrowRight /></span>
+    </a>
   );
 }
+
 
 function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:ColaboradorAcompanhamento; onVoltar:()=>void; onPerfil:()=>void }) {
   const st=statusCarteira(colaborador);
@@ -4632,10 +4691,12 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
   const selecionarAba = (destino: string) => {
     setAba(destino);
     window.setTimeout(() => {
-      document.getElementById('acompanhamento-abas')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const reduzirMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      document.getElementById('acompanhamento-abas')?.scrollIntoView({ behavior: reduzirMovimento ? 'auto' : 'smooth', block: 'start' });
     }, 0);
   };
   const iniciais = colaborador.nome.split(/\s+/).filter(Boolean).slice(0, 2).map((parte) => parte[0]).join('').toUpperCase();
+  const pendentesFormularios = (colaborador.formulariosPendentes || []).length;
 
   return (
     <div className="space-y-8">
@@ -4664,24 +4725,42 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
       <GuiaLeituraUgp colaborador={colaborador} onSelect={selecionarAba} />
 
       <Tabs value={aba} onValueChange={setAba} className="space-y-4">
-        <TabsList id="acompanhamento-abas" className="scroll-mt-24 grid h-auto w-full grid-cols-2 gap-1 rounded-2xl bg-slate-200/70 p-1 md:grid-cols-3 xl:grid-cols-6">
-          <TabsTrigger value="visao" className="rounded-xl py-2.5 font-semibold text-slate-600 data-[state=active]:bg-violet-700 data-[state=active]:text-white data-[state=active]:shadow-sm focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2">Visão geral</TabsTrigger>
-          <TabsTrigger value="trajetoria" className="rounded-xl py-2.5 font-semibold text-slate-600 data-[state=active]:bg-violet-700 data-[state=active]:text-white data-[state=active]:shadow-sm focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2">Trajetória</TabsTrigger>
-          <TabsTrigger value="formularios" className="rounded-xl py-2.5 font-semibold text-slate-600 data-[state=active]:bg-violet-700 data-[state=active]:text-white data-[state=active]:shadow-sm focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2">Formulários</TabsTrigger>
-          <TabsTrigger value="desenvolvimento" className="rounded-xl py-2.5 font-semibold text-slate-600 data-[state=active]:bg-violet-700 data-[state=active]:text-white data-[state=active]:shadow-sm focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2">Desenvolvimento</TabsTrigger>
-          <TabsTrigger value="registros" className="rounded-xl py-2.5 font-semibold text-slate-600 data-[state=active]:bg-violet-700 data-[state=active]:text-white data-[state=active]:shadow-sm focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2">Registros</TabsTrigger>
-          <TabsTrigger value="perfil" className="rounded-xl py-2.5 font-semibold text-slate-600 data-[state=active]:bg-violet-700 data-[state=active]:text-white data-[state=active]:shadow-sm focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2">Perfil</TabsTrigger>
+        <TabsList id="acompanhamento-abas" className="pi-ugp-tabs scroll-mt-24">
+          <TabsTrigger value="visao" className="pi-ugp-tab"><LayoutDashboard /> <span>Visão geral</span></TabsTrigger>
+          <TabsTrigger value="trajetoria" className="pi-ugp-tab"><Route /> <span>Trajetória</span></TabsTrigger>
+          <TabsTrigger value="formularios" className="pi-ugp-tab">
+            <FileText /> <span>Formulários</span>
+            {pendentesFormularios > 0 && <span className="pi-ugp-tab-badge">{pendentesFormularios}</span>}
+          </TabsTrigger>
+          <TabsTrigger value="desenvolvimento" className="pi-ugp-tab"><Target /> <span>Desenvolvimento</span></TabsTrigger>
+          <TabsTrigger value="registros" className="pi-ugp-tab"><Paperclip /> <span>Registros</span></TabsTrigger>
+          <TabsTrigger value="perfil" className="pi-ugp-tab"><Brain /> <span>Perfil</span></TabsTrigger>
         </TabsList>
 
-        <TabsContent value="visao" className="space-y-6">
-          <PontosAtencaoExecutivosUgp colaborador={colaborador} onSelect={selecionarAba}/>
-          {indiceIntegracao(colaborador).indice!=null&&<ComposicaoIndice colaborador={colaborador} onSelect={selecionarAba}/>}
-          <TimelineAlinhamentos colaborador={colaborador} onSelect={selecionarAba}/>
-          <div className="grid items-start gap-4 lg:grid-cols-2">
-            <PreviewTrajetoriaUgp colaborador={colaborador} onSelect={selecionarAba}/>
-            <PreviewDesenvolvimentoUgp colaborador={colaborador} onSelect={selecionarAba}/>
-            <PreviewPerfilUgp colaborador={colaborador} onSelect={selecionarAba}/>
-            <PreviewRegistrosUgp colaborador={colaborador} onSelect={selecionarAba}/>
+        <TabsContent value="visao" className="pi-overview-content">
+          <div className="pi-overview-zone">
+            <h3 className="pi-zone-label"><span className="pi-zone-number">1</span><span>Situação agora</span></h3>
+            <PontosAtencaoExecutivosUgp colaborador={colaborador} onSelect={selecionarAba}/>
+            {indiceIntegracao(colaborador).indice!=null&&<ComposicaoIndice colaborador={colaborador} onSelect={selecionarAba}/>}
+          </div>
+
+          <div className="pi-overview-zone">
+            <h3 className="pi-zone-label"><span className="pi-zone-number">2</span><span>Formulários</span></h3>
+            <TimelineAlinhamentos colaborador={colaborador} onSelect={selecionarAba}/>
+          </div>
+
+          <div className="pi-overview-zone">
+            <h3 className="pi-zone-label">
+              <span className="pi-zone-number">3</span>
+              <span>Por área</span>
+              <small>· clique para abrir os detalhes</small>
+            </h3>
+            <div className="pi-area-panel">
+              <PreviewTrajetoriaUgp colaborador={colaborador} onSelect={selecionarAba}/>
+              <PreviewDesenvolvimentoUgp colaborador={colaborador} onSelect={selecionarAba}/>
+              <PreviewPerfilUgp colaborador={colaborador} onSelect={selecionarAba}/>
+              <PreviewRegistrosUgp colaborador={colaborador} onSelect={selecionarAba}/>
+            </div>
           </div>
         </TabsContent>
 
@@ -4698,7 +4777,6 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
     </div>
   );
 }
-
 
 function PendenciasEquipeGestor({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
   const pendencias = colaborador.avisosGestorEquipe || [];
