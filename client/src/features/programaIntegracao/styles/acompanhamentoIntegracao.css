@@ -4156,3 +4156,16 @@
     margin-left: 0;
   }
 }
+
+
+/* VISÃO GERAL UGP — reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .pi-ugp-tabs *,
+  .pi-overview-content *,
+  .pi-form-card *,
+  .pi-area-panel * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
