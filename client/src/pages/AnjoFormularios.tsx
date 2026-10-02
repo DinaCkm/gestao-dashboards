@@ -18,6 +18,7 @@ import {
 import { carregarFormulariosAnjo, type AnjoFormulariosResponse } from "@/features/programaIntegracao/api/anjo";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useLocation } from "wouter";
+import { EnvelopeRelogioIllustration, TudoEmDiaIllustration } from "@/components/illustrations/ProgramaIntegracaoIllustrations";
 import "@/features/programaIntegracao/styles/acompanhamentoIntegracao.css";
 
 function formatarData(value: string | null) {
@@ -102,32 +103,32 @@ export default function AnjoFormularios() {
       <AnjoRouteGuard>
         <div className="pi-acompanhamento pi-anjo-page mx-auto">
           <header className="pi-hero">
-            <div className="pi-hero-top">
+            <div className="pi-anjo-hero-grid">
               <div>
                 <span className="pi-eyebrow pi-eyebrow--icon"><Sparkles /> Espaço do Anjo</span>
                 <h1>Acompanhar Integração</h1>
                 <p className="pi-hero-subtitle">
                   Acompanhe seus formulários e a evolução das avaliações que você mesmo respondeu ao longo da integração.
                 </p>
-              </div>
-              <button type="button" className="pi-btn pi-btn--white" onClick={() => setLocation("/anjo/orientacoes")}>
-                <BookOpen /> Ver cartilha <ArrowRight />
-              </button>
-            </div>
-
-            {!loading && !erro && dados && (
-              <div className="pi-insight">
-                <Sparkles className="h-4 w-4" />
-                {dados.indicadores.pendentes > 0 ? (
-                  <span>
-                    Você tem <strong>{dados.indicadores.pendentes} {dados.indicadores.pendentes === 1 ? "formulário" : "formulários"}</strong> disponível{dados.indicadores.pendentes === 1 ? "" : "is"} para responder
-                    {menorPrazo ? <> · prazo até <strong>{formatarData(menorPrazo)}</strong></> : null}
-                  </span>
-                ) : (
-                  <span>Nenhum formulário pendente no momento.</span>
+                <button type="button" className="pi-btn pi-btn--white mt-5" onClick={() => setLocation("/anjo/orientacoes")}>
+                  <BookOpen /> Ver cartilha <ArrowRight />
+                </button>
+                {!loading && !erro && dados && (
+                  <div className="pi-insight">
+                    <Sparkles className="h-4 w-4" />
+                    {dados.indicadores.pendentes > 0 ? (
+                      <span>
+                        Você tem <strong>{dados.indicadores.pendentes} {dados.indicadores.pendentes === 1 ? "formulário" : "formulários"}</strong> disponível{dados.indicadores.pendentes === 1 ? "" : "is"} para responder
+                        {menorPrazo ? <> · prazo até <strong>{formatarData(menorPrazo)}</strong></> : null}
+                      </span>
+                    ) : (
+                      <span>Nenhum formulário pendente no momento.</span>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
+              <EnvelopeRelogioIllustration className="is-compact" />
+            </div>
           </header>
 
           {loading ? (
@@ -185,18 +186,6 @@ export default function AnjoFormularios() {
                   <div className="pi-kpi-hint">avaliações enviadas</div>
                 </article>
               </div>
-
-              {dados.indicadores.pendentes === 0 && (
-                <div className="pi-anjo-status-note">
-                  <div className="pi-anjo-status-note-icon"><Sparkles className="h-5 w-5" /></div>
-                  <div>
-                    <strong>Parabéns! Você está em dia com os formulários.</strong>
-                    <div className="mt-1 text-sm">
-                      Não há formulários pendentes no momento. Os que ainda não estão disponíveis serão liberados no momento previsto da integração.
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {!!dados.evolucao?.length && (
                 <section className="pi-anjo-evolution">
@@ -276,6 +265,23 @@ export default function AnjoFormularios() {
                     })}
                   </div>
                 </section>
+              )}
+
+              {dados.indicadores.pendentes === 0 && (
+                <div className="pi-empty-state pi-anjo-section">
+                  <TudoEmDiaIllustration />
+                  <h4>Tudo em dia por aqui! 🎉</h4>
+                  <p>
+                    {dados.indicadores.aguardando > 0
+                      ? "Você não tem formulários pendentes. Vamos te avisar por e-mail quando o próximo alinhamento for liberado."
+                      : "Todas as avaliações desta integração foram respondidas. Obrigado por acompanhar!"}
+                  </p>
+                  <div className="pi-empty-actions">
+                    <button type="button" className="pi-btn pi-btn--ghost" onClick={() => setLocation("/anjo/orientacoes")}>
+                      <BookOpen /> Rever a cartilha
+                    </button>
+                  </div>
+                </div>
               )}
 
               <div className="pi-anjo-form-grid pi-anjo-section">
