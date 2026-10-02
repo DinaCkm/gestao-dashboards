@@ -31,7 +31,12 @@ import {
 } from '../helpers/respostaItemHelpers';
 import { linkIntegracaoPorChave } from '../helpers/emailLinksHelpers';
 import { formKeyForItem } from '../helpers/registrarRespostasParser';
-import { PAPEL_ORDEM_COBRANCA, type PapelCobranca } from '../helpers/cobrancaFormulariosHelpers';
+import {
+  PAPEL_ORDEM_COBRANCA,
+  primeiraCobrancaRegistrada,
+  segundaCobrancaDisponivel,
+  type PapelCobranca,
+} from '../helpers/cobrancaFormulariosHelpers';
 import { formatarData } from '../helpers/dateHelpers';
 import {
   TUTORIAL_PRIMEIRO_ACESSO_NOME,
@@ -198,7 +203,12 @@ export function PainelSemana({
   const [salvandoAcao, setSalvandoAcao] = useState<string | null>(null);
   const [salvandoGrupo, setSalvandoGrupo] = useState<string | null>(null);
   const [feedbackGrupo, setFeedbackGrupo] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
-  const [cobrancaAberta, setCobrancaAberta] = useState<{ processo: ProcessoIntegracao; papel: PapelCobranca } | null>(null);
+  const [cobrancaAberta, setCobrancaAberta] = useState<{
+    processo: ProcessoIntegracao;
+    papel: PapelCobranca;
+    modo: 'primeira' | 'segunda';
+    itemId?: string;
+  } | null>(null);
 
   const executarGrupo = async (
     chave: string,
@@ -502,12 +512,22 @@ export function PainelSemana({
                   const papelCobranca = PAPEL_ORDEM_COBRANCA.includes(grupo.item.r as PapelCobranca)
                     ? grupo.item.r as PapelCobranca
                     : null;
+                  const jaTevePrimeiraCobranca = primeiraCobrancaRegistrada(acao.p, grupo.itemId);
                   const podeCobrarFormulario = Boolean(
                     temRespostaFormulario &&
                     !resposta &&
+                    !jaTevePrimeiraCobranca &&
                     (acao.st.k === 'late' || acao.st.k === 'act') &&
                     acao.lado === 'eles' &&
                     papelCobranca,
+                  );
+                  const podeReforcarCobranca = Boolean(
+                    temRespostaFormulario &&
+                    !resposta &&
+                    !['ok', 'na', 'wont'].includes(ficha.s) &&
+                    jaTevePrimeiraCobranca &&
+                    papelCobranca &&
+                    segundaCobrancaDisponivel(acao.p, grupo.itemId, feriados),
                   );
                   const relN = ciclosRelatorioEvolucao(grupo.itemId);
                   const temRelatorioEvolucao = relN ? temDadosRelatorioEvolucao(acao.p, relN) : false;
@@ -623,9 +643,24 @@ export function PainelSemana({
                                 type="button"
                                 size="sm"
                                 variant="default"
-                                onClick={() => setCobrancaAberta({ processo: acao.p, papel: papelCobranca })}
+                                onClick={() => setCobrancaAberta({ processo: acao.p, papel: papelCobranca, modo: 'primeira' })}
                               >
                                 Cobrar formulário por e-mail
+                              </Button>
+                            )}
+                            {podeReforcarCobranca && papelCobranca && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => setCobrancaAberta({
+                                  processo: acao.p,
+                                  papel: papelCobranca,
+                                  modo: 'segunda',
+                                  itemId: grupo.itemId,
+                                })}
+                              >
+                                Reforçar cobrança
                               </Button>
                             )}
                             {temRespostaFormulario && !resposta && <Button type="button" size="sm" variant="outline" onClick={() => { setFichaAberta(chave); setRespostaAberta(null); }}>Registrar resposta</Button>}
@@ -715,6 +750,8 @@ export function PainelSemana({
           config={config}
           feriados={feriados}
           initialPapel={cobrancaAberta.papel}
+          modo={cobrancaAberta.modo}
+          initialItemId={cobrancaAberta.itemId}
           onSalvarProcesso={async (processo) => {
             await onSalvarProcesso({ ...processo, id: cobrancaAberta.processo.id });
             setCobrancaAberta(null);

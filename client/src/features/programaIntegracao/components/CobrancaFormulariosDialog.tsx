@@ -2,8 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import type { BootstrapState, ProcessoIntegracao } from '../types';
 import {
   destinoPapel,
+  marcarItemComoReforcado,
   marcarItensComoCobrados,
   montarEmailCobranca,
+  montarEmailReforcoCobranca,
   PAPEL_ORDEM_COBRANCA,
   pendentesCiclo,
   pendentesPorPapel,
@@ -25,6 +27,8 @@ interface Props {
   feriados?: string[];
   ciclo?: 1 | 2 | 3 | 4;
   initialPapel?: PapelCobranca | null;
+  modo?: 'primeira' | 'segunda';
+  initialItemId?: string;
   onSalvarProcesso: (processo: ProcessoIntegracao) => Promise<void> | void;
 }
 
@@ -68,6 +72,8 @@ export function CobrancaFormulariosDialog({
   feriados = [],
   ciclo,
   initialPapel = null,
+  modo = 'primeira',
+  initialItemId,
   onSalvarProcesso,
 }: Props) {
   const [papel, setPapel] = useState<PapelCobranca | null>(initialPapel);
@@ -81,20 +87,42 @@ export function CobrancaFormulariosDialog({
     () => ciclo ? pendentesCiclo(processo, ciclo, feriados) : pendentesPorPapel(processo, feriados),
     [processo, feriados, ciclo],
   );
-  const itens = papel ? resumo.grupos[papel] || [] : [];
+  const itensBase = papel ? resumo.grupos[papel] || [] : [];
+  const itens = modo === 'segunda' && initialItemId
+    ? itensBase.filter((item) => item.it.id === initialItemId)
+    : itensBase;
   const preview = useMemo(
     () => papel && itens.length
-      ? montarEmailCobranca(processo, papel, itens, config, typeof window === 'undefined' ? undefined : window.location.origin)
+      ? modo === 'segunda'
+        ? montarEmailReforcoCobranca(
+            processo,
+            papel,
+            itens[0],
+            config,
+            typeof window === 'undefined' ? undefined : window.location.origin,
+          )
+        : montarEmailCobranca(
+            processo,
+            papel,
+            itens,
+            config,
+            typeof window === 'undefined' ? undefined : window.location.origin,
+          )
       : null,
-    [papel, itens, processo, config],
+    [papel, itens, processo, config, modo],
   );
 
   const marcarCobrados = async () => {
     if (!itens.length) return;
     try {
       setSalvando(true);
-      await onSalvarProcesso(marcarItensComoCobrados(processo, itens));
-      toast.success(`${itens.length} ${itens.length === 1 ? 'formulário marcado' : 'formulários marcados'} como aguardando resposta.`);
+      if (modo === 'segunda') {
+        await onSalvarProcesso(marcarItemComoReforcado(processo, itens[0]));
+        toast.success('Reforço de cobrança registrado.');
+      } else {
+        await onSalvarProcesso(marcarItensComoCobrados(processo, itens));
+        toast.success(`${itens.length} ${itens.length === 1 ? 'formulário marcado' : 'formulários marcados'} como aguardando resposta.`);
+      }
       onOpenChange(false);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Não foi possível registrar a cobrança.');
@@ -118,10 +146,16 @@ export function CobrancaFormulariosDialog({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {papel ? `Cobrança de formulários · ${papel}` : ciclo ? `Pendências do ${ciclo}º ciclo` : 'Formulários pendentes'}
+            {papel
+              ? modo === 'segunda'
+                ? `Reforço de cobrança · ${papel}`
+                : `Cobrança de formulários · ${papel}`
+              : ciclo ? `Pendências do ${ciclo}º ciclo` : 'Formulários pendentes'}
           </DialogTitle>
           <p className="text-xs text-muted-foreground">
-            {processo.nome} · {ciclo ? `somente itens do ${ciclo}º ciclo` : 'um e-mail por responsável, juntando tudo o que falta'}
+            {processo.nome} · {modo === 'segunda'
+              ? 'segunda cobrança após 3 dias úteis sem resposta'
+              : ciclo ? `somente itens do ${ciclo}º ciclo` : 'um e-mail por responsável, juntando tudo o que falta'}
           </p>
         </DialogHeader>
 
@@ -163,7 +197,7 @@ export function CobrancaFormulariosDialog({
         ) : preview ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3">
-              <Button type="button" variant="ghost" size="sm" onClick={() => setPapel(null)}>← Voltar à lista</Button>
+              {modo === 'primeira' && <Button type="button" variant="ghost" size="sm" onClick={() => setPapel(null)}>← Voltar à lista</Button>}
               <Badge variant="outline">{itens.length} {itens.length === 1 ? 'pendência' : 'pendências'}</Badge>
             </div>
 
@@ -191,12 +225,16 @@ export function CobrancaFormulariosDialog({
               </Button>
               <Button type="button" size="sm" variant="secondary" disabled={salvando} onClick={marcarCobrados}>
                 {salvando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Marcar como cobrados
+                {modo === 'segunda' ? 'Marcar reforço como enviado' : 'Marcar como cobrados'}
               </Button>
             </div>
           </div>
         ) : (
-          <div className="rounded-md border p-4 text-sm text-muted-foreground">Nada pendente para este responsável.</div>
+          <div className="rounded-md border p-4 text-sm text-muted-foreground">
+            {modo === 'segunda'
+              ? 'Este formulário não está mais disponível para reforço de cobrança.'
+              : 'Nada pendente para este responsável.'}
+          </div>
         )}
       </DialogContent>
     </Dialog>

@@ -8,6 +8,11 @@ export interface NotaAcao {
   t: string;
 }
 
+export interface CobrancaFormularioAcaoMeta {
+  primeiraEm?: string;
+  segundaEm?: string;
+}
+
 const MARCO_POR_ALINHAMENTO: Record<number, number> = {
   1: 15,
   2: 45,
@@ -427,6 +432,37 @@ export function adicionarNotaAcao(
   ficha.notas = Array.isArray(ficha.notas) ? [...ficha.notas] : [];
   ficha.notas.push({ d: agoraIso(agoraRef), t: limpo });
 
+  return { ...processo, feito: novoFeito };
+}
+
+export function metadadosCobrancaFormularioAcao(
+  processo: ProcessoIntegracao,
+  itemId: string,
+): CobrancaFormularioAcaoMeta {
+  const ficha = normalizarFicha(processo.feito?.[itemId]);
+  const bruto = ficha.cobrancaFormulario && typeof ficha.cobrancaFormulario === 'object'
+    ? ficha.cobrancaFormulario as Record<string, any>
+    : {};
+  return {
+    primeiraEm: typeof bruto.primeiraEm === 'string' ? bruto.primeiraEm : undefined,
+    segundaEm: typeof bruto.segundaEm === 'string' ? bruto.segundaEm : undefined,
+  };
+}
+
+export function registrarCobrancaFormularioAcao(
+  processo: ProcessoIntegracao,
+  itemId: string,
+  etapa: 'primeira' | 'segunda',
+  agoraRef: Date = new Date(),
+): ProcessoIntegracao {
+  const novoFeito = clonarFeito(processo.feito);
+  const ficha = fichaDe(novoFeito, itemId);
+  const atual = ficha.cobrancaFormulario && typeof ficha.cobrancaFormulario === 'object'
+    ? { ...ficha.cobrancaFormulario }
+    : {};
+  const chave = etapa === 'segunda' ? 'segundaEm' : 'primeiraEm';
+  if (!atual[chave]) atual[chave] = agoraRef.toISOString();
+  ficha.cobrancaFormulario = atual;
   return { ...processo, feito: novoFeito };
 }
 
