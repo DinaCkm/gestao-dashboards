@@ -18,7 +18,9 @@ import {
   Users,
   BarChart3,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Archive,
+  Building2
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -445,10 +447,170 @@ export default function ReportsPage() {
           )}
         </Card>
 
+        {/* Exportação administrativa de Cases */}
+        {isAdmin && <ExportarCasesAdmin />}
+
         {/* Relatório de Interesses em Cases */}
         {isAdmin && <RelatorioInteressesCases />}
       </div>
     </DashboardLayout>
+  );
+}
+
+function ExportarCasesAdmin() {
+  const { data: opcoes, isLoading } = trpc.cases.opcoesExportacaoAdmin.useQuery();
+  const exportMutation = trpc.cases.exportarCasesAdmin.useMutation();
+  const [programId, setProgramId] = useState("todos");
+  const [turmaId, setTurmaId] = useState("todas");
+  const [alunoId, setAlunoId] = useState("todos");
+  const [trilhaId, setTrilhaId] = useState("todas");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [includeEvidence, setIncludeEvidence] = useState(true);
+
+  const turmas = useMemo(() => {
+    const base = opcoes?.turmas || [];
+    return programId === "todos" ? base : base.filter((t: any) => String(t.programId) === programId);
+  }, [opcoes, programId]);
+
+  const alunos = useMemo(() => {
+    const base = opcoes?.alunos || [];
+    return base.filter((a: any) => {
+      if (programId !== "todos" && String(a.programId) !== programId) return false;
+      if (turmaId !== "todas" && String(a.turmaId) !== turmaId) return false;
+      return true;
+    });
+  }, [opcoes, programId, turmaId]);
+
+  const handleExport = async () => {
+    try {
+      const result = await exportMutation.mutateAsync({
+        programId: programId !== "todos" ? Number(programId) : undefined,
+        turmaId: turmaId !== "todas" ? Number(turmaId) : undefined,
+        alunoId: alunoId !== "todos" ? Number(alunoId) : undefined,
+        trilhaId: trilhaId !== "todas" ? Number(trilhaId) : undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        includeEvidence,
+      });
+      window.location.href = result.url;
+      toast.success(`ZIP gerado: ${result.totalCases} case(s), ${result.totalFiles} arquivo(s).${result.failedFiles ? ` ${result.failedFiles} anexo(s) não puderam ser baixados.` : ""}`);
+    } catch (error: any) {
+      toast.error(error?.message || "Não foi possível gerar o ZIP dos cases.");
+    }
+  };
+
+  return (
+    <Card className="gradient-card">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Archive className="h-5 w-5 text-primary" />
+          Exportar Cases
+        </CardTitle>
+        <CardDescription>
+          Gere um único ZIP com os cases entregues, anexos, evidências e uma planilha de controle.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Carregando filtros...
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label>Empresa</Label>
+                <Select value={programId} onValueChange={(v) => { setProgramId(v); setTurmaId("todas"); setAlunoId("todos"); }}>
+                  <SelectTrigger className="bg-input"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todas as empresas</SelectItem>
+                    {(opcoes?.empresas || []).map((e: any) => (
+                      <SelectItem key={e.id} value={String(e.id)}>{e.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Turma</Label>
+                <Select value={turmaId} onValueChange={(v) => { setTurmaId(v); setAlunoId("todos"); }}>
+                  <SelectTrigger className="bg-input"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas as turmas</SelectItem>
+                    {turmas.map((t: any) => (
+                      <SelectItem key={t.id} value={String(t.id)}>{t.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Aluno</Label>
+                <Select value={alunoId} onValueChange={setAlunoId}>
+                  <SelectTrigger className="bg-input"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os alunos</SelectItem>
+                    {alunos.map((a: any) => (
+                      <SelectItem key={a.id} value={String(a.id)}>{a.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Trilha / Ciclo</Label>
+                <Select value={trilhaId} onValueChange={setTrilhaId}>
+                  <SelectTrigger className="bg-input"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas as trilhas</SelectItem>
+                    {(opcoes?.trilhas || []).map((t: any) => (
+                      <SelectItem key={t.id} value={String(t.id)}>{t.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Período - De</Label>
+                <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="bg-input" />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Período - Até</Label>
+                <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="bg-input" />
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={includeEvidence}
+                onChange={(e) => setIncludeEvidence(e.target.checked)}
+                className="h-4 w-4"
+              />
+              Incluir evidências anexadas
+            </label>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Button onClick={handleExport} disabled={exportMutation.isPending}>
+                {exportMutation.isPending ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Gerando ZIP...</>
+                ) : (
+                  <><Download className="mr-2 h-4 w-4" /> Baixar todos os filtrados</>
+                )}
+              </Button>
+              {programId !== "todos" && (
+                <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+                  <Building2 className="h-4 w-4" />
+                  O ZIP será separado por empresa, turma, aluno e trilha.
+                </span>
+              )}
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
