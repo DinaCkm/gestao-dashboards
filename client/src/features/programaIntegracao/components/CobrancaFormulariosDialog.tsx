@@ -118,7 +118,7 @@ export function CobrancaFormulariosDialog({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {papel ? `Cobrança de formulários · ${papel}` : ciclo ? `Pendências do ${ciclo}º ciclo` : 'Formulários pendentes até hoje'}
+            {papel ? `Cobrança de formulários · ${papel}` : ciclo ? `Pendências do ${ciclo}º ciclo` : 'Formulários pendentes'}
           </DialogTitle>
           <p className="text-xs text-muted-foreground">
             {processo.nome} · {ciclo ? `somente itens do ${ciclo}º ciclo` : 'um e-mail por responsável, juntando tudo o que falta'}
@@ -129,7 +129,7 @@ export function CobrancaFormulariosDialog({
           <div className="space-y-4">
             {!resumo.total && (
               <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-                Nenhum formulário vencido em aberto neste processo.
+                Nenhum formulário pendente para cobrança neste processo.
               </div>
             )}
             {PAPEL_ORDEM_COBRANCA.filter((p) => (resumo.grupos[p] || []).length > 0).map((p) => {
@@ -158,7 +158,7 @@ export function CobrancaFormulariosDialog({
                 </div>
               );
             })}
-            <p className="text-xs text-muted-foreground">Só entram formulários cuja data prevista já passou e que ainda não foram encerrados.</p>
+            <p className="text-xs text-muted-foreground">Entram formulários previstos para hoje ou já vencidos, desde que ainda não tenham sido encerrados.</p>
           </div>
         ) : preview ? (
           <div className="space-y-4">
