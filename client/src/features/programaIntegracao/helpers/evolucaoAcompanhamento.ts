@@ -116,17 +116,35 @@ function percentualValido(valor: number | null | undefined): number | null {
 export function percentualEsperadoPdi(dia: number): number | null {
   const atual = Math.max(0, Number(dia || 0));
 
-  // Antes do 30º dia, o PDI ainda está em estruturação e não reduz o índice.
-  if (atual < 30) return null;
+  // Até o 19º dia, o PDI ainda está em estruturação e não reduz o índice.
+  if (atual < 20) return null;
 
-  // A expectativa cresce de forma gradual entre os marcos para evitar
-  // uma queda artificial de nota exatamente no dia de cada marco.
-  if (atual <= 75) {
-    return 25 + ((atual - 30) / (75 - 30)) * 25;
+  // A expectativa cresce continuamente entre marcos intermediários,
+  // evitando saltos artificiais na nota de Desenvolvimento.
+  const marcos = [
+    { dia: 20, percentual: 10 },
+    { dia: 30, percentual: 25 },
+    { dia: 45, percentual: 33 },
+    { dia: 60, percentual: 42 },
+    { dia: 75, percentual: 50 },
+    { dia: 90, percentual: 60 },
+    { dia: 105, percentual: 70 },
+    { dia: 120, percentual: 80 },
+    { dia: 135, percentual: 90 },
+    { dia: 150, percentual: 100 },
+  ] as const;
+
+  if (atual >= 150) return 100;
+
+  for (let i = 0; i < marcos.length - 1; i += 1) {
+    const inicio = marcos[i];
+    const fim = marcos[i + 1];
+    if (atual >= inicio.dia && atual <= fim.dia) {
+      const proporcao = (atual - inicio.dia) / (fim.dia - inicio.dia);
+      return inicio.percentual + proporcao * (fim.percentual - inicio.percentual);
+    }
   }
-  if (atual <= 150) {
-    return 50 + ((atual - 75) / (150 - 75)) * 50;
-  }
+
   return 100;
 }
 
