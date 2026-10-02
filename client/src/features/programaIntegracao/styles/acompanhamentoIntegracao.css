@@ -326,7 +326,7 @@
   overflow: visible;
   min-height: 150px;
   border: 1px solid var(--pi-border);
-  border-radius: var(--pi-r-lg);
+  border-radius: var(--pi-r-lg) var(--pi-r-lg) 0 0;
   background: var(--pi-surface);
   box-shadow: var(--pi-shadow);
   padding: 17px;
@@ -336,11 +336,11 @@
 .pi-kpi::after {
   content: "";
   position: absolute;
-  left: 1px;
-  bottom: 1px;
+  left: 0;
+  bottom: 0;
   width: 32%;
   height: 3px;
-  border-radius: var(--pi-r-pill);
+  border-radius: 0;
   background: linear-gradient(90deg, var(--pi-kpi-c), transparent);
   transition: width .32s var(--pi-ease);
 }
@@ -357,7 +357,7 @@
 }
 
 .pi-kpi:hover::after {
-  width: calc(100% - 2px);
+  width: 100%;
 }
 
 .pi-kpi--brand { --pi-kpi-c: var(--pi-brand); --pi-kpi-soft: var(--pi-brand-soft); }
