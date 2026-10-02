@@ -201,7 +201,7 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
       items = [
         ...items,
         {
-          label: "Banco de Sucessores",
+          label: "Aderência",
           path: "/banco-de-sucessores",
           icon: Award,
           requiresAceite: true,
