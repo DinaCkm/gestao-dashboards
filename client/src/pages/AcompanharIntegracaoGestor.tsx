@@ -3019,11 +3019,12 @@ function ComposicaoIndice({
         {disponiveis.map((item) => {
           const faixa = faixaDimensaoIndice(item.valor);
           const ChipIcon = faixa.Icon;
+          const DimIcon = item.Icon;
           const classeDim = item.chave === 'exp' ? 'is-exp' : item.chave === 'ada' ? 'is-ada' : 'is-dev';
           return (
             <article key={item.chave} className={'pi-index-dim ' + classeDim}>
               <div className="pi-index-dim-top">
-                <span className="pi-index-tile"><item.Icon className="h-5 w-5" /></span>
+                <span className="pi-index-tile"><DimIcon className="h-5 w-5" /></span>
                 <div>
                   <div className="pi-index-dim-name">{item.nome}</div>
                   <div className="pi-index-dim-desc">{item.descricao}</div>
