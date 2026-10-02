@@ -3074,6 +3074,44 @@ function ComposicaoIndice({
             {parcial ? ' Como o resultado é parcial, os pesos disponíveis são reajustados proporcionalmente, exatamente como no cálculo atual.' : ''}
           </p>
 
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="pi-index-how-dimension is-exp">
+              <div className="flex items-start gap-3">
+                <span className="pi-index-tile is-exp"><Heart className="h-4 w-4" /></span>
+                <div>
+                  <div className="font-black text-slate-900">Experiência · peso 40%</div>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                    Mostra <b>como o próprio colaborador está vivendo a integração</b>. O resultado vem da Pesquisa de Integração respondida por ele ao longo dos alinhamentos.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="pi-index-how-dimension is-ada">
+              <div className="flex items-start gap-3">
+                <span className="pi-index-tile is-ada"><Puzzle className="h-4 w-4" /></span>
+                <div>
+                  <div className="font-black text-slate-900">Adaptação · peso 35%</div>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                    Mostra <b>como o colaborador está se encaixando e se adaptando à equipe, ao trabalho e à rotina</b>. O resultado combina as percepções mais recentes registradas nos formulários do Gestor e do Anjo.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="pi-index-how-dimension is-dev">
+              <div className="flex items-start gap-3">
+                <span className="pi-index-tile is-dev"><Sprout className="h-4 w-4" /></span>
+                <div>
+                  <div className="font-black text-slate-900">Desenvolvimento · peso 25%</div>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                    Mostra <b>o avanço do desenvolvimento previsto para o colaborador</b>. Considera a Jornada Compliance — incluindo os cursos e atividades previstos — e as tarefas do PDI.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="pi-index-stack" role="img" aria-label="Contribuição das dimensões para o Índice de Integração">
             {contribuicoes.map((item) => (
               <UiTooltip key={item.chave}>
