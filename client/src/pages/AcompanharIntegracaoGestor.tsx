@@ -38,6 +38,26 @@ import { gerarDocumentoAtaRelatorio } from '@/features/programaIntegracao/helper
 import { FormulariosEvolucaoUgp } from '@/features/programaIntegracao/components/FormulariosEvolucaoUgp';
 import { CobrancaFormulariosUgp } from '@/features/programaIntegracao/components/CobrancaFormulariosUgp';
 
+interface HistoricoCobrancaFormulario {
+  id: string;
+  chave: string;
+  formKey: string;
+  ciclo: number;
+  papel: string;
+  formulario: string;
+  respondenteNome: string;
+  respondenteEmail: string;
+  cobradoEm: string;
+  cobradoPorUserId?: number | null;
+  cobradoPorNome: string;
+  origem: 'CKM' | 'UGP' | string;
+  etapa?: string;
+  processoId?: string;
+  processoDbId?: number;
+  colaboradorNome?: string;
+  unidade?: string;
+}
+
 interface Pendencia {
   ciclo: number;
   etapa?: string;
@@ -56,7 +76,9 @@ interface Pendencia {
     cobradoEm: string;
     cobradoPorNome: string;
     cobradoPorUserId?: number | null;
+    origem?: string;
   } | null;
+  historicoCobrancas?: HistoricoCobrancaFormulario[];
 }
 
 interface GestorDisponivel {
@@ -228,6 +250,7 @@ interface AcompanhamentoResponse {
     corpo?: string;
     anexo?: string;
   }>;
+  historicoCobrancas?: HistoricoCobrancaFormulario[];
   colaboradores: ColaboradorAcompanhamento[];
 }
 
@@ -3195,7 +3218,7 @@ function TabelaFormulariosPendentesUgp({ colaborador }: { colaborador: Colaborad
 }
 
 function CarteiraUgp({
-  colaboradores,busca,setBusca,unidade,setUnidade,fase,setFase,status,setStatus,radarFiltro,setRadarFiltro,onAbrir,onRecarregar,assinatura,modelosCobranca
+  colaboradores,busca,setBusca,unidade,setUnidade,fase,setFase,status,setStatus,radarFiltro,setRadarFiltro,onAbrir,onRecarregar,assinatura,modelosCobranca,historicoCobrancas
 }: {
   colaboradores: ColaboradorAcompanhamento[];
   busca:string; setBusca:(v:string)=>void;
@@ -3207,6 +3230,7 @@ function CarteiraUgp({
   onRecarregar:()=>Promise<void>|void;
   assinatura:string;
   modelosCobranca?: Record<string, any>;
+  historicoCobrancas?: HistoricoCobrancaFormulario[];
 }) {
   const unidades=Array.from(new Set(colaboradores.map((x)=>x.unidade).filter(Boolean))).sort();
   const lista=colaboradores.filter((x)=>{
@@ -3262,6 +3286,7 @@ function CarteiraUgp({
         onRecarregar={onRecarregar}
         assinatura={assinatura}
         modelosCobranca={modelosCobranca}
+        historicoCobrancas={historicoCobrancas || []}
       />
 
       {radarFiltro==='all' && (
@@ -4708,6 +4733,7 @@ export default function AcompanharIntegracaoGestor() {
                 onRecarregar={() => carregar(gestorView)}
                 assinatura={dados?.usuarioAtualNome || 'UGP/RH'}
                 modelosCobranca={dados?.modelosCobranca || {}}
+                historicoCobrancas={dados?.historicoCobrancas || []}
               />
             )
           ) : modoDetalhe && colaborador ? (
