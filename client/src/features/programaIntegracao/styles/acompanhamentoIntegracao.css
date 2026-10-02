@@ -3063,6 +3063,22 @@
   color: var(--pi-text-2);
 }
 
+.pi-index-how-dimension {
+  --pi-index-dim-c: var(--pi-d-exp);
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--pi-index-dim-c) 22%, var(--pi-border));
+  border-radius: var(--pi-r-md);
+  background: color-mix(in srgb, var(--pi-index-dim-c) 6%, var(--pi-surface));
+}
+
+.pi-index-how-dimension.is-exp { --pi-index-dim-c: var(--pi-d-exp); }
+.pi-index-how-dimension.is-ada { --pi-index-dim-c: var(--pi-d-ada); }
+.pi-index-how-dimension.is-dev { --pi-index-dim-c: var(--pi-d-dev); }
+
+.pi-index-how-dimension .pi-index-tile {
+  --pi-tile-c: var(--pi-index-dim-c);
+}
+
 .pi-index-stack {
   display: flex;
   gap: 2px;
