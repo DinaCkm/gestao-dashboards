@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, History, Search, TrendingUp, Users } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ClipboardCheck, Clock3, History, Search, TrendingUp, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -17,6 +17,7 @@ import {
 import { modeloEmailIntegracao } from '../helpers/emailModelosIntegracao';
 import { CHAVE_MODELO_COBRANCA } from '../helpers/emailModelosCobranca';
 import { MARCADOR_EMAIL_VAZIO } from '../helpers/emailValoresHelpers';
+import { calcularResumoCobrancasFormularios } from '../helpers/cobrancaIndicadoresHelpers';
 
 type FiltroRapido = 'all' | 'atraso' | 'vence3' | 'pendentes' | 'nao_cobrados';
 
@@ -73,6 +74,12 @@ type Colaborador = {
   dia: number;
   gestor: string;
   anjo: string;
+  respostas?: Array<{
+    form?: string;
+    ciclo?: number;
+    papel?: string;
+    submittedAt?: string;
+  }>;
   formulariosPendentes: Pendencia[];
   statusAcompanhamento?: { chave: string; rotulo: string };
 };
@@ -438,6 +445,11 @@ export function CobrancaFormulariosUgp({
 
   const pessoasComRecorrencia = rankingCobrancas.filter((item) => item.total >= 2).length;
 
+  const resumoCobrancas = useMemo(
+    () => calcularResumoCobrancasFormularios(historicoCobrancas, colaboradores),
+    [historicoCobrancas, colaboradores],
+  );
+
   const alterarSelecao = (id: string, valor: boolean) => {
     setSelecionados((atual) => {
       const proximo = new Set(atual);
@@ -787,7 +799,24 @@ export function CobrancaFormulariosUgp({
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500"><TrendingUp className="h-4 w-4" /> Com 2+ cobranças</div>
                 <div className="mt-2 text-2xl font-bold text-slate-950">{pessoasComRecorrencia}</div>
               </div>
+              <div className="rounded-xl border border-violet-200 bg-violet-50/40 p-4">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-violet-700"><ClipboardCheck className="h-4 w-4" /> Formulários cobrados</div>
+                <div className="mt-2 text-2xl font-bold text-violet-950">{resumoCobrancas.formulariosCobrados}</div>
+              </div>
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-emerald-700"><CheckCircle2 className="h-4 w-4" /> Respondidos pós-cobrança</div>
+                <div className="mt-2 text-2xl font-bold text-emerald-950">{resumoCobrancas.respondidosPosCobranca}</div>
+              </div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-amber-700"><Clock3 className="h-4 w-4" /> Ainda pendentes pós-cobrança</div>
+                <div className="mt-2 text-2xl font-bold text-amber-950">{resumoCobrancas.pendentesPosCobranca}</div>
+              </div>
             </div>
+            {resumoCobrancas.semConfirmacao > 0 && (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                {resumoCobrancas.semConfirmacao} {resumoCobrancas.semConfirmacao === 1 ? 'formulário cobrado ainda não possui' : 'formulários cobrados ainda não possuem'} confirmação temporal suficiente para classificar como respondido pós-cobrança ou ainda pendente. O sistema não presume resultado sem evidência.
+              </div>
+            )}
 
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="rounded-xl border border-slate-200 p-4">
