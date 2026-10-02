@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, Search } from 'lucide-react';
+import { AlertTriangle, Clock3, History, Search, TrendingUp, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -20,10 +20,31 @@ import { MARCADOR_EMAIL_VAZIO } from '../helpers/emailValoresHelpers';
 
 type FiltroRapido = 'all' | 'atraso' | 'vence3' | 'pendentes' | 'nao_cobrados';
 
+type HistoricoCobranca = {
+  id: string;
+  chave: string;
+  formKey: string;
+  ciclo: number;
+  papel: string;
+  formulario: string;
+  respondenteNome: string;
+  respondenteEmail: string;
+  cobradoEm: string;
+  cobradoPorUserId?: number | null;
+  cobradoPorNome: string;
+  origem: 'CKM' | 'UGP' | string;
+  etapa?: string;
+  processoId?: string;
+  processoDbId?: number;
+  colaboradorNome?: string;
+  unidade?: string;
+};
+
 type UltimaCobranca = {
   cobradoEm: string;
   cobradoPorNome: string;
   cobradoPorUserId?: number | null;
+  origem?: string;
 } | null;
 
 type Pendencia = {
@@ -40,6 +61,7 @@ type Pendencia = {
   respondenteEmail?: string;
   gestorEmail?: string;
   ultimaCobranca?: UltimaCobranca;
+  historicoCobrancas?: HistoricoCobranca[];
 };
 
 type Colaborador = {
@@ -70,8 +92,10 @@ type ItemCobranca = {
   ciclo: number;
   alinhamento: number;
   prazo: string;
+  solicitadoEm: string;
   atrasado: boolean;
   ultimaCobranca: UltimaCobranca;
+  historicoCobrancas: HistoricoCobranca[];
   link: string;
 };
 
@@ -105,6 +129,30 @@ function diasAte(prazo: string) {
   const data = new Date(prazo + 'T12:00:00');
   if (Number.isNaN(data.getTime())) return null;
   return Math.round((data.getTime() - hoje.getTime()) / 86400000);
+}
+
+function diasDesde(dataIso: string) {
+  const iso = String(dataIso || '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  const hoje = new Date(hojeIsoLocal() + 'T12:00:00');
+  const inicio = new Date(iso + 'T12:00:00');
+  if (Number.isNaN(inicio.getTime())) return null;
+  return Math.max(0, Math.floor((hoje.getTime() - inicio.getTime()) / 86400000));
+}
+
+function textoPendenteHa(dataIso: string) {
+  const dias = diasDesde(dataIso);
+  if (dias == null) return '—';
+  if (dias === 0) return 'Hoje';
+  return dias === 1 ? '1 dia' : dias + ' dias';
+}
+
+function origemCobranca(registro: Pick<HistoricoCobranca, 'origem'>) {
+  return String(registro.origem || '').toUpperCase() === 'CKM' ? 'CKM' : 'UGP';
+}
+
+function textoHistoricoCobranca(registro: HistoricoCobranca) {
+  return 'Preenchimento cobrado pela ' + origemCobranca(registro) + ' em ' + dataBr(registro.cobradoEm);
 }
 
 function cobradoHoje(ultima: UltimaCobranca) {
@@ -250,6 +298,7 @@ export function CobrancaFormulariosUgp({
   onRecarregar,
   assinatura,
   modelosCobranca = {},
+  historicoCobrancas = [],
 }: {
   colaboradores: Colaborador[];
   busca: string;
@@ -264,6 +313,7 @@ export function CobrancaFormulariosUgp({
   onRecarregar: () => Promise<void> | void;
   assinatura: string;
   modelosCobranca?: Record<string, any>;
+  historicoCobrancas?: HistoricoCobranca[];
 }) {
   const filtro = filtroRapido as FiltroRapido;
   const ativo = filtro !== 'all';
@@ -274,6 +324,8 @@ export function CobrancaFormulariosUgp({
   const [mensagemIndice, setMensagemIndice] = useState(0);
   const [mensagensOpen, setMensagensOpen] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const [historicoItem, setHistoricoItem] = useState<ItemCobranca | null>(null);
+  const [historicoGeralOpen, setHistoricoGeralOpen] = useState(false);
 
   const colaboradoresBase = useMemo(() => colaboradores.filter((item) => {
     const okUnidade = unidade === 'all' || item.unidade === unidade;
@@ -311,8 +363,10 @@ export function CobrancaFormulariosUgp({
         ciclo,
         alinhamento: marco,
         prazo: pendencia.prazo,
+        solicitadoEm: String(pendencia.solicitadoEm || ''),
         atrasado: Boolean(pendencia.atrasado),
         ultimaCobranca: pendencia.ultimaCobranca || null,
+        historicoCobrancas: pendencia.historicoCobrancas || [],
         link: linkFormulario(colaborador, pendencia),
       };
     });
@@ -348,6 +402,41 @@ export function CobrancaFormulariosUgp({
   );
 
   const selecionadosItens = itensVisiveis.filter((item) => selecionados.has(item.id));
+
+  const rankingCobrancas = useMemo(() => {
+    const grupos = new Map<string, {
+      chave: string;
+      nome: string;
+      email: string;
+      total: number;
+      ckm: number;
+      ugp: number;
+      ultima: string;
+    }>();
+
+    historicoCobrancas.forEach((registro) => {
+      const email = String(registro.respondenteEmail || '').trim().toLowerCase();
+      const nome = String(registro.respondenteNome || '').trim() || 'Nome não informado';
+      const chave = email || nome.toLowerCase();
+      const atual = grupos.get(chave) || { chave, nome, email, total: 0, ckm: 0, ugp: 0, ultima: '' };
+      atual.total += 1;
+      if (origemCobranca(registro) === 'CKM') atual.ckm += 1;
+      else atual.ugp += 1;
+      if (String(registro.cobradoEm || '') > atual.ultima) atual.ultima = String(registro.cobradoEm || '');
+      grupos.set(chave, atual);
+    });
+
+    return [...grupos.values()]
+      .sort((a, b) => b.total - a.total || b.ultima.localeCompare(a.ultima));
+  }, [historicoCobrancas]);
+
+  const maioresPendencias = useMemo(() => [...todosItens]
+    .map((item) => ({ item, dias: diasDesde(item.solicitadoEm) }))
+    .filter((registro): registro is { item: ItemCobranca; dias: number } => registro.dias != null)
+    .sort((a, b) => b.dias - a.dias || a.item.respondenteNome.localeCompare(b.item.respondenteNome, 'pt-BR'))
+    .slice(0, 5), [todosItens]);
+
+  const pessoasComRecorrencia = rankingCobrancas.filter((item) => item.total >= 2).length;
 
   const alterarSelecao = (id: string, valor: boolean) => {
     setSelecionados((atual) => {
@@ -418,7 +507,7 @@ export function CobrancaFormulariosUgp({
   };
 
   const exportar = () => {
-    const cabecalho = ['Quem responde', 'Papel', 'E-mail', 'Formulário', 'Sobre quem', 'Alinhamento', 'Prazo', 'Situação', 'Última cobrança'];
+    const cabecalho = ['Quem responde', 'Papel', 'E-mail', 'Formulário', 'Sobre quem', 'Alinhamento', 'Pendente há', 'Situação', 'Última cobrança'];
     const linhas = selecionadosItens.map((item) => [
       item.respondenteNome,
       item.papel,
@@ -426,7 +515,7 @@ export function CobrancaFormulariosUgp({
       item.formulario,
       item.colaboradorNome,
       item.alinhamento ? item.alinhamento + ' dias' : 'Pré-integração',
-      dataBr(item.prazo),
+      textoPendenteHa(item.solicitadoEm),
       situacao(item).texto,
       item.ultimaCobranca?.cobradoEm
         ? 'Cobrado em ' + new Date(item.ultimaCobranca.cobradoEm).toLocaleDateString('pt-BR') + ' por ' + (item.ultimaCobranca.cobradoPorNome || 'UGP/RH')
@@ -458,35 +547,49 @@ export function CobrancaFormulariosUgp({
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
-          {([
-            ['atraso', 'Atrasados', contador('atraso')],
-            ['vence3', 'Vencem em 3 dias', contador('vence3')],
-            ['pendentes', 'Todos pendentes', contador('pendentes')],
-            ['nao_cobrados', 'Ainda não cobrados', contador('nao_cobrados')],
-          ] as Array<[FiltroRapido, string, number]>).map(([valor, rotulo, total]) => (
-            <Button
-              key={valor}
-              size="sm"
-              variant={filtro === valor ? 'default' : 'outline'}
-              className={filtro === valor ? 'bg-violet-700 hover:bg-violet-800' : ''}
-              onClick={() => setFiltroRapido(filtro === valor ? 'all' : valor)}
-            >
-              {rotulo} ({total})
-            </Button>
-          ))}
+      <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,.04)]">
+        <div>
+          <div className="text-sm font-bold text-slate-900">Filtrar por status dos formulários</div>
+          <div className="mt-0.5 text-xs text-slate-500">Use os atalhos abaixo para acompanhar somente as pendências que precisam da sua atenção.</div>
         </div>
-        {!ativo && (
-          <button
-            type="button"
-            onClick={() => setFiltroRapido('atraso')}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 hover:shadow-sm"
-          >
-            <AlertTriangle className="h-4 w-4" />
-            Filtrar processos com formulários em atraso
-          </button>
-        )}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            {([
+              ['atraso', 'Atrasados', contador('atraso')],
+              ['vence3', 'Vencem em 3 dias', contador('vence3')],
+              ['pendentes', 'Todos pendentes', contador('pendentes')],
+              ['nao_cobrados', 'Ainda não cobrados', contador('nao_cobrados')],
+            ] as Array<[FiltroRapido, string, number]>).map(([valor, rotulo, total]) => (
+              <Button
+                key={valor}
+                size="sm"
+                variant={filtro === valor ? 'default' : 'outline'}
+                className={filtro === valor ? 'bg-violet-700 hover:bg-violet-800' : ''}
+                onClick={() => setFiltroRapido(filtro === valor ? 'all' : valor)}
+              >
+                {rotulo} ({total})
+              </Button>
+            ))}
+          </div>
+          {!ativo && (
+            <button
+              type="button"
+              onClick={() => setFiltroRapido('atraso')}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 hover:shadow-sm"
+            >
+              <AlertTriangle className="h-4 w-4" />
+              Ver formulários em atraso
+            </button>
+          )}
+        </div>
+        <div className="border-t border-slate-100 pt-3">
+          <Button type="button" variant="outline" className="gap-2" onClick={() => setHistoricoGeralOpen(true)}>
+            <History className="h-4 w-4" />
+            Histórico geral de cobranças
+            {historicoCobrancas.length > 0 && <Badge variant="secondary">{historicoCobrancas.length}</Badge>}
+          </Button>
+          <span className="ml-3 text-xs text-slate-500">Os registros permanecem no histórico mesmo depois que o formulário é respondido.</span>
+        </div>
       </div>
 
       {ativo && (
@@ -548,7 +651,7 @@ export function CobrancaFormulariosUgp({
                   <th className="px-3 py-3 text-left">Formulário</th>
                   <th className="px-3 py-3 text-left">Sobre quem</th>
                   <th className="px-3 py-3 text-center">Alinhamento</th>
-                  <th className="px-3 py-3 text-center">Prazo</th>
+                  <th className="px-3 py-3 text-center">Pendente há</th>
                   <th className="px-3 py-3 text-center">Situação</th>
                   <th className="px-3 py-3 text-left">Última cobrança</th>
                   <th className="px-3 py-3 text-right">Ação</th>
@@ -558,9 +661,9 @@ export function CobrancaFormulariosUgp({
                 {itensVisiveis.map((item) => {
                   const visual = situacao(item);
                   const semEmail = !item.respondenteEmail.includes('@');
-                  const ultima = item.ultimaCobranca?.cobradoEm
-                    ? 'Cobrado em ' + new Date(item.ultimaCobranca.cobradoEm).toLocaleDateString('pt-BR') + ' por ' + (item.ultimaCobranca.cobradoPorNome || 'UGP/RH')
-                    : 'Ainda não cobrado';
+                  const historicoOrdenado = [...item.historicoCobrancas]
+                    .sort((a, b) => String(a.cobradoEm || '').localeCompare(String(b.cobradoEm || '')));
+                  const ultima = historicoOrdenado[historicoOrdenado.length - 1] || null;
                   return (
                     <tr key={item.id} className="border-t align-top hover:bg-slate-50/70">
                       <td className="px-3 py-4 text-center">
@@ -572,9 +675,29 @@ export function CobrancaFormulariosUgp({
                       <td className="px-3 py-4 font-medium text-slate-900">{item.formulario}</td>
                       <td className="px-3 py-4 text-slate-600">{item.colaboradorNome}</td>
                       <td className="px-3 py-4 text-center">{item.alinhamento ? item.alinhamento + ' dias' : 'Pré'}</td>
-                      <td className="px-3 py-4 text-center tabular-nums">{dataBr(item.prazo)}</td>
+                      <td className="px-3 py-4 text-center">
+                        <div className="font-semibold tabular-nums text-slate-900">{textoPendenteHa(item.solicitadoEm)}</div>
+                        {item.solicitadoEm && <div className="mt-0.5 text-[11px] text-slate-500">desde {dataBr(item.solicitadoEm)}</div>}
+                      </td>
                       <td className="px-3 py-4 text-center"><Badge variant="outline" className={visual.classes}>{visual.texto}</Badge></td>
-                      <td className="px-3 py-4 text-xs text-slate-600">{ultima}</td>
+                      <td className="px-3 py-4 text-xs text-slate-600">
+                        {ultima ? (
+                          <button
+                            type="button"
+                            onClick={() => setHistoricoItem(item)}
+                            className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-left transition hover:border-violet-300 hover:bg-violet-50/40"
+                          >
+                            <div className="font-semibold text-slate-800">
+                              {historicoOrdenado.length} {historicoOrdenado.length === 1 ? 'cobrança' : 'cobranças'}
+                            </div>
+                            <div className="mt-0.5 text-[11px] text-slate-500">
+                              Última: {origemCobranca(ultima)} · {dataBr(ultima.cobradoEm)}
+                            </div>
+                          </button>
+                        ) : (
+                          <span>Ainda não cobrado</span>
+                        )}
+                      </td>
                       <td className="px-3 py-4">
                         <div className="flex justify-end gap-1">
                           <Button size="sm" variant="outline" disabled={semEmail} onClick={() => gerarMensagens([item])}>Gerar mensagem</Button>
@@ -602,6 +725,155 @@ export function CobrancaFormulariosUgp({
           </div>
         </div>
       )}
+
+      <Dialog open={Boolean(historicoItem)} onOpenChange={(open) => { if (!open) setHistoricoItem(null); }}>
+        <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Histórico de cobranças do formulário</DialogTitle>
+            <DialogDescription>
+              {historicoItem
+                ? historicoItem.respondenteNome + ' · ' + historicoItem.formulario + ' · ' + historicoItem.colaboradorNome
+                : ''}
+            </DialogDescription>
+          </DialogHeader>
+          {historicoItem && (
+            <div className="space-y-3">
+              {[...historicoItem.historicoCobrancas]
+                .sort((a, b) => String(a.cobradoEm || '').localeCompare(String(b.cobradoEm || '')))
+                .map((registro, indice) => (
+                  <div key={registro.id || registro.cobradoEm + '-' + indice} className="flex gap-3 rounded-xl border border-slate-200 bg-slate-50/50 p-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-bold text-violet-800">
+                      {indice + 1}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">{textoHistoricoCobranca(registro)}</div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        {registro.etapa === 'segunda' ? 'Reforço de cobrança' : registro.etapa === 'primeira' ? 'Primeira cobrança' : 'Cobrança registrada'}
+                        {registro.cobradoPorNome && registro.cobradoPorNome !== origemCobranca(registro)
+                          ? ' · registrado por ' + registro.cobradoPorNome
+                          : ''}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              {!historicoItem.historicoCobrancas.length && (
+                <div className="rounded-xl border border-dashed p-6 text-center text-sm text-slate-500">Nenhuma cobrança registrada para este formulário.</div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={historicoGeralOpen} onOpenChange={setHistoricoGeralOpen}>
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-5xl">
+          <DialogHeader>
+            <DialogTitle>Histórico geral de cobranças de formulários</DialogTitle>
+            <DialogDescription>
+              Histórico permanente das cobranças registradas pela CKM e pela UGP/RH, inclusive de formulários que depois foram respondidos.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border bg-slate-50 p-4">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500"><History className="h-4 w-4" /> Cobranças registradas</div>
+                <div className="mt-2 text-2xl font-bold text-slate-950">{historicoCobrancas.length}</div>
+              </div>
+              <div className="rounded-xl border bg-slate-50 p-4">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500"><Users className="h-4 w-4" /> Pessoas cobradas</div>
+                <div className="mt-2 text-2xl font-bold text-slate-950">{rankingCobrancas.length}</div>
+              </div>
+              <div className="rounded-xl border bg-slate-50 p-4">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500"><TrendingUp className="h-4 w-4" /> Com 2+ cobranças</div>
+                <div className="mt-2 text-2xl font-bold text-slate-950">{pessoasComRecorrencia}</div>
+              </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 p-4">
+                <div className="mb-3">
+                  <div className="font-bold text-slate-900">Quem mais precisou de cobrança</div>
+                  <div className="text-xs text-slate-500">Ordenado pelo número de cobranças registradas, sem avaliação subjetiva.</div>
+                </div>
+                <div className="space-y-2">
+                  {rankingCobrancas.slice(0, 5).map((pessoa, indice) => (
+                    <div key={pessoa.chave} className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold text-slate-900">{indice + 1}. {pessoa.nome}</div>
+                        <div className="truncate text-xs text-slate-500">{pessoa.email || 'E-mail não informado'}</div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <div className="text-sm font-bold text-violet-800">{pessoa.total} {pessoa.total === 1 ? 'cobrança' : 'cobranças'}</div>
+                        <div className="text-[11px] text-slate-500">CKM {pessoa.ckm} · UGP {pessoa.ugp}</div>
+                      </div>
+                    </div>
+                  ))}
+                  {!rankingCobrancas.length && <div className="py-5 text-center text-sm text-slate-500">Ainda não há cobranças registradas.</div>}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 p-4">
+                <div className="mb-3">
+                  <div className="font-bold text-slate-900">Pendências abertas há mais tempo</div>
+                  <div className="text-xs text-slate-500">Tempo contado desde o registro do envio do e-mail que solicitou o preenchimento.</div>
+                </div>
+                <div className="space-y-2">
+                  {maioresPendencias.map(({ item, dias }) => (
+                    <div key={item.id} className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold text-slate-900">{item.respondenteNome}</div>
+                        <div className="truncate text-xs text-slate-500">{item.formulario} · {item.colaboradorNome}</div>
+                      </div>
+                      <div className="shrink-0 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800">
+                        {dias === 0 ? 'Hoje' : dias === 1 ? '1 dia' : dias + ' dias'}
+                      </div>
+                    </div>
+                  ))}
+                  {!maioresPendencias.length && <div className="py-5 text-center text-sm text-slate-500">Não há pendências abertas com data de solicitação registrada.</div>}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200">
+              <div className="border-b px-4 py-3">
+                <div className="font-bold text-slate-900">Todas as cobranças registradas</div>
+                <div className="text-xs text-slate-500">Da mais recente para a mais antiga.</div>
+              </div>
+              <div className="max-h-[360px] overflow-auto">
+                <table className="w-full min-w-[800px] text-sm">
+                  <thead className="sticky top-0 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Data</th>
+                      <th className="px-3 py-2 text-left">Origem</th>
+                      <th className="px-3 py-2 text-left">Quem responde</th>
+                      <th className="px-3 py-2 text-left">Papel</th>
+                      <th className="px-3 py-2 text-left">Formulário</th>
+                      <th className="px-3 py-2 text-left">Sobre quem</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...historicoCobrancas]
+                      .sort((a, b) => String(b.cobradoEm || '').localeCompare(String(a.cobradoEm || '')))
+                      .map((registro, indice) => (
+                        <tr key={registro.id || registro.cobradoEm + '-' + indice} className="border-t">
+                          <td className="px-3 py-2 tabular-nums">{dataBr(registro.cobradoEm)}</td>
+                          <td className="px-3 py-2"><Badge variant="outline">{origemCobranca(registro)}</Badge></td>
+                          <td className="px-3 py-2 font-medium">{registro.respondenteNome || '—'}</td>
+                          <td className="px-3 py-2">{registro.papel || '—'}</td>
+                          <td className="px-3 py-2">{registro.formulario || '—'}</td>
+                          <td className="px-3 py-2">{registro.colaboradorNome || '—'}</td>
+                        </tr>
+                      ))}
+                    {!historicoCobrancas.length && (
+                      <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">Ainda não há cobranças registradas.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={mensagensOpen} onOpenChange={setMensagensOpen}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
