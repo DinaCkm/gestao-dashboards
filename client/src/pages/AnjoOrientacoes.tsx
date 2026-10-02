@@ -1,7 +1,9 @@
+import type { CSSProperties } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import AnjoRouteGuard from "@/features/programaIntegracao/components/AnjoRouteGuard";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { HeartHandshake, Route, Users, MessageCircle, CalendarCheck, ArrowRight, ShieldCheck, Sunrise, Handshake, Compass, Coffee, Milestone, Heart, Lightbulb, Headphones, Eye, Network, Sprout, AlertTriangle, Check, X, CheckCircle2 } from "lucide-react";
+import { HeartHandshake, Route, Users, MessageCircle, CalendarCheck, ArrowRight, ShieldCheck, Sunrise, Handshake, Compass, Coffee, Flag, Heart, Lightbulb, Headphones, Eye, Network, Sprout, AlertTriangle, Check, X, CheckCircle2 } from "lucide-react";
+import { AnjoAcolhendoIllustration, SparkShape } from "@/components/illustrations/ProgramaIntegracaoIllustrations";
 import { useLocation } from "wouter";
 import "@/features/programaIntegracao/styles/acompanhamentoIntegracao.css";
 
@@ -58,7 +60,7 @@ const etapas = [
   },
 ];
 
-const etapaIcones = [Sunrise, Handshake, Compass, Coffee, Milestone];
+const etapaIcones = [Sunrise, Handshake, Compass, Coffee, Flag];
 
 const esperado = [
   ["Acolher", "Contribuir para que a chegada e a adaptação sejam mais leves e positivas."],
@@ -72,6 +74,14 @@ const esperado = [
 const esperadoIcones = [Heart, Lightbulb, Headphones, Eye, Network, Sprout];
 const esperadoClasses = ["v-rose", "v-amber", "v-sky", "v-violet", "v-teal", "v-green"];
 
+const etapaCores = [
+  "var(--pi-warn)",
+  "var(--pi-rose)",
+  "var(--pi-sky)",
+  "var(--pi-teal)",
+  "var(--pi-green)",
+];
+
 export default function AnjoOrientacoes() {
   const [, setLocation] = useLocation();
 
@@ -80,15 +90,16 @@ export default function AnjoOrientacoes() {
       <AnjoRouteGuard>
         <div className="pi-acompanhamento pi-anjo-page mx-auto">
           <header className="pi-hero pi-anjo-hero-simple">
-            <div className="pi-hero-top">
+            <div className="pi-anjo-hero-grid">
               <div>
                 <span className="pi-eyebrow pi-eyebrow--icon"><AlertTriangle /> Espaço do Anjo</span>
                 <h1>Cartilha e Orientações do Anjo</h1>
                 <p className="pi-hero-subtitle">Tudo o que você precisa saber para apoiar o colaborador durante sua integração.</p>
+                <button type="button" className="pi-btn pi-btn--white mt-5" onClick={() => setLocation("/anjo/formularios")}>
+                  Acompanhar integração <ArrowRight />
+                </button>
               </div>
-              <button type="button" className="pi-btn pi-btn--white" onClick={() => setLocation("/anjo/formularios")}>
-                Acompanhar integração <ArrowRight />
-              </button>
+              <AnjoAcolhendoIllustration />
             </div>
           </header>
 
@@ -128,9 +139,18 @@ export default function AnjoOrientacoes() {
                       </span>
                     </AccordionTrigger>
                     <AccordionContent className="pi-anjo-step-body">
-                      <ul className="pi-anjo-checklist">
-                        {etapa.itens.map((item) => <li key={item}><Check /><span>{item}</span></li>)}
-                      </ul>
+                      <div className="pi-anjo-step-visual-body">
+                        <div className="pi-anjo-scene" aria-hidden="true">
+                          <SparkShape className="pi-scene-spark pi-twinkle" />
+                          <SparkShape className="pi-scene-spark pi-twinkle d2" />
+                          <span className="pi-t3d lg" style={{ "--pi-art-c": etapaCores[index] } as CSSProperties}>
+                            <EtapaIcone />
+                          </span>
+                        </div>
+                        <ul className="pi-anjo-checklist">
+                          {etapa.itens.map((item) => <li key={item}><Check /><span>{item}</span></li>)}
+                        </ul>
+                      </div>
                     </AccordionContent>
                   </AccordionItem>
                 );
@@ -145,7 +165,7 @@ export default function AnjoOrientacoes() {
                 const EsperadoIcone = esperadoIcones[index];
                 return (
                   <article key={titulo} className={"pi-anjo-value " + esperadoClasses[index]}>
-                    <span className="pi-anjo-icon-tile"><EsperadoIcone /></span>
+                    <span className="pi-t3d" aria-hidden="true"><EsperadoIcone /></span>
                     <h3>{titulo}</h3>
                     <p>{descricao}</p>
                   </article>

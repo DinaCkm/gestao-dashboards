@@ -42,6 +42,9 @@
   --pi-green: #22C55E;
   --pi-green-soft: rgba(34, 197, 94, .12);
   --pi-warn-glow: rgba(245, 158, 11, .55);
+  --pi-skin-1: #F2C9A5;
+  --pi-skin-2: #8D5A3B;
+  --pi-hair: #2B1B12;
 
   --pi-bg: #F3F1FA;
   --pi-surface: #FFFFFF;
@@ -1986,6 +1989,276 @@
   color: var(--pi-danger-ink);
 }
 
+
+/* =========================================================
+   ILUSTRAÇÕES E MICROANIMAÇÕES — Programa de Integração
+   ========================================================= */
+.pi-art {
+  display: block;
+  height: auto;
+}
+
+.pi-art--hero {
+  width: min(340px, 38vw);
+  filter: drop-shadow(0 24px 30px rgba(0, 0, 0, .35));
+  animation: piArtFloat 6s ease-in-out infinite;
+}
+
+.pi-art--hero.is-compact {
+  width: min(220px, 30vw);
+}
+
+.pi-float-a { animation: piArtBob 4s ease-in-out infinite; }
+.pi-float-b { animation: piArtBob 5s ease-in-out infinite .8s; }
+
+.pi-twinkle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: piArtTwinkle 2.6s ease-in-out infinite;
+}
+
+.pi-twinkle.d2 { animation-delay: .9s; }
+.pi-twinkle.d3 { animation-delay: 1.6s; }
+
+@keyframes piArtFloat { 50% { transform: translateY(-8px); } }
+@keyframes piArtBob { 50% { transform: translateY(-5px); } }
+@keyframes piArtTwinkle {
+  0%, 100% { opacity: .35; transform: scale(.8); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+@keyframes piArtUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes piArtDraw { to { stroke-dashoffset: 0; } }
+
+.pi-f-brand { fill: var(--pi-brand); }
+.pi-f-brand3 { fill: var(--pi-brand-3); }
+.pi-f-soft { fill: var(--pi-brand-soft); }
+.pi-f-surface { fill: var(--pi-surface); }
+.pi-f-surface2 { fill: var(--pi-surface-2); }
+.pi-f-line { fill: var(--pi-border-strong); }
+.pi-f-ok { fill: var(--pi-ok); }
+.pi-f-warn { fill: var(--pi-warn); }
+.pi-f-danger { fill: var(--pi-danger); }
+.pi-s-border { stroke: var(--pi-border-strong); }
+.pi-s-brand { stroke: var(--pi-brand); }
+
+.pi-anjo-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+}
+
+.pi-t3d {
+  --pi-art-c: var(--pi-brand);
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  flex: 0 0 auto;
+  border-radius: 18px;
+  color: var(--pi-white);
+  transform: rotate(-6deg);
+  background:
+    radial-gradient(120% 120% at 28% 18%,
+      color-mix(in srgb, var(--pi-art-c) 35%, var(--pi-white)) 0%,
+      var(--pi-art-c) 48%,
+      color-mix(in srgb, var(--pi-art-c) 60%, var(--pi-dark-tip)) 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.5),
+    inset 0 -8px 14px rgba(0,0,0,.22),
+    0 16px 26px -12px var(--pi-art-c);
+  transition: transform .35s var(--pi-ease);
+}
+
+.pi-t3d::after {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 6px;
+  width: 24px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.55);
+  filter: blur(3px);
+}
+
+.pi-t3d svg {
+  position: relative;
+  z-index: 1;
+  width: 26px;
+  height: 26px;
+  stroke-width: 2.2;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.25));
+}
+
+.pi-t3d.lg {
+  width: 72px;
+  height: 72px;
+  border-radius: 22px;
+}
+
+.pi-t3d.lg svg {
+  width: 32px;
+  height: 32px;
+}
+
+.pi-anjo-value:hover .pi-t3d {
+  transform: rotate(0) scale(1.08);
+}
+
+.pi-anjo-value.v-rose .pi-t3d { --pi-art-c: var(--pi-rose); }
+.pi-anjo-value.v-amber .pi-t3d { --pi-art-c: var(--pi-warn); }
+.pi-anjo-value.v-sky .pi-t3d { --pi-art-c: var(--pi-sky); }
+.pi-anjo-value.v-violet .pi-t3d { --pi-art-c: var(--pi-brand); }
+.pi-anjo-value.v-teal .pi-t3d { --pi-art-c: var(--pi-teal); }
+.pi-anjo-value.v-green .pi-t3d { --pi-art-c: var(--pi-green); }
+
+.pi-anjo-step-visual-body {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 20px;
+  align-items: center;
+}
+
+.pi-anjo-step[data-state="open"] .pi-anjo-step-visual-body {
+  animation: piArtUp .4s var(--pi-ease);
+}
+
+.pi-anjo-scene {
+  position: relative;
+  width: 132px;
+  height: 110px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: radial-gradient(circle at 50% 60%, var(--pi-brand-soft), transparent 70%);
+}
+
+.pi-anjo-scene .pi-t3d {
+  position: relative;
+  z-index: 1;
+}
+
+.pi-anjo-scene .pi-scene-spark {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  color: var(--pi-warn);
+}
+
+.pi-anjo-scene .pi-scene-spark:first-child {
+  left: 14px;
+  top: 14px;
+}
+
+.pi-anjo-scene .pi-scene-spark:nth-child(2) {
+  right: 16px;
+  bottom: 18px;
+  color: var(--pi-brand-3);
+}
+
+.pi-empty-state {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 34px 24px 30px;
+  border: 1.5px dashed var(--pi-border-strong);
+  border-radius: var(--pi-r-lg);
+  background: var(--pi-surface);
+  color: var(--pi-text);
+}
+
+.pi-empty-state h4 {
+  margin: 8px 0 0;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+
+.pi-empty-state p {
+  margin: 0;
+  color: var(--pi-muted);
+  max-width: 46ch;
+}
+
+.pi-empty-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.pi-art--empty { width: 220px; }
+.pi-art--filter { width: 170px; }
+
+.pi-empty-table-cell {
+  padding: 0 !important;
+}
+
+.pi-empty-table-cell .pi-empty-state {
+  border: 0;
+  border-radius: 0;
+  padding: 30px 20px;
+}
+
+.pi-success-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(10,7,20,.55);
+  backdrop-filter: blur(6px);
+}
+
+.pi-success-modal {
+  width: min(420px, 100%);
+  background: var(--pi-surface);
+  border: 1px solid var(--pi-border);
+  border-radius: 24px;
+  padding: 28px 26px 24px;
+  text-align: center;
+  box-shadow: 0 40px 80px -20px rgba(0,0,0,.5);
+  color: var(--pi-text);
+  animation: piArtUp .35s var(--pi-ease);
+}
+
+.pi-success-modal h4 {
+  margin: 10px 0 6px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+
+.pi-success-modal p {
+  margin: 0 0 20px;
+  color: var(--pi-muted);
+}
+
+.pi-art--success {
+  width: 150px;
+  margin: 0 auto;
+}
+
+.pi-art--success .pi-ring-draw {
+  stroke-dasharray: 290;
+  stroke-dashoffset: 290;
+  animation: piArtDraw .7s var(--pi-ease) .1s forwards;
+}
+
+.pi-art--success .pi-check-draw {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  animation: piArtDraw .45s var(--pi-ease) .65s forwards;
+}
+
 @media (max-width: 900px) {
   .pi-acompanhamento {
     padding: 12px;
@@ -2025,6 +2298,10 @@
 
 
 @media (max-width: 860px) {
+  .pi-anjo-hero-grid { grid-template-columns: 1fr; }
+  .pi-art--hero { display: none; }
+  .pi-anjo-scene { display: none; }
+  .pi-anjo-step-visual-body { grid-template-columns: 1fr; }
   .pi-anjo-hero-simple {
     padding: 22px 20px;
   }
@@ -2058,6 +2335,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .pi-art--success .pi-ring-draw,
+  .pi-art--success .pi-check-draw {
+    stroke-dashoffset: 0 !important;
+  }
   .pi-acompanhamento *,
   .pi-acompanhamento *::before,
   .pi-acompanhamento *::after {
