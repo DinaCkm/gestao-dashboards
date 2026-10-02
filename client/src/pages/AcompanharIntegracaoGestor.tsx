@@ -26,6 +26,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import {
+  calcularDesenvolvimentoNoRitmo,
   evolucaoPorPapel,
   evolucaoPesquisaColaborador,
   INDICES_PESQUISA_COLABORADOR,
@@ -377,10 +378,12 @@ function indiceIntegracao(colaborador: ColaboradorAcompanhamento) {
     gestor[gestor.length - 1]?.mediaGeral == null ? null : gestor[gestor.length - 1]!.mediaGeral! * 20,
     anjo[anjo.length - 1]?.mediaGeral == null ? null : anjo[anjo.length - 1]!.mediaGeral! * 20,
   ]);
-  const desenvolvimento = mediaNumeros([
-    colaborador.pdi.percentual,
-    colaborador.jornadaCompliance.percentual,
-  ]);
+  const desenvolvimentoRitmo = calcularDesenvolvimentoNoRitmo({
+    dia: colaborador.dia,
+    pdiPercentual: colaborador.pdi.percentual,
+    compliancePercentual: colaborador.jornadaCompliance.percentual,
+  });
+  const desenvolvimento = desenvolvimentoRitmo.desenvolvimento;
 
   const componentes = [
     { chave: 'Experiência', valor: experiencia, peso: 40 },
@@ -393,7 +396,14 @@ function indiceIntegracao(colaborador: ColaboradorAcompanhamento) {
     ? componentes.reduce((s, item) => s + Number(item.valor) * item.peso, 0) / cobertura
     : null;
 
-  return { indice, cobertura, experiencia, adaptacao, desenvolvimento };
+  return {
+    indice,
+    cobertura,
+    experiencia,
+    adaptacao,
+    desenvolvimento,
+    desenvolvimentoRitmo,
+  };
 }
 
 function requisitosFechamento(colaborador: ColaboradorAcompanhamento) {
@@ -1450,7 +1460,7 @@ function LeituraIntegradaUgp({ colaborador }: { colaborador: ColaboradorAcompanh
 
           <div className="rounded-2xl border border-teal-200 bg-teal-50/60 p-4">
             <div className="text-xs font-black uppercase tracking-wide text-teal-700">Gestor</div>
-            <div className="mt-1 text-3xl font-black text-slate-950">{gestorAtual == null ? '—' : `${gestorAtual.toFixed(2).replace('.', ',')} / 5`}</div>
+            <div className="mt-1 text-3xl font-black text-slate-950">{gestorAtual == null ? '—' : `${gestorAtual.toFixed(2).replace('.', ',')} de 5`}</div>
             <div className="mt-1 text-xs leading-relaxed text-slate-600">
               Avaliação do Programa{gestorUltimo ? ` · alinhamento de ${diaDoAlinhamento(gestorUltimo.ciclo)} dias` : ''}
             </div>
@@ -1459,7 +1469,7 @@ function LeituraIntegradaUgp({ colaborador }: { colaborador: ColaboradorAcompanh
 
           <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
             <div className="text-xs font-black uppercase tracking-wide text-amber-700">Anjo</div>
-            <div className="mt-1 text-3xl font-black text-slate-950">{anjoAtual == null ? '—' : `${anjoAtual.toFixed(2).replace('.', ',')} / 5`}</div>
+            <div className="mt-1 text-3xl font-black text-slate-950">{anjoAtual == null ? '—' : `${anjoAtual.toFixed(2).replace('.', ',')} de 5`}</div>
             <div className="mt-1 text-xs leading-relaxed text-slate-600">
               Avaliação do Programa{anjoUltimo ? ` · alinhamento de ${diaDoAlinhamento(anjoUltimo.ciclo)} dias` : ''}
             </div>
@@ -2430,7 +2440,7 @@ function EvolucaoBloco({ titulo, respostas, papel }: {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.25} />
                   <XAxis dataKey="momento" />
                   <YAxis domain={[0, 5]} ticks={[0,1,2,3,4,5]} />
-                  <ChartTooltip formatter={(v: number) => Number(v).toFixed(2).replace('.', ',')} />
+                  <ChartTooltip formatter={(v: number) => Number(v).toFixed(2).replace('.', ',') + ' de 5'} />
                   <Legend />
                   {PILARES_ACOMPANHAMENTO.map((p, i) => (
                     <Line
@@ -2462,7 +2472,7 @@ function EvolucaoBloco({ titulo, respostas, papel }: {
                       <td className="px-3 py-2 font-medium">{p.nome}</td>
                       {momentos.map((m) => (
                         <td key={m.ciclo} className="px-3 py-2 text-center">
-                          {m.pilares[p.chave] == null ? '—' : m.pilares[p.chave]!.toFixed(2).replace('.', ',')}
+                          {m.pilares[p.chave] == null ? '—' : m.pilares[p.chave]!.toFixed(2).replace('.', ',') + ' de 5'}
                         </td>
                       ))}
                     </tr>
@@ -2927,7 +2937,7 @@ function ComposicaoIndice({
     {
       chave: 'dev',
       nome: 'Desenvolvimento',
-      descricao: 'Aprendizado e evolução',
+      descricao: 'Aderência ao desenvolvimento esperado até hoje',
       valor: indice.desenvolvimento,
       peso: 25,
       Icon: Sprout,
@@ -3105,8 +3115,19 @@ function ComposicaoIndice({
                 <div>
                   <div className="font-black text-slate-900">Desenvolvimento · peso 25%</div>
                   <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                    Mostra <b>o avanço do desenvolvimento previsto para o colaborador</b>. Considera a Jornada Compliance — incluindo os cursos e atividades previstos — e as tarefas do PDI.
+                    Mostra <b>se o desenvolvimento está no ritmo esperado para o momento atual da jornada</b>. O PDI representa 60% desta dimensão e a Jornada Compliance 40%. O PDI começa a ser considerado a partir do 30º dia, com expectativa de 25% no dia 30, 50% no dia 75 e 100% no dia 150. A Jornada Compliance deve chegar a 100% até o 60º dia.
                   </p>
+                  <div className="mt-3 space-y-1 text-xs leading-relaxed text-slate-500">
+                    <div>
+                      <b>PDI:</b> {indice.desenvolvimentoRitmo.pdi.realizado == null ? 'sem dado' : Math.round(indice.desenvolvimentoRitmo.pdi.realizado) + '% realizado'}
+                      {indice.desenvolvimentoRitmo.pdi.esperado == null ? ' · ainda não entra na nota' : ' · ' + Math.round(indice.desenvolvimentoRitmo.pdi.esperado) + '% esperado até hoje'}
+                    </div>
+                    <div>
+                      <b>Compliance:</b> {indice.desenvolvimentoRitmo.compliance.realizado == null ? 'sem dado' : Math.round(indice.desenvolvimentoRitmo.compliance.realizado) + '% realizado'}
+                      {indice.desenvolvimentoRitmo.compliance.esperado == null ? ' · ainda não entra na nota' : ' · ' + Math.round(indice.desenvolvimentoRitmo.compliance.esperado) + '% esperado até hoje'}
+                    </div>
+                    <div>Quando o realizado atinge ou supera o esperado, a aderência daquele componente fica em 100%. Antecipação não gera nota acima de 100%.</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -3449,7 +3470,7 @@ function PercepcoesDumbbell({ colaborador }: { colaborador: ColaboradorAcompanha
             const difOriginal=gv!=null&&av!=null?Math.abs(gv-av):null;
             const dif=gp!=null&&ap!=null?Math.abs(gp-ap):null;
             const alerta=difOriginal!=null&&difOriginal>=3;
-            return <div key={pilar.chave} className={'rounded-2xl border p-4 '+(alerta?'border-amber-200 bg-amber-50/50':'border-slate-200 bg-white')}><div className="flex justify-between gap-3"><div className="font-semibold">{pilar.nome}</div>{alerta&&<Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">diferença relevante</Badge>}</div><div className="relative mt-4 h-8"><div className="absolute left-0 right-0 top-4 h-1 rounded-full bg-slate-100"/>{gp!=null&&ap!=null&&<div className="absolute top-4 h-1" style={{left:Math.min(gp,ap)+'%',width:Math.abs(gp-ap)+'%',backgroundColor:'#CBD5E1'}}/>}{gp!=null&&<span className="absolute top-1 h-6 w-6 -translate-x-1/2 rounded-full border-4 border-white shadow" style={{left:gp+'%',backgroundColor:PAPEL_CORES.gestor}}/>}{ap!=null&&<span className="absolute top-1 h-6 w-6 -translate-x-1/2 rotate-45 rounded-[4px] border-4 border-white shadow" style={{left:ap+'%',backgroundColor:PAPEL_CORES.anjo}}/>}</div><div className="mt-2 flex flex-wrap gap-4 text-xs"><span style={{color:PAPEL_CORES.gestor}} className="font-bold">Gestor: {gp==null?'—':Math.round(gp)+'% · nota '+gv?.toFixed(2).replace('.',',')}</span><span style={{color:PAPEL_CORES.anjo}} className="font-bold">Anjo: {ap==null?'—':Math.round(ap)+'% · nota '+av?.toFixed(2).replace('.',',')}</span>{difOriginal!=null&&<span className="font-semibold text-slate-500">diferença na nota original: {difOriginal.toFixed(2).replace('.',',')} ponto(s)</span>}</div></div>;
+            return <div key={pilar.chave} className={'rounded-2xl border p-4 '+(alerta?'border-amber-200 bg-amber-50/50':'border-slate-200 bg-white')}><div className="flex justify-between gap-3"><div className="font-semibold">{pilar.nome}</div>{alerta&&<Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">diferença relevante</Badge>}</div><div className="relative mt-4 h-8"><div className="absolute left-0 right-0 top-4 h-1 rounded-full bg-slate-100"/>{gp!=null&&ap!=null&&<div className="absolute top-4 h-1" style={{left:Math.min(gp,ap)+'%',width:Math.abs(gp-ap)+'%',backgroundColor:'#CBD5E1'}}/>}{gp!=null&&<span className="absolute top-1 h-6 w-6 -translate-x-1/2 rounded-full border-4 border-white shadow" style={{left:gp+'%',backgroundColor:PAPEL_CORES.gestor}}/>}{ap!=null&&<span className="absolute top-1 h-6 w-6 -translate-x-1/2 rotate-45 rounded-[4px] border-4 border-white shadow" style={{left:ap+'%',backgroundColor:PAPEL_CORES.anjo}}/>}</div><div className="mt-2 flex flex-wrap gap-4 text-xs"><span style={{color:PAPEL_CORES.gestor}} className="font-bold">Gestor: {gp==null?'—':Math.round(gp)+'% · nota '+gv?.toFixed(2).replace('.',',')+' de 5'}</span><span style={{color:PAPEL_CORES.anjo}} className="font-bold">Anjo: {ap==null?'—':Math.round(ap)+'% · nota '+av?.toFixed(2).replace('.',',')+' de 5'}</span>{difOriginal!=null&&<span className="font-semibold text-slate-500">diferença na nota original: {difOriginal.toFixed(2).replace('.',',')} ponto(s)</span>}</div></div>;
           })}
         </div>
       </CardContent>
@@ -3458,10 +3479,17 @@ function PercepcoesDumbbell({ colaborador }: { colaborador: ColaboradorAcompanha
 }
 
 function DesenvolvimentoDetalhe({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const ritmo = calcularDesenvolvimentoNoRitmo({
+    dia: colaborador.dia,
+    pdiPercentual: colaborador.pdi.percentual,
+    compliancePercentual: colaborador.jornadaCompliance.percentual,
+  });
   const itens = [
     {
       titulo: 'Jornada Compliance',
       percentual: colaborador.jornadaCompliance.percentual,
+      esperado: ritmo.compliance.esperado,
+      aderencia: ritmo.compliance.aderencia,
       detalhe: colaborador.jornadaCompliance.total
         ? colaborador.jornadaCompliance.concluidas + ' de ' + colaborador.jornadaCompliance.total + ' atividades concluídas'
         : 'Ainda sem atividades registradas.',
@@ -3470,6 +3498,8 @@ function DesenvolvimentoDetalhe({ colaborador }: { colaborador: ColaboradorAcomp
     {
       titulo: 'Plano de Desenvolvimento (PDI)',
       percentual: colaborador.pdi.percentual,
+      esperado: ritmo.pdi.esperado,
+      aderencia: ritmo.pdi.aderencia,
       detalhe: colaborador.pdi.total
         ? colaborador.pdi.concluidas + ' de ' + colaborador.pdi.total + ' tarefas concluídas'
         : 'Ainda sem tarefas registradas.',
@@ -3504,8 +3534,16 @@ function DesenvolvimentoDetalhe({ colaborador }: { colaborador: ColaboradorAcomp
               <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-slate-100">
                 <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(0, Math.min(100, Number(item.percentual || 0)))}%`, backgroundColor: visual.barra }} />
               </div>
-              <div className="mt-3 text-xs leading-relaxed text-slate-500">
-                Esta aba apresenta somente o avanço percentual. Os cursos e conteúdos individuais não são exibidos aqui.
+              <div className="mt-3 space-y-1 text-xs leading-relaxed text-slate-500">
+                <div>Este é o avanço real registrado. Os cursos e conteúdos individuais não são exibidos aqui.</div>
+                {item.esperado == null ? (
+                  <div className="font-semibold text-slate-600">Ainda não entra na régua de Desenvolvimento neste momento da jornada.</div>
+                ) : (
+                  <div className="font-semibold text-slate-600">
+                    Esperado até hoje: {Math.round(item.esperado)}%
+                    {item.aderencia == null ? '' : ' · aderência ao esperado: ' + Math.round(item.aderencia) + '%'}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

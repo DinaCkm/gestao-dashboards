@@ -95,6 +95,98 @@ export function percentualNumero(valor: string): number | null {
   return match ? Number(match[1]) : null;
 }
 
+export interface DesenvolvimentoRitmoComponente {
+  realizado: number | null;
+  esperado: number | null;
+  aderencia: number | null;
+  peso: number;
+}
+
+export interface DesenvolvimentoRitmoResultado {
+  desenvolvimento: number | null;
+  pdi: DesenvolvimentoRitmoComponente;
+  compliance: DesenvolvimentoRitmoComponente;
+}
+
+function percentualValido(valor: number | null | undefined): number | null {
+  if (valor == null || !Number.isFinite(Number(valor))) return null;
+  return Math.max(0, Math.min(100, Number(valor)));
+}
+
+export function percentualEsperadoPdi(dia: number): number | null {
+  const atual = Math.max(0, Number(dia || 0));
+
+  // Antes do 30º dia, o PDI ainda está em estruturação e não reduz o índice.
+  if (atual < 30) return null;
+
+  // A expectativa cresce de forma gradual entre os marcos para evitar
+  // uma queda artificial de nota exatamente no dia de cada marco.
+  if (atual <= 75) {
+    return 25 + ((atual - 30) / (75 - 30)) * 25;
+  }
+  if (atual <= 150) {
+    return 50 + ((atual - 75) / (150 - 75)) * 50;
+  }
+  return 100;
+}
+
+export function percentualEsperadoCompliance(dia: number): number | null {
+  const atual = Math.max(0, Number(dia || 0));
+
+  // A primeira leitura começa no marco de 15 dias. A partir daí,
+  // a Jornada Compliance deve avançar até chegar a 100% no 60º dia.
+  if (atual < 15) return null;
+  if (atual <= 60) {
+    return 25 + ((atual - 15) / (60 - 15)) * 75;
+  }
+  return 100;
+}
+
+function aderenciaAoEsperado(
+  realizado: number | null | undefined,
+  esperado: number | null,
+): number | null {
+  const valor = percentualValido(realizado);
+  if (valor == null || esperado == null || esperado <= 0) return null;
+  return Math.min(100, (valor / esperado) * 100);
+}
+
+export function calcularDesenvolvimentoNoRitmo({
+  dia,
+  pdiPercentual,
+  compliancePercentual,
+}: {
+  dia: number;
+  pdiPercentual: number | null | undefined;
+  compliancePercentual: number | null | undefined;
+}): DesenvolvimentoRitmoResultado {
+  const esperadoPdi = percentualEsperadoPdi(dia);
+  const esperadoCompliance = percentualEsperadoCompliance(dia);
+
+  const pdi: DesenvolvimentoRitmoComponente = {
+    realizado: percentualValido(pdiPercentual),
+    esperado: esperadoPdi,
+    aderencia: aderenciaAoEsperado(pdiPercentual, esperadoPdi),
+    peso: 60,
+  };
+  const compliance: DesenvolvimentoRitmoComponente = {
+    realizado: percentualValido(compliancePercentual),
+    esperado: esperadoCompliance,
+    aderencia: aderenciaAoEsperado(compliancePercentual, esperadoCompliance),
+    peso: 40,
+  };
+
+  const disponiveis = [pdi, compliance].filter(
+    (item): item is DesenvolvimentoRitmoComponente & { aderencia: number } => item.aderencia != null,
+  );
+  const somaPesos = disponiveis.reduce((soma, item) => soma + item.peso, 0);
+  const desenvolvimento = somaPesos
+    ? disponiveis.reduce((soma, item) => soma + item.aderencia * item.peso, 0) / somaPesos
+    : null;
+
+  return { desenvolvimento, pdi, compliance };
+}
+
 
 export const INDICES_PESQUISA_COLABORADOR = [
   {
