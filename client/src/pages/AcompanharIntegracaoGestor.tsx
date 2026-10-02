@@ -26,6 +26,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import {
+  calcularDesenvolvimentoNoRitmo,
   evolucaoPorPapel,
   evolucaoPesquisaColaborador,
   INDICES_PESQUISA_COLABORADOR,
@@ -377,10 +378,12 @@ function indiceIntegracao(colaborador: ColaboradorAcompanhamento) {
     gestor[gestor.length - 1]?.mediaGeral == null ? null : gestor[gestor.length - 1]!.mediaGeral! * 20,
     anjo[anjo.length - 1]?.mediaGeral == null ? null : anjo[anjo.length - 1]!.mediaGeral! * 20,
   ]);
-  const desenvolvimento = mediaNumeros([
-    colaborador.pdi.percentual,
-    colaborador.jornadaCompliance.percentual,
-  ]);
+  const desenvolvimentoRitmo = calcularDesenvolvimentoNoRitmo({
+    dia: colaborador.dia,
+    pdiPercentual: colaborador.pdi.percentual,
+    compliancePercentual: colaborador.jornadaCompliance.percentual,
+  });
+  const desenvolvimento = desenvolvimentoRitmo.desenvolvimento;
 
   const componentes = [
     { chave: 'Experiência', valor: experiencia, peso: 40 },
@@ -393,7 +396,14 @@ function indiceIntegracao(colaborador: ColaboradorAcompanhamento) {
     ? componentes.reduce((s, item) => s + Number(item.valor) * item.peso, 0) / cobertura
     : null;
 
-  return { indice, cobertura, experiencia, adaptacao, desenvolvimento };
+  return {
+    indice,
+    cobertura,
+    experiencia,
+    adaptacao,
+    desenvolvimento,
+    desenvolvimentoRitmo,
+  };
 }
 
 function requisitosFechamento(colaborador: ColaboradorAcompanhamento) {
@@ -2927,7 +2937,7 @@ function ComposicaoIndice({
     {
       chave: 'dev',
       nome: 'Desenvolvimento',
-      descricao: 'Aprendizado e evolução',
+      descricao: 'Aderência ao desenvolvimento esperado até hoje',
       valor: indice.desenvolvimento,
       peso: 25,
       Icon: Sprout,
@@ -3105,8 +3115,19 @@ function ComposicaoIndice({
                 <div>
                   <div className="font-black text-slate-900">Desenvolvimento · peso 25%</div>
                   <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                    Mostra <b>o avanço do desenvolvimento previsto para o colaborador</b>. Considera a Jornada Compliance — incluindo os cursos e atividades previstos — e as tarefas do PDI.
+                    Mostra <b>se o desenvolvimento está no ritmo esperado para o momento atual da jornada</b>. O PDI representa 60% desta dimensão e a Jornada Compliance 40%. O PDI começa a ser considerado a partir do 30º dia, com expectativa de 25% no dia 30, 50% no dia 75 e 100% no dia 150. A Jornada Compliance deve chegar a 100% até o 60º dia.
                   </p>
+                  <div className="mt-3 space-y-1 text-xs leading-relaxed text-slate-500">
+                    <div>
+                      <b>PDI:</b> {indice.desenvolvimentoRitmo.pdi.realizado == null ? 'sem dado' : Math.round(indice.desenvolvimentoRitmo.pdi.realizado) + '% realizado'}
+                      {indice.desenvolvimentoRitmo.pdi.esperado == null ? ' · ainda não entra na nota' : ' · ' + Math.round(indice.desenvolvimentoRitmo.pdi.esperado) + '% esperado até hoje'}
+                    </div>
+                    <div>
+                      <b>Compliance:</b> {indice.desenvolvimentoRitmo.compliance.realizado == null ? 'sem dado' : Math.round(indice.desenvolvimentoRitmo.compliance.realizado) + '% realizado'}
+                      {indice.desenvolvimentoRitmo.compliance.esperado == null ? ' · ainda não entra na nota' : ' · ' + Math.round(indice.desenvolvimentoRitmo.compliance.esperado) + '% esperado até hoje'}
+                    </div>
+                    <div>Quando o realizado atinge ou supera o esperado, a aderência daquele componente fica em 100%. Antecipação não gera nota acima de 100%.</div>
+                  </div>
                 </div>
               </div>
             </div>
