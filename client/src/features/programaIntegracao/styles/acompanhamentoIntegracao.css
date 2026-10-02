@@ -336,15 +336,13 @@
 .pi-kpi::after {
   content: "";
   position: absolute;
-  right: 1px;
-  bottom: 1px;
   left: 1px;
+  bottom: 1px;
+  width: 32%;
   height: 3px;
   border-radius: var(--pi-r-pill);
   background: linear-gradient(90deg, var(--pi-kpi-c), transparent);
-  transform: scaleX(.32);
-  transform-origin: left center;
-  transition: transform .32s var(--pi-ease);
+  transition: width .32s var(--pi-ease);
 }
 
 .pi-kpi:hover {
@@ -359,7 +357,7 @@
 }
 
 .pi-kpi:hover::after {
-  transform: scaleX(1);
+  width: calc(100% - 2px);
 }
 
 .pi-kpi--brand { --pi-kpi-c: var(--pi-brand); --pi-kpi-soft: var(--pi-brand-soft); }
