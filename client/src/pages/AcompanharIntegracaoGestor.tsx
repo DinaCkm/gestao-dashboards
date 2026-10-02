@@ -3458,14 +3458,14 @@ function CarteiraUgp({
         </div>
         <div className="pi-table-wrap">
           <table className="pi-table min-w-[1180px] text-sm">
-            <thead><tr><th className="px-4 py-3 text-left">Colaborador</th><th className="px-4 py-3 text-left">Unidade</th><th className="px-4 py-3 text-center">Dias em integração</th><th className="px-4 py-3 text-center">Processo completo</th><th className="px-4 py-3 text-center">Índice de desenvolvimento</th><th className="px-4 py-3 text-center">Tendência</th><th className="px-4 py-3 text-center">Status</th><th className="px-4 py-3 text-right">Abrir</th></tr></thead>
+            <thead><tr><th className="px-4 py-3 text-left">Colaborador</th><th className="px-4 py-3 text-left">Unidade</th><th className="px-4 py-3 text-center">Dias em integração</th><th className="px-4 py-3 text-center">Andamento do processo</th><th className="px-4 py-3 text-center">Índice de desenvolvimento</th><th className="px-4 py-3 text-center">Tendência</th><th className="px-4 py-3 text-center">Status</th><th className="px-4 py-3 text-right">Abrir</th></tr></thead>
             <tbody>
               {lista.map((x)=>{
                 const idx=indiceIntegracao(x).indice, st=statusCarteira(x);
                 const progresso=x.processoAcoes || {total:95,concluidas:0,percentual:0};
                 const fechamento=requisitosFechamento(x);
                 const percentualProcesso = fechamento.completo ? 100 : Math.min(99, Number(progresso.percentual || 0));
-                const atrasadoProcesso = !fechamento.completo && temFormularioEmAtrasoOperacional(x);
+                const atrasadoProcesso = !fechamento.completo && (temFormularioEmAtrasoOperacional(x) || fechamento.prazoFinal);
                 const score = idx == null ? null : Math.round(idx);
                 const scoreClasse = score == null ? 'pi-score--none' : score >= 80 ? 'pi-score--ok' : score >= 60 ? 'pi-score--warn' : 'pi-score--danger';
                 const statusClasse = st.chave === 'atencao' ? 'pi-pill--warn' : st.chave === 'acompanhar' ? 'pi-pill--info' : 'pi-pill--ok';
@@ -3485,7 +3485,7 @@ function CarteiraUgp({
                     <td className="px-4 py-4 text-center">
                       <div className="pi-process" data-pi-tip={(progresso.concluidas || 0) + ' de ' + (progresso.total || 0) + ' ações concluídas'}>
                         <span className={'pi-pill ' + (fechamento.completo ? 'pi-pill--ok' : atrasadoProcesso ? 'pi-pill--danger' : 'pi-pill--warn')}>
-                          {fechamento.completo ? 'Completo' : atrasadoProcesso ? 'Atrasado' : 'Pendente'}
+                          {fechamento.completo ? 'Completo' : atrasadoProcesso ? 'Atrasado' : 'Em andamento'}
                         </span>
                         <div className={'pi-process-bar ' + (fechamento.completo ? 'is-complete' : !atrasadoProcesso ? 'is-pending' : '')}><span style={{ width: percentualProcesso + '%' }} /></div>
                         <span className="pi-process-meta">{Math.round(percentualProcesso)}% das ações</span>
