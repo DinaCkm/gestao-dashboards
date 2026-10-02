@@ -12,7 +12,7 @@ import { Tooltip as UiTooltip, TooltipContent, TooltipProvider, TooltipTrigger }
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Activity, AlertTriangle, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, Brain, Camera, CheckCircle2, ChevronRight, ClipboardList, Download, Eye, FileText, Filter, Handshake, Info, LayoutDashboard, ListChecks, Maximize2, MessageSquareText, Minimize2, Network, Paperclip, RefreshCw, Route, Search, Sparkles, Target, UserCheck, Users } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, Brain, Camera, CheckCircle2, ChevronDown, ChevronRight, ClipboardList, Download, Eye, FileText, Filter, Gauge, Handshake, Heart, Info, LayoutDashboard, Lightbulb, ListChecks, Maximize2, MessageSquareText, Minimize2, MousePointerClick, Network, Paperclip, Puzzle, RefreshCw, Route, Search, Sparkles, Sprout, Star, Target, UserCheck, Users } from 'lucide-react';
 import { DISC_PERFIL_RESUMO, INTEGRACAO_CLUSTERS } from '@shared/integracaoAssessment';
 import { competenciaConsultoriaPorNome } from '@shared/competenciasConsultoria';
 import {
@@ -757,6 +757,16 @@ function GuiaLeituraUgp({
   colaborador: ColaboradorAcompanhamento;
   onSelect: (aba: string) => void;
 }) {
+  const [aberto, setAberto] = useState(false);
+  const [visto, setVisto] = useState(() => {
+    try {
+      return typeof window !== 'undefined' && window.localStorage.getItem('roteiroUgpVisto') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const guideBodyId = 'roteiro-ugp-body-' + String(colaborador.id || 'colaborador').replace(/[^a-zA-Z0-9_-]/g, '-');
+
   const sinais = sinaisAtencaoUgp(colaborador);
   const mudancas = mudancasDimensoes(colaborador.respostas);
   const quedas = mudancas.filter((m) => m.direcao === 'caiu');
@@ -798,65 +808,77 @@ function GuiaLeituraUgp({
     },
   ];
 
-  return (
-    <Card className="group overflow-hidden rounded-3xl border border-cyan-200/20 bg-[linear-gradient(120deg,#0B1F36_0%,#123F5A_48%,#0F766E_100%)] text-white shadow-[0_14px_35px_rgba(15,54,74,0.20)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_44px_rgba(15,54,74,0.28)]">
-      <CardContent className="p-5 sm:p-6">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-sm font-black tracking-tight text-cyan-50">
-              <Eye className="h-4 w-4" /> Não sabe por onde começar? Comece por aqui!
-            </div>
-            <h3 className="mt-2 text-2xl font-black tracking-tight text-white">Leitura rápida para RH / UGP</h3>
-            <p className="mt-1 max-w-3xl text-sm leading-relaxed text-white/75">
-              Esta área funciona como um roteiro. Comece pela situação atual, depois veja a trajetória e, por fim,
-              aprofunde o perfil e as diferentes percepções.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-2 backdrop-blur-sm">
-            <Activity className="h-4 w-4 text-violet-200" />
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-white/60">Momento atual</div>
-              <div className="text-sm font-black">Dia {colaborador.dia} de {colaborador.totalDias}</div>
-            </div>
-          </div>
-        </div>
+  const alternar = () => {
+    const proximo = !aberto;
+    setAberto(proximo);
+    if (proximo && !visto) {
+      setVisto(true);
+      try {
+        window.localStorage.setItem('roteiroUgpVisto', '1');
+      } catch {
+        // A persistência da dica é apenas visual; falhas de storage não afetam o roteiro.
+      }
+    }
+  };
 
-        <div className="mt-5 grid gap-3 lg:grid-cols-3">
-          {passos.map((passo) => {
-            const Icon = passo.icon;
-            const visualPasso = passo.numero === '1'
-              ? { card: 'border-sky-200 bg-sky-50/95 hover:bg-white', icon: 'bg-sky-100 text-sky-800', passo: 'text-sky-700', acao: 'text-sky-800' }
-              : passo.numero === '2'
-                ? { card: 'border-cyan-200 bg-cyan-50/95 hover:bg-white', icon: 'bg-cyan-100 text-cyan-800', passo: 'text-cyan-700', acao: 'text-cyan-800' }
-                : { card: 'border-emerald-200 bg-emerald-50/95 hover:bg-white', icon: 'bg-emerald-100 text-emerald-800', passo: 'text-emerald-700', acao: 'text-emerald-800' };
-            return (
-              <button
-                key={passo.numero}
-                type="button"
-                onClick={() => onSelect(passo.aba)}
-                className={`group rounded-2xl border p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(15,23,42,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${visualPasso.card}`}
-              >
-                <div className="flex items-start gap-3">
-                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm ${visualPasso.icon}`}>
-                    <Icon className="h-5 w-5" />
+  return (
+    <section className={'pi-ugp-guide' + (aberto ? ' is-open' : '') + (visto ? ' seen' : '')}>
+      <button
+        type="button"
+        className="pi-ugp-guide-head"
+        aria-expanded={aberto}
+        aria-controls={guideBodyId}
+        onClick={alternar}
+      >
+        <span>
+          <span className="pi-ugp-guide-eyebrow"><Eye className="h-4 w-4" /> Não sabe por onde começar? Comece por aqui!</span>
+          <span className="pi-ugp-guide-title block">Leitura rápida para RH / UGP</span>
+          <span className="pi-ugp-guide-sub block">
+            Esta área funciona como um roteiro. Comece pela situação atual, depois veja a trajetória e, por fim,
+            aprofunde o perfil e as diferentes percepções.
+          </span>
+        </span>
+
+        <span className="pi-ugp-guide-right">
+          <span className="pi-ugp-guide-day">
+            <Activity className="h-4 w-4" />
+            <span><small>Momento atual</small><b>Dia {colaborador.dia} de {colaborador.totalDias}</b></span>
+          </span>
+          {!visto && <span className="pi-ugp-guide-hint" aria-hidden="true"><MousePointerClick /></span>}
+          <span className="pi-ugp-guide-toggle">
+            {aberto ? 'Minimizar' : 'Ver roteiro'}
+            <span className="pi-ugp-guide-chevron"><ChevronDown className="h-4 w-4" /></span>
+          </span>
+        </span>
+      </button>
+
+      <div id={guideBodyId} className="pi-ugp-guide-body" aria-hidden={!aberto}>
+        <div>
+          <div className="pi-ugp-guide-steps">
+            {passos.map((passo) => {
+              const Icon = passo.icon;
+              return (
+                <button
+                  key={passo.numero}
+                  type="button"
+                  onClick={() => onSelect(passo.aba)}
+                  className="pi-ugp-guide-step"
+                  tabIndex={aberto ? 0 : -1}
+                >
+                  <span className="pi-ugp-guide-tile"><Icon className="h-5 w-5" /></span>
+                  <span>
+                    <span className="pi-ugp-guide-step-num">Passo {passo.numero}</span>
+                    <h4>{passo.titulo}</h4>
+                    <p>{passo.texto}</p>
+                    <span className="pi-ugp-guide-step-link">{passo.acao} <ArrowRight /></span>
                   </span>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${visualPasso.passo}`}>Passo {passo.numero}</span>
-                    </div>
-                    <div className="mt-1 font-black text-slate-950">{passo.titulo}</div>
-                    <p className="mt-1 text-sm leading-relaxed text-slate-600">{passo.texto}</p>
-                    <span className={`mt-3 inline-flex items-center gap-1 text-xs font-black ${visualPasso.acao}`}>
-                      {passo.acao} <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-                    </span>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 
@@ -2837,6 +2859,27 @@ function resumoExecutivoTexto(colaborador: ColaboradorAcompanhamento) {
   return partes.length ? partes.join('. ') + '.' : 'Ainda não há dados suficientes para produzir uma síntese executiva da integração.';
 }
 
+function faixaIndiceIntegracao(valor: number) {
+  if (valor >= 90) {
+    return { chave: 'ok', classe: 'is-ok', rotulo: 'Excelente', nota: 'Integração acima do esperado.', Icon: Star };
+  }
+  if (valor >= 80) {
+    return { chave: 'ok', classe: 'is-ok', rotulo: 'Bom', nota: 'Integração no caminho certo.', Icon: CheckCircle2 };
+  }
+  if (valor >= 60) {
+    return { chave: 'warn', classe: 'is-warn', rotulo: 'Atenção', nota: 'Vale acompanhar mais de perto.', Icon: AlertTriangle };
+  }
+  return { chave: 'danger', classe: 'is-danger', rotulo: 'Crítico', nota: 'Precisa de ação prioritária.', Icon: AlertTriangle };
+}
+
+function faixaDimensaoIndice(valor: number) {
+  const faixa = faixaIndiceIntegracao(valor);
+  return {
+    ...faixa,
+    rotuloChip: faixa.chave === 'ok' ? faixa.rotulo : faixa.chave === 'warn' ? 'Ponto de atenção' : 'Prioridade',
+  };
+}
+
 function ComposicaoIndice({
   colaborador,
   onSelect,
@@ -2845,66 +2888,249 @@ function ComposicaoIndice({
   onSelect?: (aba: AbaAcompanhamentoUgp) => void;
 }) {
   const indice = indiceIntegracao(colaborador);
-  const comps = [
-    { nome:'Experiência', valor:indice.experiencia, peso:40, cor:PAPEL_CORES.colaborador, aba:'trajetoria' as const },
-    { nome:'Adaptação', valor:indice.adaptacao, peso:35, cor:PAPEL_CORES.gestor, aba:'formularios' as const },
-    { nome:'Desenvolvimento', valor:indice.desenvolvimento, peso:25, cor:'#7C3AED', aba:'desenvolvimento' as const },
-  ].filter((x) => x.valor != null) as Array<{nome:string; valor:number; peso:number; cor:string; aba:AbaAcompanhamentoUgp}>;
-  const somaPesos = comps.reduce((s,x) => s + x.peso, 0) || 1;
-  const contribs = comps.map((x) => ({ ...x, contribuicao:x.valor * x.peso / somaPesos }));
+  const indiceArredondado = Math.round(Number(indice.indice || 0));
+  const [valorAnel, setValorAnel] = useState(0);
+
+  useEffect(() => {
+    if (indice.indice == null) {
+      setValorAnel(0);
+      return;
+    }
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setValorAnel(indiceArredondado);
+      return;
+    }
+    setValorAnel(0);
+    const frame = window.requestAnimationFrame(() => setValorAnel(indiceArredondado));
+    return () => window.cancelAnimationFrame(frame);
+  }, [indiceArredondado, indice.indice]);
+
+  const definicoes = [
+    {
+      chave: 'exp',
+      nome: 'Experiência',
+      descricao: 'Como a pessoa vive a integração',
+      valor: indice.experiencia,
+      peso: 40,
+      Icon: Heart,
+      aba: 'trajetoria' as const,
+    },
+    {
+      chave: 'ada',
+      nome: 'Adaptação',
+      descricao: 'Encaixe na equipe e na rotina',
+      valor: indice.adaptacao,
+      peso: 35,
+      Icon: Puzzle,
+      aba: 'formularios' as const,
+    },
+    {
+      chave: 'dev',
+      nome: 'Desenvolvimento',
+      descricao: 'Aprendizado e evolução',
+      valor: indice.desenvolvimento,
+      peso: 25,
+      Icon: Sprout,
+      aba: 'desenvolvimento' as const,
+    },
+  ];
+
+  const disponiveis = definicoes.filter((item) => item.valor != null) as Array<
+    (typeof definicoes)[number] & { valor: number }
+  >;
+  const cobertura = disponiveis.reduce((soma, item) => soma + item.peso, 0) || 1;
+  const contribuicoes = disponiveis.map((item) => {
+    const pesoEfetivo = item.peso / cobertura * 100;
+    const pontos = item.valor * item.peso / cobertura;
+    return { ...item, pesoEfetivo, pontos };
+  });
+
+  const faixaGeral = faixaIndiceIntegracao(indiceArredondado);
+  const GeralIcon = faixaGeral.Icon;
+  const menor = disponiveis.slice().sort((a, b) => a.valor - b.valor)[0];
+  const todasBoas = disponiveis.length > 0 && disponiveis.every((item) => item.valor >= 80);
+  const parcial = indice.cobertura < 100;
+
   return (
-    <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
-      <CardContent className="p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <Network className="h-5 w-5 text-violet-700" />
-              <div className="font-bold text-slate-950">Índice de Integração</div>
-              <UiTooltip>
-                <TooltipTrigger asChild><button type="button" className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><Info className="h-4 w-4" /></button></TooltipTrigger>
-                <TooltipContent className="max-w-sm text-xs leading-relaxed">Combina Experiência do Colaborador (40%), Adaptação observada por Gestor/Anjo (35%) e Desenvolvimento — PDI + Compliance (25%). Se uma fonte ainda não existe, os pesos disponíveis são reajustados. DISC/Assessment não entra no cálculo.</TooltipContent>
-              </UiTooltip>
+    <section className={'pi-index-card ' + faixaGeral.classe}>
+      <div className="pi-index-top">
+        <div>
+          <div className="pi-index-head">
+            <span className="pi-index-tile"><Gauge className="h-5 w-5" /></span>
+            <div>
+              <h3 className="pi-index-title">
+                Índice de Integração
+                <UiTooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="pi-index-tip" aria-label="Sobre o Índice de Integração">i</button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-sm text-xs leading-relaxed">
+                    Média ponderada de Experiência (40%), Adaptação (35%) e Desenvolvimento (25%), em escala de 0 a 100. Se uma fonte ainda não existe, os pesos disponíveis são reajustados proporcionalmente.
+                  </TooltipContent>
+                </UiTooltip>
+              </h3>
+              <p className="pi-index-sub">Resumo executivo em escala de 0 a 100.</p>
             </div>
-            <div className="mt-1 text-xs text-slate-500">Resumo executivo em escala de 0 a 100.</div>
           </div>
-          <div className="font-mono text-4xl font-black tabular-nums text-violet-950">{indice.indice == null ? '—' : Math.round(indice.indice) + '%'}</div>
-        </div>
-        <div className="mt-5 flex h-4 overflow-hidden rounded-full bg-slate-100">
-          {contribs.map((x) => <div key={x.nome} title={x.nome + ': ' + Math.round(x.valor) + '%'} style={{ width:Math.max(2,x.contribuicao) + '%', backgroundColor:x.cor }} />)}
-        </div>
-        <div className="mt-3 grid gap-2 sm:grid-cols-3">
-          {contribs.map((x) => (
-            <button
-              key={x.nome}
-              type="button"
-              onClick={() => onSelect?.(x.aba)}
-              className="group rounded-xl border border-transparent bg-slate-50 px-3 py-2 text-left text-xs transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:bg-white hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
-              aria-label={`Ver detalhes de ${x.nome}`}
-            >
-              <div className="flex items-center gap-2 font-semibold text-slate-800"><span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor:x.cor}} />{x.nome}</div>
-              <div className="mt-1 flex items-end justify-between gap-2">
-                <span className="font-bold tabular-nums text-slate-950">{Math.round(x.valor)}%</span>
-                {onSelect && <span className="inline-flex items-center gap-1 font-semibold text-violet-700 opacity-80">Ver detalhes <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" /></span>}
-              </div>
-            </button>
-          ))}
+
+          {disponiveis.length > 0 && (
+            <div className={'pi-index-insight' + (todasBoas ? ' is-good' : '')}>
+              {todasBoas ? <Star /> : <Lightbulb />}
+              <span>
+                {todasBoas
+                  ? `Todas as dimensões ${parcial ? 'disponíveis ' : ''}estão em Bom ou acima. 🎉`
+                  : menor && menor.valor < 80
+                    ? <><b>{menor.nome}</b> é o que mais puxa o índice para baixo ({Math.round(menor.valor)}%).</>
+                    : 'As dimensões disponíveis estão em nível satisfatório.'}
+              </span>
+            </div>
+          )}
         </div>
 
-        <details className="mt-4 overflow-hidden rounded-xl border border-violet-100 bg-violet-50/40">
-          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-black text-violet-800 hover:bg-violet-50">
-            ⓘ Entenda como o Índice de Integração é calculado
-          </summary>
-          <div className="space-y-3 border-t border-violet-100 bg-white px-4 py-4 text-sm leading-relaxed text-slate-650">
-            <div><b>Experiência do colaborador — peso 40%.</b> Mostra como o próprio colaborador relata sua integração na Pesquisa de Integração. O sistema reúne Cultura e pertencimento, Anjo e colegas, Gestão e Trabalho/desenvolvimento e transforma as respostas em uma escala de 0 a 100.</div>
-            <div><b>Adaptação observada — peso 35%.</b> Mostra como Gestor e Anjo percebem a adaptação do colaborador ao trabalho. As notas originais das avaliações são convertidas para uma escala de 0 a 100 para compor o índice.</div>
-            <div><b>Desenvolvimento — peso 25%.</b> Mostra o avanço registrado no PDI e na Jornada Compliance. Ele não mede sentimento, satisfação ou perfil comportamental.</div>
-            <div className="rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
-              Se uma dessas fontes ainda não existir, o sistema não inventa um resultado: os pesos disponíveis são reajustados proporcionalmente. O índice só aparece quando existe cobertura mínima de 60%. DISC/Assessment e atrasos administrativos não entram na nota.
+        <div className="pi-index-gauge">
+          <div
+            className="pi-index-ring"
+            role="img"
+            aria-label={`Índice de Integração: ${indiceArredondado}%, ${faixaGeral.rotulo}`}
+            style={{ '--pi-index-v': valorAnel } as React.CSSProperties}
+          >
+            {indiceArredondado >= 80 && (
+              <>
+                <Sparkles className="pi-index-spark s1" />
+                <Sparkles className="pi-index-spark s2" />
+              </>
+            )}
+            <div className="pi-index-ring-inner">
+              <div>
+                <div className="pi-index-ring-value"><AnimatedNumber value={indiceArredondado} suffix="%" /></div>
+                <div className="pi-index-ring-cap">Índice</div>
+              </div>
             </div>
           </div>
-        </details>
-      </CardContent>
-    </Card>
+          <div className="pi-index-band">
+            <span className={'pi-index-band-pill ' + faixaGeral.classe}><GeralIcon className="h-4 w-4" /> {faixaGeral.rotulo}</span>
+            <span className="pi-index-band-note">{faixaGeral.nota}</span>
+            {parcial && <span className="pi-index-band-note">Resultado parcial · cobertura atual de {indice.cobertura}%.</span>}
+          </div>
+        </div>
+      </div>
+
+      <div className="pi-index-dims">
+        {disponiveis.map((item) => {
+          const faixa = faixaDimensaoIndice(item.valor);
+          const ChipIcon = faixa.Icon;
+          const DimIcon = item.Icon;
+          const classeDim = item.chave === 'exp' ? 'is-exp' : item.chave === 'ada' ? 'is-ada' : 'is-dev';
+          return (
+            <article key={item.chave} className={'pi-index-dim ' + classeDim}>
+              <div className="pi-index-dim-top">
+                <span className="pi-index-tile"><DimIcon className="h-5 w-5" /></span>
+                <div>
+                  <div className="pi-index-dim-name">{item.nome}</div>
+                  <div className="pi-index-dim-desc">{item.descricao}</div>
+                </div>
+                <div className="pi-index-dim-value"><AnimatedNumber value={Math.round(item.valor)} suffix="%" /></div>
+              </div>
+
+              <UiTooltip>
+                <TooltipTrigger asChild>
+                  <div
+                    className="pi-index-meter"
+                    tabIndex={0}
+                    aria-label={`${item.nome}: ${Math.round(item.valor)}% · ${faixa.rotulo}`}
+                  >
+                    <span className="pi-index-meter-fill" style={{ width: Math.max(0, Math.min(100, item.valor)) + '%' }} />
+                    <i className="pi-index-meter-mark" style={{ left: '60%' }} />
+                    <i className="pi-index-meter-mark" style={{ left: '80%' }} />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  {item.nome}: {Math.round(item.valor)}% · {faixa.rotulo}
+                </TooltipContent>
+              </UiTooltip>
+
+              <div className="pi-index-dim-foot">
+                <span className={'pi-index-chip ' + faixa.classe}><ChipIcon className="h-3.5 w-3.5" /> {faixa.rotuloChip}</span>
+                {onSelect && (
+                  <button type="button" className="pi-index-more" onClick={() => onSelect(item.aba)}>
+                    Ver detalhes <ArrowRight />
+                  </button>
+                )}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      <details className="pi-index-how">
+        <summary>
+          <Info className="h-4 w-4" />
+          Entenda como o Índice de Integração é calculado
+          <span className="pi-index-how-chevron"><ChevronDown className="h-4 w-4" /></span>
+        </summary>
+        <div className="pi-index-how-body">
+          <p className="pi-index-how-lead">
+            O índice é uma média ponderada das três dimensões. A barra mostra quanto cada uma contribui para o total.
+            {parcial ? ' Como o resultado é parcial, os pesos disponíveis são reajustados proporcionalmente, exatamente como no cálculo atual.' : ''}
+          </p>
+
+          <div className="pi-index-stack" role="img" aria-label="Contribuição das dimensões para o Índice de Integração">
+            {contribuicoes.map((item) => (
+              <UiTooltip key={item.chave}>
+                <TooltipTrigger asChild>
+                  <span
+                    tabIndex={0}
+                    className={'pi-index-stack-part ' + (item.chave === 'exp' ? 'is-exp' : item.chave === 'ada' ? 'is-ada' : 'is-dev')}
+                    style={{ width: Math.max(0, item.pontos) + '%' }}
+                    aria-label={`${item.nome}: ${Math.round(item.valor)}% × ${item.pesoEfetivo.toFixed(1).replace('.', ',')}% = ${item.pontos.toFixed(1).replace('.', ',')} pontos`}
+                  />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  {item.nome}: {Math.round(item.valor)}% × {item.pesoEfetivo.toFixed(1).replace('.', ',')}% = {item.pontos.toFixed(1).replace('.', ',')} pontos
+                </TooltipContent>
+              </UiTooltip>
+            ))}
+          </div>
+
+          <div className="pi-index-legend">
+            {contribuicoes.map((item) => (
+              <span
+                key={item.chave}
+                className={item.chave === 'exp' ? 'is-exp' : item.chave === 'ada' ? 'is-ada' : 'is-dev'}
+              >
+                <i />{item.nome} · peso {parcial ? item.pesoEfetivo.toFixed(1).replace('.', ',') : item.peso}%
+              </span>
+            ))}
+          </div>
+
+          <div className="pi-index-formula">
+            {contribuicoes.map((item) => (
+              <React.Fragment key={item.chave}>
+                <span className={'pi-index-formula-name ' + (item.chave === 'exp' ? 'is-exp' : item.chave === 'ada' ? 'is-ada' : 'is-dev')}>
+                  <i className="pi-index-formula-dot" />{item.nome}
+                </span>
+                <span className="pi-index-formula-muted">{Math.round(item.valor)}%</span>
+                <span className="pi-index-formula-muted pi-index-formula-weight">× {item.pesoEfetivo.toFixed(1).replace('.', ',')}%</span>
+                <span className="pi-index-formula-result">{item.pontos.toFixed(1).replace('.', ',')}</span>
+              </React.Fragment>
+            ))}
+            <div className="pi-index-formula-sum">
+              <span>Índice de Integração</span>
+              <span>{contribuicoes.reduce((soma, item) => soma + item.pontos, 0).toFixed(1).replace('.', ',')} ≈ {indiceArredondado}%</span>
+            </div>
+          </div>
+
+          <div>
+            <div className="pi-index-sub mb-2">Faixas de leitura:</div>
+            <div className="pi-index-bands">
+              <span className="pi-index-band-pill is-ok"><CheckCircle2 className="h-4 w-4" /> 80 a 100 · Bom</span>
+              <span className="pi-index-band-pill is-warn"><AlertTriangle className="h-4 w-4" /> 60 a 79 · Atenção</span>
+              <span className="pi-index-band-pill is-danger"><AlertTriangle className="h-4 w-4" /> 0 a 59 · Crítico</span>
+            </div>
+          </div>
+        </div>
+      </details>
+    </section>
   );
 }
 
