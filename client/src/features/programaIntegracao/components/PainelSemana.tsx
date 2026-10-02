@@ -524,6 +524,7 @@ export function PainelSemana({
                   const podeReforcarCobranca = Boolean(
                     temRespostaFormulario &&
                     !resposta &&
+                    !['ok', 'na', 'wont'].includes(ficha.s) &&
                     jaTevePrimeiraCobranca &&
                     papelCobranca &&
                     segundaCobrancaDisponivel(acao.p, grupo.itemId, feriados),
