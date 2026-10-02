@@ -122,6 +122,11 @@
   background: linear-gradient(125deg, var(--pi-hero-1) 0%, var(--pi-hero-2) 58%, var(--pi-hero-3) 100%);
 }
 
+.pi-hero--detail {
+  min-height: 0;
+  padding-bottom: 28px;
+}
+
 .pi-hero::before {
   content: "";
   position: absolute;
@@ -445,6 +450,43 @@
 .pi-tag--ok { background: var(--pi-ok-soft); color: var(--pi-ok-ink); }
 .pi-tag--warn { background: var(--pi-warn-soft); color: var(--pi-warn-ink); }
 .pi-tag--muted { background: var(--pi-surface-2); color: var(--pi-muted); }
+
+[data-pi-tip] {
+  position: relative;
+}
+
+[data-pi-tip]::after {
+  content: attr(data-pi-tip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 9px);
+  z-index: 60;
+  width: max-content;
+  max-width: 260px;
+  padding: 8px 11px;
+  border: 1px solid var(--pi-hero-line);
+  border-radius: 10px;
+  background: var(--pi-dark-tip);
+  color: var(--pi-dark-tip-text);
+  box-shadow: var(--pi-shadow-lift);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-align: left;
+  text-transform: none;
+  white-space: normal;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 5px) scale(.98);
+  transition: opacity .16s var(--pi-ease), transform .16s var(--pi-ease);
+}
+
+[data-pi-tip]:hover::after,
+[data-pi-tip]:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
 
 .pi-tip {
   display: inline-grid;
