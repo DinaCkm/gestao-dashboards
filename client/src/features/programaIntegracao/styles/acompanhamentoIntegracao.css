@@ -1,9 +1,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
+  --p-c: #2563EB;
+  --p-g: #0D9488;
+  --p-a: #D97706;
 }
 
 [data-theme="dark"] {
+  --p-c: #3B82F6;
+  --p-g: #0D9488;
+  --p-a: #D97706;
 }
 
 @property --pi-index-v {
