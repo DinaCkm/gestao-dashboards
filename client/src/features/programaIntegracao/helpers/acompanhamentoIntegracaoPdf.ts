@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import { evolucaoPorPapel, evolucaoPesquisaColaborador, INDICES_PESQUISA_COLABORADOR, PILARES_ACOMPANHAMENTO, percentualNumero, type RespostaAcompanhamento } from './evolucaoAcompanhamento';
+import { calcularDesenvolvimentoNoRitmo, evolucaoPorPapel, evolucaoPesquisaColaborador, INDICES_PESQUISA_COLABORADOR, PILARES_ACOMPANHAMENTO, percentualNumero, type RespostaAcompanhamento } from './evolucaoAcompanhamento';
 
 export interface ColaboradorAcompanhamentoPdf {
   nome: string;
@@ -50,7 +50,12 @@ function indiceExecutivoPdf(colaborador: ColaboradorAcompanhamentoPdf) {
   const gestor = mediaAdaptacaoAtual(colaborador.respostas, 'Gestor');
   const anjo = mediaAdaptacaoAtual(colaborador.respostas, 'Anjo');
   const adaptacao = mediaNumeros([gestor, anjo]);
-  const desenvolvimento = mediaNumeros([colaborador.pdi.percentual, colaborador.jornadaCompliance.percentual]);
+  const desenvolvimentoRitmo = calcularDesenvolvimentoNoRitmo({
+    dia: colaborador.dia,
+    pdiPercentual: colaborador.pdi.percentual,
+    compliancePercentual: colaborador.jornadaCompliance.percentual,
+  });
+  const desenvolvimento = desenvolvimentoRitmo.desenvolvimento;
   const componentes = [
     { nome: 'Experiência', valor: experiencia, peso: 40, cor: [37,99,235] as [number,number,number] },
     { nome: 'Adaptação', valor: adaptacao, peso: 35, cor: [15,118,110] as [number,number,number] },
@@ -60,7 +65,7 @@ function indiceExecutivoPdf(colaborador: ColaboradorAcompanhamentoPdf) {
   const indice = somaPesos >= 60
     ? componentes.reduce((s,x) => s + x.valor * (x.peso / somaPesos), 0)
     : null;
-  return { indice, componentes, cobertura: somaPesos };
+  return { indice, componentes, cobertura: somaPesos, desenvolvimentoRitmo };
 }
 
 function resumoExecutivoPdf(colaborador: ColaboradorAcompanhamentoPdf) {
@@ -302,7 +307,7 @@ function evolucao(doc: jsPDF, y: number, titulo: string, respostas: RespostaAcom
     doc.text(pilar.nome, xLabel, y + 5);
     momentos.forEach((m, i) => {
       const v = m.pilares[pilar.chave];
-      doc.text(v == null ? '—' : v.toFixed(2).replace('.', ','), xStart + i * col + 3, y + 5);
+      doc.text(v == null ? '—' : v.toFixed(2).replace('.', ',') + ' de 5', xStart + i * col + 3, y + 5);
     });
     y += 8;
   });
@@ -419,7 +424,22 @@ export function gerarAcompanhamentoIntegracaoPdf(
       });
       doc.setFont('helvetica','normal'); doc.setFontSize(5.8); doc.setTextColor(80,85,95);
       doc.text(indiceInfo.componentes.map((x)=>x.nome+' '+String(Math.round(x.valor))+'%').join(' · '),50,y+15);
-      y+=22;
+      const ritmo = indiceInfo.desenvolvimentoRitmo;
+      const detalhesRitmo = [
+        ritmo.pdi.realizado == null
+          ? null
+          : 'PDI '+String(Math.round(ritmo.pdi.realizado))+'% realizado'+(ritmo.pdi.esperado == null ? ' · ainda não entra na nota' : ' · '+String(Math.round(ritmo.pdi.esperado))+'% esperado'),
+        ritmo.compliance.realizado == null
+          ? null
+          : 'Compliance '+String(Math.round(ritmo.compliance.realizado))+'% realizado'+(ritmo.compliance.esperado == null ? ' · ainda não entra na nota' : ' · '+String(Math.round(ritmo.compliance.esperado))+'% esperado'),
+      ].filter(Boolean).join(' | ');
+      if (detalhesRitmo) {
+        doc.setFontSize(5.5); doc.setTextColor(105,110,120);
+        doc.text(detalhesRitmo,50,y+20,{maxWidth:140});
+        y+=28;
+      } else {
+        y+=22;
+      }
     }
     y=timelinePdf(doc,y,colaborador.respostas);
   }
