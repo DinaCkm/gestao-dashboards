@@ -2531,11 +2531,11 @@ function tendenciaGeral(colaborador: ColaboradorAcompanhamento) {
 }
 
 function diasAtePrazoVisual(prazo: string) {
-  const iso = String(prazo || '').slice(0, 10);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  const valor = String(prazo || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return null;
   const agora = new Date();
   const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 12);
-  const data = new Date(iso + 'T12:00:00');
+  const data = new Date(valor + 'T12:00:00');
   if (Number.isNaN(data.getTime())) return null;
   return Math.round((data.getTime() - hoje.getTime()) / 86400000);
 }
