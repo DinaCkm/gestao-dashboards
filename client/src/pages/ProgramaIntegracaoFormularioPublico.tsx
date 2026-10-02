@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRoute } from 'wouter';
 import {
   carregarFormularioPublicoMeta,
@@ -21,8 +21,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import confetti from 'canvas-confetti';
+import { SuccessCheckIllustration } from '@/components/illustrations/ProgramaIntegracaoIllustrations';
 import { INTEGRACAO_CLUSTERS } from '@shared/integracaoAssessment';
 import '@/features/programaIntegracao/programaIntegracaoV4.css';
+import '@/features/programaIntegracao/styles/acompanhamentoIntegracao.css';
 
 const SLUGS = new Set<PublicFormSlug>([
   'controle-integracao',
@@ -228,6 +231,8 @@ export default function ProgramaIntegracaoFormularioPublico() {
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [sucesso, setSucesso] = useState<{ protocolo: string; pendente: boolean } | null>(null);
+  const successButtonRef = useRef<HTMLButtonElement>(null);
+  const confettiDisparadoRef = useRef(false);
   const [opcoesAtivas, setOpcoesAtivas] = useState<{ colaboradores: string[]; gestores: string[]; anjos: string[] }>({
     colaboradores: [], gestores: [], anjos: [],
   });
@@ -272,6 +277,34 @@ export default function ProgramaIntegracaoFormularioPublico() {
       });
     return () => { ativo = false; };
   }, []);
+
+  const sucessoAnjo = Boolean(sucesso && slug === 'avaliacao-programa' && draft.role === 'Anjo');
+
+  useEffect(() => {
+    if (!sucessoAnjo) return;
+
+    successButtonRef.current?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') window.location.href = '/anjo/formularios';
+    };
+    window.addEventListener('keydown', onKeyDown);
+
+    if (!confettiDisparadoRef.current && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      confettiDisparadoRef.current = true;
+      const colors = ['#7C3AED','#C026D3','#F59E0B','#10B981','#4F46E5'];
+      confetti({ particleCount: 90, spread: 75, origin: { y: .62 }, colors, zIndex: 100 });
+      const esquerda = window.setTimeout(() => confetti({ particleCount: 50, angle: 60, spread: 60, origin: { x: 0, y: .7 }, colors, zIndex: 100 }), 180);
+      const direita = window.setTimeout(() => confetti({ particleCount: 50, angle: 120, spread: 60, origin: { x: 1, y: .7 }, colors, zIndex: 100 }), 180);
+      return () => {
+        window.removeEventListener('keydown', onKeyDown);
+        window.clearTimeout(esquerda);
+        window.clearTimeout(direita);
+      };
+    }
+
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [sucessoAnjo]);
 
   useEffect(() => {
     let ativo = true;
@@ -427,6 +460,37 @@ export default function ProgramaIntegracaoFormularioPublico() {
     const numerico = q.type === 'cpf' || q.type === 'tel';
     return <label key={q.code} className="block space-y-1"><span className="text-sm font-medium">{label}</span>{q.hint && <span className="block text-xs text-muted-foreground">{q.hint}</span>}<input type={q.type === 'date' ? 'date' : 'text'} inputMode={numerico ? 'numeric' : undefined} maxLength={q.type === 'cpf' ? 11 : q.type === 'tel' ? 11 : undefined} placeholder={q.type === 'cpf' ? 'somente números' : q.type === 'tel' ? '63999998888' : undefined} value={String(value)} onChange={(e) => atualizarAnswer(q.code, numerico ? e.target.value.replace(/\D/g, '') : e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2" /></label>;
   };
+
+  if (sucesso && sucessoAnjo) {
+    const primeiroNome = draft.nomeColaborador.trim().split(/\s+/)[0] || 'o colaborador';
+    return (
+      <div className="pi-acompanhamento min-h-screen">
+        <div
+          className="pi-success-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pi-anjo-success-title"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) window.location.href = '/anjo/formularios';
+          }}
+        >
+          <div className="pi-success-modal">
+            <SuccessCheckIllustration />
+            <h4 id="pi-anjo-success-title">Avaliação enviada!</h4>
+            <p>Obrigado por acompanhar {primeiroNome}. Sua contribuição faz diferença na integração dele(a).</p>
+            <button
+              ref={successButtonRef}
+              type="button"
+              className="pi-btn pi-btn--primary w-full"
+              onClick={() => { window.location.href = '/anjo/formularios'; }}
+            >
+              Voltar ao acompanhamento
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (sucesso) {
     return <div className="programa-integracao-public-v4 min-h-screen p-4 sm:p-8"><Card className="mx-auto max-w-2xl"><CardContent className="py-10 text-center"><CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" /><h1 className="mt-4 text-2xl font-bold">Resposta enviada</h1>{(form.outro || []).map((p, i) => <p key={i} className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">{p}</p>)}<div className="mx-auto mt-6 max-w-sm rounded-lg border bg-muted/30 p-4"><p className="text-xs uppercase tracking-wide text-muted-foreground">Protocolo</p><p className="mt-1 font-mono text-xl font-bold">{sucesso.protocolo}</p><p className="mt-2 text-xs text-muted-foreground">Guarde este número — ele identifica sua resposta caso precise consultar depois.</p></div>{sucesso.pendente && <p className="mx-auto mt-4 max-w-lg text-sm text-muted-foreground">A resposta foi recebida e ficará aguardando conferência administrativa para ser vinculada ao processo correto. Não é necessário reenviar.</p>}</CardContent></Card></div>;
