@@ -336,13 +336,14 @@
 .pi-kpi::after {
   content: "";
   position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  right: 1px;
+  bottom: 1px;
+  left: 1px;
   height: 3px;
+  border-radius: var(--pi-r-pill);
   background: linear-gradient(90deg, var(--pi-kpi-c), transparent);
   transform: scaleX(.32);
-  transform-origin: left;
+  transform-origin: left center;
   transition: transform .32s var(--pi-ease);
 }
 
