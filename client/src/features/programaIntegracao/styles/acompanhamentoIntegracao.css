@@ -692,6 +692,30 @@
   box-shadow: var(--pi-ring) !important;
 }
 
+.pi-select-trigger svg {
+  color: var(--pi-brand);
+}
+
+.pi-view-select svg {
+  color: var(--pi-white);
+}
+
+.pi-mode-banner {
+  border: 1px solid var(--pi-brand-line);
+  border-radius: var(--pi-r-md);
+  background: var(--pi-brand-soft);
+  color: var(--pi-text-2);
+}
+
+.pi-mode-title {
+  color: var(--pi-text);
+  font-weight: 800;
+}
+
+.pi-mode-subtitle {
+  color: var(--pi-muted);
+}
+
 .pi-search-icon {
   color: var(--pi-muted) !important;
 }
