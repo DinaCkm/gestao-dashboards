@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, History, Search, TrendingUp, Users } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ClipboardCheck, Clock3, History, Search, TrendingUp, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -299,6 +299,11 @@ export function CobrancaFormulariosUgp({
   assinatura,
   modelosCobranca = {},
   historicoCobrancas = [],
+  resumoCobrancas = {
+    formulariosCobrados: 0,
+    respondidosPosCobranca: 0,
+    pendentesPosCobranca: 0,
+  },
 }: {
   colaboradores: Colaborador[];
   busca: string;
@@ -314,6 +319,11 @@ export function CobrancaFormulariosUgp({
   assinatura: string;
   modelosCobranca?: Record<string, any>;
   historicoCobrancas?: HistoricoCobranca[];
+  resumoCobrancas?: {
+    formulariosCobrados: number;
+    respondidosPosCobranca: number;
+    pendentesPosCobranca: number;
+  };
 }) {
   const filtro = filtroRapido as FiltroRapido;
   const ativo = filtro !== 'all';
@@ -786,6 +796,18 @@ export function CobrancaFormulariosUgp({
               <div className="rounded-xl border bg-slate-50 p-4">
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500"><TrendingUp className="h-4 w-4" /> Com 2+ cobranças</div>
                 <div className="mt-2 text-2xl font-bold text-slate-950">{pessoasComRecorrencia}</div>
+              </div>
+              <div className="rounded-xl border border-violet-200 bg-violet-50/40 p-4">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-violet-700"><ClipboardCheck className="h-4 w-4" /> Formulários cobrados</div>
+                <div className="mt-2 text-2xl font-bold text-violet-950">{resumoCobrancas.formulariosCobrados}</div>
+              </div>
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-emerald-700"><CheckCircle2 className="h-4 w-4" /> Respondidos pós-cobrança</div>
+                <div className="mt-2 text-2xl font-bold text-emerald-950">{resumoCobrancas.respondidosPosCobranca}</div>
+              </div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-amber-700"><Clock3 className="h-4 w-4" /> Ainda pendentes pós-cobrança</div>
+                <div className="mt-2 text-2xl font-bold text-amber-950">{resumoCobrancas.pendentesPosCobranca}</div>
               </div>
             </div>
 
