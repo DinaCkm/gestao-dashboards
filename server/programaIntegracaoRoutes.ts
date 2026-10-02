@@ -2827,9 +2827,53 @@ programaIntegracaoRouter.put("/api/programa-integracao/processos/:legacyId", req
     if (Array.isArray(estadoAtualServidor.registrosIntegracao)) {
       estado.registrosIntegracao = estadoAtualServidor.registrosIntegracao;
     }
-    if (Array.isArray(estadoAtualServidor.cobrancasFormularios)) {
-      estado.cobrancasFormularios = estadoAtualServidor.cobrancasFormularios;
-    }
+    const cobrancasServidor = Array.isArray(estadoAtualServidor.cobrancasFormularios)
+      ? [...estadoAtualServidor.cobrancasFormularios]
+      : [];
+    const feitoRecebido = p?.feito && typeof p.feito === "object" ? p.feito : {};
+    const feitoServidor = estadoAtualServidor?.feito && typeof estadoAtualServidor.feito === "object"
+      ? estadoAtualServidor.feito
+      : {};
+
+    Object.entries(META_COBRANCA_POR_ITEM).forEach(([itemId, meta]) => {
+      const cobrancaRecebida = feitoRecebido?.[itemId]?.cobrancaFormulario;
+      const cobrancaServidor = feitoServidor?.[itemId]?.cobrancaFormulario;
+      ([
+        ["primeiraEm", "primeira"],
+        ["segundaEm", "segunda"],
+      ] as const).forEach(([campo, etapa]) => {
+        const novoValor = String(cobrancaRecebida?.[campo] || "").trim();
+        const valorAnterior = String(cobrancaServidor?.[campo] || "").trim();
+        if (!novoValor || novoValor === valorAnterior) return;
+
+        const chave = chaveCobrancaFormulario(meta);
+        const destino = destinoCobrancaDoProcesso(p, meta.papel);
+        const jaExiste = cobrancasServidor.some((item: any) =>
+          String(item?.chave || "") === chave &&
+          String(item?.cobradoEm || "") === novoValor &&
+          String(item?.origem || "") === "CKM"
+        );
+        if (jaExiste) return;
+
+        cobrancasServidor.push({
+          id: `ckm_${Date.now()}_${legacyId}_${itemId}_${etapa}`,
+          chave,
+          formKey: meta.formKey,
+          ciclo: meta.ciclo,
+          papel: meta.papel,
+          formulario: meta.formulario,
+          respondenteNome: destino.nome,
+          respondenteEmail: destino.email,
+          cobradoEm: novoValor,
+          cobradoPorUserId: Number((req as any).authenticatedUser?.id || 0) || null,
+          cobradoPorNome: String((req as any).authenticatedUser?.name || (req as any).authenticatedUser?.email || "CKM"),
+          origem: "CKM",
+          etapa,
+          itemId,
+        });
+      });
+    });
+    estado.cobrancasFormularios = cobrancasServidor;
 
     // Chaves gerenciadas exclusivamente pelo backend da Avaliação de Potencial.
     // Uma ficha antiga aberta no navegador nunca pode apagar snapshot, vínculo
