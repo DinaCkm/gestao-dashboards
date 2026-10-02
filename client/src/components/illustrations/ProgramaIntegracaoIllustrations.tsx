@@ -85,9 +85,9 @@ export function TudoEmDiaIllustration({ className = "", style }: ArtProps) {
         <path d="M180 134c-7-3-12-9-11-16 8 1 13 8 11 16z" className="pi-f-ok" opacity=".7"/>
         <rect x="166" y="148" width="22" height="16" rx="4" className="pi-f-warn"/>
       </g>
-      <path className="pi-twinkle" d="M40 48l3 7 7 3-7 3-3 7-3-7-7-3 7-3z" className="pi-f-warn"/>
-      <path className="pi-twinkle d2" d="M176 40l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" className="pi-f-brand3"/>
-      <path className="pi-twinkle d3" d="M30 120l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" className="pi-f-brand"/>
+      <path className="pi-twinkle pi-f-warn" d="M40 48l3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/>
+      <path className="pi-twinkle d2 pi-f-brand3" d="M176 40l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/>
+      <path className="pi-twinkle d3 pi-f-brand" d="M30 120l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/>
     </svg>
   );
 }
@@ -105,8 +105,8 @@ export function CalendarioCheckIllustration({ className = "", style }: ArtProps)
         <circle cx="124" cy="100" r="18" className="pi-f-ok"/>
         <path d="M115 100l6 6 12-12" fill="none" stroke="#fff" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round"/>
       </g>
-      <path className="pi-twinkle" d="M34 40l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" className="pi-f-warn"/>
-      <path className="pi-twinkle d2" d="M168 116l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" className="pi-f-brand"/>
+      <path className="pi-twinkle pi-f-warn" d="M34 40l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/>
+      <path className="pi-twinkle d2 pi-f-brand" d="M168 116l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/>
     </svg>
   );
 }
