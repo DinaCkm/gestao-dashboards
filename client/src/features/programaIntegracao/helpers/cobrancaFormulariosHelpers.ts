@@ -17,7 +17,7 @@ import {
   type EmailMontadoIntegracao,
   type ValoresEmailIntegracao,
 } from './emailCoreHelpers';
-import { ASSINATURA_EMAIL_INTEGRACAO, AVISO_PADRAO_EMAIL_INTEGRACAO } from './emailModelosPadrao';
+import { ASSINATURA_EMAIL_INTEGRACAO } from './emailModelosPadrao';
 import { MARCADOR_EMAIL_VAZIO } from './emailValoresHelpers';
 import type { EmailPreviewIntegracao } from './emailMontagemHelpers';
 import type { ItemPlanoReal, ResponsavelIntegracao } from './planoReal';
@@ -165,9 +165,7 @@ function chaveModeloCobranca(
 }
 
 function avisoCobranca(config: BootstrapState['config']): string {
-  return config?.aviso == null
-    ? AVISO_PADRAO_EMAIL_INTEGRACAO
-    : String(config.aviso || '');
+  return String(config?.aviso || '');
 }
 
 function valoresBaseCobranca(
