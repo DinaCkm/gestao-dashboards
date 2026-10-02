@@ -196,6 +196,9 @@ function finalizarPreviewCobranca(
 ): EmailPreviewIntegracao {
   const email = {
     ...emailBase,
+    para: destino.para || MARCADOR_EMAIL_VAZIO,
+    cc: '',
+    anexo: '',
     corpo: emailBase.corpo + ASSINATURA_EMAIL_INTEGRACAO,
   };
   const textoSimples = emailMarkdownParaTexto(email.corpo);
