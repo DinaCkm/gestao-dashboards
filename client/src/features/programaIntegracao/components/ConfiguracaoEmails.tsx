@@ -160,7 +160,16 @@ export function ConfiguracaoEmails({ config, processos, onSaved, chaveInicialExt
   const salvar = async () => {
     if (!chave || !modeloPadrao) return;
     const atuais = config.emails && typeof config.emails === 'object' ? { ...config.emails } : {};
-    const payload = { ...atuais, [chave]: { ...draft } };
+    const modeloSalvar = modeloCobranca
+      ? {
+          para: modeloPadrao.para,
+          cc: modeloPadrao.cc,
+          assunto: draft.assunto,
+          anexo: modeloPadrao.anexo,
+          corpo: draft.corpo,
+        }
+      : { ...draft };
+    const payload = { ...atuais, [chave]: modeloSalvar };
 
     try {
       setStatus('saving');
@@ -227,7 +236,7 @@ export function ConfiguracaoEmails({ config, processos, onSaved, chaveInicialExt
         <CardHeader>
           <CardTitle>Modelos de e-mail</CardTitle>
           <p className="text-xs text-muted-foreground">
-            {CHAVES_EMAIL_INTEGRACAO.length} modelos · 32 históricos + 8 de cobrança
+            {CHAVES_EMAIL_INTEGRACAO.length} modelos disponíveis
           </p>
         </CardHeader>
         <CardContent className="max-h-[72vh] space-y-4 overflow-y-auto">
@@ -274,7 +283,7 @@ export function ConfiguracaoEmails({ config, processos, onSaved, chaveInicialExt
               <label className="space-y-1 text-sm">
                 <span className="font-medium">Para</span>
                 <input
-                  value={draft.para}
+                  value={modeloCobranca ? (modeloPadrao?.para || draft.para) : draft.para}
                   onChange={(e) => marcar('para', e.target.value)}
                   disabled={modeloCobranca}
                   className="w-full rounded-md border bg-background px-3 py-2 disabled:cursor-not-allowed disabled:bg-muted/50"
