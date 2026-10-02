@@ -657,14 +657,10 @@ function cobrancasLegadasCkmDoEstado(estado: Record<string, any>, processo: any)
     const destino = destinoCobrancaDoProcesso(processo, meta.papel);
     const chave = chaveCobrancaFormulario(meta);
 
-    ([
-      ["primeiraEm", "primeira"],
-      ["segundaEm", "segunda"],
-    ] as const).forEach(([campo, etapa]) => {
-      const cobradoEm = String(cobranca?.[campo] || "").trim();
+    const adicionar = (cobradoEm: string, etapa: "primeira" | "segunda", origemId: string) => {
       if (!cobradoEm) return;
       out.push({
-        id: `legacy_ckm_${itemId}_${etapa}_${cobradoEm}`,
+        id: `legacy_ckm_${itemId}_${origemId}_${cobradoEm}`,
         chave,
         formKey: meta.formKey,
         ciclo: meta.ciclo,
@@ -680,7 +676,37 @@ function cobrancasLegadasCkmDoEstado(estado: Record<string, any>, processo: any)
         itemId,
         legado: true,
       });
-    });
+    };
+
+    const primeiraEm = String(cobranca?.primeiraEm || "").trim();
+    const segundaEm = String(cobranca?.segundaEm || "").trim();
+    adicionar(primeiraEm, "primeira", "primeira");
+    adicionar(segundaEm, "segunda", "segunda");
+
+    // Compatibilidade com cobranças feitas antes de o campo estruturado existir.
+    // A nota histórica tinha formato DD/MM HH:MM e é usada somente quando não há
+    // primeiraEm. Restringimos a leitura a registros recentes para não inferir ano
+    // de forma ambígua em históricos antigos.
+    if (!primeiraEm) {
+      const notas = Array.isArray(ficha?.notas) ? ficha.notas : [];
+      const nota = [...notas].reverse().find((item: any) =>
+        String(item?.t || "").trim() === "Cobrança enviada por e-mail.");
+      const match = String(nota?.d || "").match(/^(\d{2})\/(\d{2})\s+(\d{2}):(\d{2})$/);
+      if (match) {
+        const agora = new Date();
+        const candidata = new Date(
+          agora.getFullYear(),
+          Number(match[2]) - 1,
+          Number(match[1]),
+          Number(match[3]),
+          Number(match[4]),
+        );
+        const diferencaDias = Math.floor((agora.getTime() - candidata.getTime()) / 86400000);
+        if (!Number.isNaN(candidata.getTime()) && diferencaDias >= 0 && diferencaDias <= 30) {
+          adicionar(candidata.toISOString(), "primeira", "nota");
+        }
+      }
+    }
   });
 
   return out;
