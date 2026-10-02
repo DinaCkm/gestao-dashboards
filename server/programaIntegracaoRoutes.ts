@@ -1024,11 +1024,11 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     const mentorasConfiguradas = Array.isArray(configGeralPrograma.mentoras)
       ? configGeralPrograma.mentoras
       : [];
-    const emailsConfigurados = configGeralPrograma?.emails && typeof configGeralPrograma.emails === "object"
+    const modelosEmailConfigurados = configGeralPrograma?.emails && typeof configGeralPrograma.emails === "object"
       ? configGeralPrograma.emails as Record<string, any>
       : {};
     const modelosCobrancaConfigurados = Object.fromEntries(
-      Object.entries(emailsConfigurados).filter(([chave]) =>
+      Object.entries(modelosEmailConfigurados).filter(([chave]) =>
         chave.startsWith("m_cobranca_form_") || chave.startsWith("m_reforco_form_")),
     );
     const nomeMentoraResponsavel = (row: any): string => {
