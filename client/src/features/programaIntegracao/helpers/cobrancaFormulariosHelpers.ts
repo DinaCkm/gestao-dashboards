@@ -99,6 +99,37 @@ export function dataReforcoCobranca(
   return uteis === 3 ? atual : null;
 }
 
+function primeiraCobrancaLegadaIso(
+  processo: ProcessoIntegracao,
+  itemId: string,
+  hojeRef: string | Date = new Date(),
+): string | null {
+  const ficha = processo.feito?.[itemId] as any;
+  const notas = Array.isArray(ficha?.notas) ? ficha.notas : [];
+  const nota = [...notas].reverse().find((item: any) =>
+    String(item?.t || '').trim() === 'Cobrança enviada por e-mail.');
+  if (!nota?.d) return null;
+
+  const match = String(nota.d).match(/^(\d{2})\/(\d{2})\s+(\d{2}):(\d{2})$/);
+  if (!match) return null;
+  const hoje = typeof hojeRef === 'string' ? new Date(`${hojeRef.slice(0, 10)}T12:00:00`) : hojeRef;
+  const ano = hoje.getFullYear();
+  const candidata = new Date(ano, Number(match[2]) - 1, Number(match[1]), Number(match[3]), Number(match[4]));
+  if (Number.isNaN(candidata.getTime()) || candidata.getTime() > hoje.getTime()) return null;
+  const diferencaDias = Math.floor((hoje.getTime() - candidata.getTime()) / 86400000);
+  if (diferencaDias < 0 || diferencaDias > 30) return null;
+  return candidata.toISOString();
+}
+
+export function primeiraCobrancaRegistrada(
+  processo: ProcessoIntegracao,
+  itemId: string,
+  hojeRef: string | Date = new Date(),
+): boolean {
+  const meta = metadadosCobrancaFormularioAcao(processo, itemId);
+  return Boolean(meta.primeiraEm || primeiraCobrancaLegadaIso(processo, itemId, hojeRef));
+}
+
 export function segundaCobrancaDisponivel(
   processo: ProcessoIntegracao,
   itemId: string,
@@ -106,8 +137,10 @@ export function segundaCobrancaDisponivel(
   hojeRef: string | Date = new Date(),
 ): boolean {
   const meta = metadadosCobrancaFormularioAcao(processo, itemId);
-  if (!meta.primeiraEm || meta.segundaEm) return false;
-  const dataReforco = dataReforcoCobranca(meta.primeiraEm, feriados);
+  if (meta.segundaEm) return false;
+  const primeiraEm = meta.primeiraEm || primeiraCobrancaLegadaIso(processo, itemId, hojeRef);
+  if (!primeiraEm) return false;
+  const dataReforco = dataReforcoCobranca(primeiraEm, feriados);
   if (!dataReforco) return false;
   return hojeIso(hojeRef) >= dataReforco;
 }
