@@ -9,6 +9,14 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import {
+  emailMarkdownParaTexto,
+  montarEmailComModelo,
+  type ValoresEmailIntegracao,
+} from '../helpers/emailCoreHelpers';
+import { modeloEmailIntegracao } from '../helpers/emailModelosIntegracao';
+import { CHAVE_MODELO_COBRANCA } from '../helpers/emailModelosCobranca';
+import { MARCADOR_EMAIL_VAZIO } from '../helpers/emailValoresHelpers';
 
 type FiltroRapido = 'all' | 'atraso' | 'vence3' | 'pendentes' | 'nao_cobrados';
 
@@ -166,10 +174,16 @@ function escaparCsv(valor: unknown) {
   return '"' + String(valor ?? '').replace(/"/g, '""') + '"';
 }
 
-function montarMensagem(itens: ItemCobranca[], assinatura: string): Mensagem {
+function montarMensagem(
+  itens: ItemCobranca[],
+  assinatura: string,
+  modelosCobranca: Record<string, any> = {},
+): Mensagem {
   const primeiro = itens[0];
   const nome = primeiroNome(primeiro.respondenteNome);
   const papel = primeiro.papel;
+  const chave = CHAVE_MODELO_COBRANCA.primeira[papel];
+  const modelo = modeloEmailIntegracao(chave, modelosCobranca);
 
   const linhas = itens.map((item) => {
     const sobreQuem = item.formKey === 'pesquisa' && item.papel === 'Colaborador'
@@ -177,20 +191,38 @@ function montarMensagem(itens: ItemCobranca[], assinatura: string): Mensagem {
       : ' · ' + item.colaboradorNome;
     const alinhamento = item.alinhamento ? ' · alinhamento de ' + item.alinhamento + ' dias' : '';
     const atraso = item.atrasado ? ' · em atraso' : '';
-    return '• ' + item.formulario + sobreQuem + alinhamento + ' · prazo ' + dataBr(item.prazo) + atraso + '\n  ' + item.link;
+    return '- **' + item.formulario + '**' + sobreQuem + alinhamento + ' · prazo ' + dataBr(item.prazo) + atraso + '\n  ' + item.link;
   }).join('\n');
 
-  const abertura = papel === 'Gestor'
-    ? 'Olá, ' + nome + ', tudo bem?\n\nHá formulário(s) do Programa de Integração aguardando sua resposta:'
-    : papel === 'Anjo'
-      ? 'Olá, ' + nome + ', tudo bem?\n\nSeu papel de apoio é muito importante para a integração. Há formulário(s) aguardando sua resposta:'
-      : 'Olá, ' + nome + ', tudo bem?\n\nQueremos saber como está sendo sua experiência de integração. Há formulário(s) aguardando sua resposta:';
+  const colaboradores = [...new Set(itens.map((item) => item.colaboradorNome).filter(Boolean))];
+  const colaboradorToken = colaboradores.length === 1
+    ? colaboradores[0]
+    : colaboradores.length > 1
+      ? colaboradores.length + ' colaboradores'
+      : '';
 
-  const fechamento = papel === 'Gestor'
-    ? 'Sua resposta é importante para mantermos o acompanhamento da integração atualizado.'
-    : papel === 'Anjo'
-      ? 'Sua percepção ajuda a organização a acompanhar o apoio e a adaptação ao longo da integração.'
-      : 'Sua resposta é muito importante para acompanharmos como está sendo sua experiência de integração.';
+  const valores: ValoresEmailIntegracao = {
+    DESTINATARIO_1: nome,
+    COLABORADOR: colaboradorToken,
+    EMAIL_COLABORADOR: papel === 'Colaborador' ? primeiro.respondenteEmail : '',
+    EMAIL_GESTOR: papel === 'Gestor' ? primeiro.respondenteEmail : primeiro.gestorEmail,
+    EMAIL_ANJO: papel === 'Anjo' ? primeiro.respondenteEmail : '',
+    UGP: papel === 'UGP' ? primeiro.respondenteEmail : '',
+    LISTA_FORMULARIOS: linhas,
+    FORMULARIO: itens.length === 1 ? primeiro.formulario : '',
+    LINK_FORMULARIO: itens.length === 1 ? primeiro.link : '',
+  };
+
+  const montado = modelo
+    ? montarEmailComModelo(chave, modelo, valores, MARCADOR_EMAIL_VAZIO)
+    : null;
+
+  const assunto = montado?.assunto && !montado.assunto.includes(MARCADOR_EMAIL_VAZIO)
+    ? montado.assunto
+    : 'Programa de Integração · ' + itens.length + ' formulário(s) aguardando sua resposta';
+  const corpoModelo = montado?.corpo && !montado.corpo.includes(MARCADOR_EMAIL_VAZIO)
+    ? emailMarkdownParaTexto(montado.corpo)
+    : 'Olá, ' + nome + ', tudo bem?\n\nHá formulário(s) do Programa de Integração aguardando sua resposta:\n\n' + linhas.replace(/\*\*/g, '');
 
   return {
     id: papel + '|' + String(primeiro.respondenteEmail || primeiro.respondenteNome).toLowerCase(),
@@ -198,8 +230,8 @@ function montarMensagem(itens: ItemCobranca[], assinatura: string): Mensagem {
     para: primeiro.respondenteEmail,
     ccGestor: primeiro.gestorEmail,
     copiarGestor: false,
-    assunto: 'Programa de Integração · ' + itens.length + ' formulário(s) aguardando sua resposta',
-    corpo: abertura + '\n\n' + linhas + '\n\n' + fechamento + '\nQualquer dúvida, estou à disposição.\n\n' + (assinatura || 'UGP/RH'),
+    assunto,
+    corpo: corpoModelo + '\n\n' + (assinatura || 'UGP/RH'),
     itens,
   };
 }
@@ -217,6 +249,7 @@ export function CobrancaFormulariosUgp({
   onAbrir,
   onRecarregar,
   assinatura,
+  modelosCobranca = {},
 }: {
   colaboradores: Colaborador[];
   busca: string;
@@ -230,6 +263,7 @@ export function CobrancaFormulariosUgp({
   onAbrir: (id: string) => void;
   onRecarregar: () => Promise<void> | void;
   assinatura: string;
+  modelosCobranca?: Record<string, any>;
 }) {
   const filtro = filtroRapido as FiltroRapido;
   const ativo = filtro !== 'all';
@@ -368,7 +402,7 @@ export function CobrancaFormulariosUgp({
       grupo.push(item);
       grupos.set(chave, grupo);
     });
-    setMensagens([...grupos.values()].map((grupo) => montarMensagem(grupo, assinatura)));
+    setMensagens([...grupos.values()].map((grupo) => montarMensagem(grupo, assinatura, modelosCobranca)));
     setMensagemIndice(0);
     setMensagensOpen(true);
   };
