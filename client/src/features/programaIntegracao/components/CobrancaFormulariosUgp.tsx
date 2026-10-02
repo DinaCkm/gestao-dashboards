@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, ClipboardCheck, Clock3, History, Search, TrendingUp, Users } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ClipboardCheck, Clock3, Filter, History, Search, TrendingUp, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -450,6 +450,8 @@ export function CobrancaFormulariosUgp({
     [historicoCobrancas, colaboradores],
   );
 
+  const totalAtrasados = contador('atraso');
+
   const alterarSelecao = (id: string, valor: boolean) => {
     setSelecionados((atual) => {
       const proximo = new Set(atual);
@@ -559,54 +561,69 @@ export function CobrancaFormulariosUgp({
 
   return (
     <>
-      <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,.04)]">
-        <div>
-          <div className="text-sm font-bold text-slate-900">Filtrar por status dos formulários</div>
-          <div className="mt-0.5 text-xs text-slate-500">Use os atalhos abaixo para acompanhar somente as pendências que precisam da sua atenção.</div>
+      <div className="pi-filter-panel space-y-4">
+        <div className="pi-filter-head">
+          <span className="pi-filter-icon"><Filter className="h-4 w-4" /></span>
+          <div>
+            <div className="pi-filter-title">Filtrar por status dos formulários</div>
+            <div className="pi-filter-subtitle mt-0.5">Use os atalhos abaixo para acompanhar somente as pendências que precisam da sua atenção.</div>
+          </div>
         </div>
+
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-2">
+          <div className="pi-chips">
             {([
               ['atraso', 'Atrasados', contador('atraso')],
               ['vence3', 'Vencem em 3 dias', contador('vence3')],
               ['pendentes', 'Todos pendentes', contador('pendentes')],
               ['nao_cobrados', 'Ainda não cobrados', contador('nao_cobrados')],
-            ] as Array<[FiltroRapido, string, number]>).map(([valor, rotulo, total]) => (
-              <Button
-                key={valor}
-                size="sm"
-                variant={filtro === valor ? 'default' : 'outline'}
-                className={filtro === valor ? 'bg-violet-700 hover:bg-violet-800' : ''}
-                onClick={() => setFiltroRapido(filtro === valor ? 'all' : valor)}
-              >
-                {rotulo} ({total})
-              </Button>
-            ))}
+            ] as Array<[FiltroRapido, string, number]>).map(([valor, rotulo, total]) => {
+              const ativa = filtro === valor;
+              const vazia = total === 0;
+              const semantica = valor === 'atraso' ? ' pi-chip--danger' : valor === 'vence3' ? ' pi-chip--warn' : '';
+              return (
+                <Button
+                  key={valor}
+                  size="sm"
+                  variant="outline"
+                  className={'pi-chip' + semantica + (vazia ? ' is-empty' : '') + (ativa ? ' is-active' : '')}
+                  onClick={() => setFiltroRapido(ativa ? 'all' : valor)}
+                >
+                  {valor === 'vence3' && total > 0 && <span className="pi-chip-dot" aria-hidden="true" />}
+                  <span>{rotulo}</span>
+                  <span className="pi-chip-count">{total}</span>
+                </Button>
+              );
+            })}
           </div>
+
           {!ativo && (
             <button
               type="button"
               onClick={() => setFiltroRapido('atraso')}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 hover:shadow-sm"
+              className={'pi-filter-action inline-flex items-center gap-2 px-4 ' + (totalAtrasados > 0 ? 'is-danger' : 'is-quiet')}
             >
               <AlertTriangle className="h-4 w-4" />
               Ver formulários em atraso
             </button>
           )}
         </div>
-        <div className="border-t border-slate-100 pt-3">
-          <Button type="button" variant="outline" className="gap-2" onClick={() => setHistoricoGeralOpen(true)}>
-            <History className="h-4 w-4" />
-            Histórico geral de cobranças
-            {historicoCobrancas.length > 0 && <Badge variant="secondary">{historicoCobrancas.length}</Badge>}
-          </Button>
-          <span className="ml-3 text-xs text-slate-500">Os registros permanecem no histórico mesmo depois que o formulário é respondido.</span>
+
+        <div className="border-t pt-4" style={{ borderColor: 'var(--pi-border)' }}>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="button" variant="outline" className="pi-chip gap-2" onClick={() => setHistoricoGeralOpen(true)}>
+              <History className="h-4 w-4" />
+              Histórico geral de cobranças
+              {historicoCobrancas.length > 0 && <span className="pi-chip-count pi-history-count">{historicoCobrancas.length}</span>}
+            </Button>
+            <span className="pi-note">Os registros permanecem no histórico mesmo depois que o formulário é respondido.</span>
+          </div>
         </div>
       </div>
 
       {ativo && (
-        <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
-          <div className="border-b bg-white p-4">
+        <Card className="pi-table-card">
+          <div className="pi-toolbar">
             <div className="mb-3 flex flex-col gap-3 rounded-xl border border-violet-100 bg-violet-50/50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="text-sm font-bold text-violet-950">Modo cobrança de formulários</div>
@@ -615,20 +632,20 @@ export function CobrancaFormulariosUgp({
               <Button size="sm" variant="outline" onClick={() => setFiltroRapido('all')}>Voltar para a carteira</Button>
             </div>
 
-            <div className="grid gap-3 lg:grid-cols-[1fr_200px_180px_180px]">
+            <div className="pi-toolbar-grid grid gap-3 lg:grid-cols-[1fr_200px_180px_180px]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <Input className="pl-9" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por respondente ou colaborador..." />
+                <Search className="pi-search-icon absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                <Input className="pi-control pl-9" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por respondente ou colaborador..." />
               </div>
               <Select value={unidade} onValueChange={setUnidade}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="pi-select-trigger"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas as unidades</SelectItem>
                   {[...new Set(colaboradores.map((item) => item.unidade).filter(Boolean))].sort().map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={papel} onValueChange={setPapel}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="pi-select-trigger"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os papéis</SelectItem>
                   <SelectItem value="Colaborador">Colaborador</SelectItem>
@@ -637,7 +654,7 @@ export function CobrancaFormulariosUgp({
                 </SelectContent>
               </Select>
               <Select value={alinhamento} onValueChange={setAlinhamento}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="pi-select-trigger"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os alinhamentos</SelectItem>
                   {[15, 45, 75, 150].map((dia) => <SelectItem key={dia} value={String(dia)}>{dia} dias</SelectItem>)}
@@ -646,8 +663,8 @@ export function CobrancaFormulariosUgp({
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1500px] text-sm">
+          <div className="pi-table-wrap">
+            <table className="pi-table min-w-[1500px] text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="px-3 py-3 text-center">
