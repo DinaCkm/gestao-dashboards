@@ -3479,10 +3479,17 @@ function PercepcoesDumbbell({ colaborador }: { colaborador: ColaboradorAcompanha
 }
 
 function DesenvolvimentoDetalhe({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const ritmo = calcularDesenvolvimentoNoRitmo({
+    dia: colaborador.dia,
+    pdiPercentual: colaborador.pdi.percentual,
+    compliancePercentual: colaborador.jornadaCompliance.percentual,
+  });
   const itens = [
     {
       titulo: 'Jornada Compliance',
       percentual: colaborador.jornadaCompliance.percentual,
+      esperado: ritmo.compliance.esperado,
+      aderencia: ritmo.compliance.aderencia,
       detalhe: colaborador.jornadaCompliance.total
         ? colaborador.jornadaCompliance.concluidas + ' de ' + colaborador.jornadaCompliance.total + ' atividades concluídas'
         : 'Ainda sem atividades registradas.',
@@ -3491,6 +3498,8 @@ function DesenvolvimentoDetalhe({ colaborador }: { colaborador: ColaboradorAcomp
     {
       titulo: 'Plano de Desenvolvimento (PDI)',
       percentual: colaborador.pdi.percentual,
+      esperado: ritmo.pdi.esperado,
+      aderencia: ritmo.pdi.aderencia,
       detalhe: colaborador.pdi.total
         ? colaborador.pdi.concluidas + ' de ' + colaborador.pdi.total + ' tarefas concluídas'
         : 'Ainda sem tarefas registradas.',
@@ -3525,8 +3534,16 @@ function DesenvolvimentoDetalhe({ colaborador }: { colaborador: ColaboradorAcomp
               <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-slate-100">
                 <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(0, Math.min(100, Number(item.percentual || 0)))}%`, backgroundColor: visual.barra }} />
               </div>
-              <div className="mt-3 text-xs leading-relaxed text-slate-500">
-                Esta aba apresenta somente o avanço percentual. Os cursos e conteúdos individuais não são exibidos aqui.
+              <div className="mt-3 space-y-1 text-xs leading-relaxed text-slate-500">
+                <div>Este é o avanço real registrado. Os cursos e conteúdos individuais não são exibidos aqui.</div>
+                {item.esperado == null ? (
+                  <div className="font-semibold text-slate-600">Ainda não entra na régua de Desenvolvimento neste momento da jornada.</div>
+                ) : (
+                  <div className="font-semibold text-slate-600">
+                    Esperado até hoje: {Math.round(item.esperado)}%
+                    {item.aderencia == null ? '' : ' · aderência ao esperado: ' + Math.round(item.aderencia) + '%'}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
