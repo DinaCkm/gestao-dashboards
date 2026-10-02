@@ -40,7 +40,7 @@ import { disc360Router } from "./routers/disc360";
 import { relatorioMentoradoRouter } from "./routers/relatorioMentorado";
 import { meuDesempenhoRouter } from "./routers/meuDesempenho";
 import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateType } from "./templateGenerator";
-import { storagePut } from "./storage";
+import { storagePut, storageDownloadBuffer, storageGetDownload } from "./storage";
 import { renderPdfFromUrl, montarCabecalhoRodapeRelatorio } from "./pdfRenderer";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
 import { getDb } from "./db";
@@ -12054,6 +12054,287 @@ E-mail: ${alunoInteressado.email || ctx.user.email || "não informado"}`;
         if (!aluno) throw new TRPCError({ code: "NOT_FOUND", message: "Perfil do aluno não encontrado." });
         await db.markCaseInteresseAsRead(input.interesseId, aluno.id);
         return { success: true };
+      }),
+
+    // Admin: opções disponíveis para exportação em lote dos cases
+    opcoesExportacaoAdmin: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user || ctx.user.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Apenas administradores podem exportar cases." });
+      }
+
+      const database = await getDb();
+      if (!database) return { empresas: [], turmas: [], alunos: [], trilhas: [] };
+
+      const rows = await database.execute(sql`
+        SELECT
+          cs.alunoId,
+          a.name AS alunoNome,
+          a.programId,
+          p.name AS empresa,
+          a.turmaId,
+          t.name AS turmaNome,
+          cs.trilhaId,
+          COALESCE(cs.trilhaNome, tr.name) AS trilhaNome
+        FROM cases_sucesso cs
+        INNER JOIN alunos a ON a.id = cs.alunoId
+        LEFT JOIN programs p ON p.id = a.programId
+        LEFT JOIN turmas t ON t.id = a.turmaId
+        LEFT JOIN trilhas tr ON tr.id = cs.trilhaId
+        WHERE cs.entregue = 1
+        ORDER BY p.name, t.name, a.name, COALESCE(cs.trilhaNome, tr.name)
+      `) as any;
+
+      const result = (rows?.[0] ?? rows) as any[];
+      const unique = <T extends { id: number }>(items: T[]) =>
+        Array.from(new Map(items.filter((item) => Number.isFinite(item.id)).map((item) => [item.id, item])).values());
+
+      return {
+        empresas: unique(result
+          .filter((r: any) => r.programId)
+          .map((r: any) => ({ id: Number(r.programId), nome: String(r.empresa || "Empresa") }))),
+        turmas: unique(result
+          .filter((r: any) => r.turmaId)
+          .map((r: any) => ({ id: Number(r.turmaId), nome: String(r.turmaNome || `Turma #${r.turmaId}`), programId: Number(r.programId) }))),
+        alunos: unique(result
+          .filter((r: any) => r.alunoId)
+          .map((r: any) => ({
+            id: Number(r.alunoId),
+            nome: String(r.alunoNome || `Aluno #${r.alunoId}`),
+            programId: r.programId ? Number(r.programId) : null,
+            turmaId: r.turmaId ? Number(r.turmaId) : null,
+          }))),
+        trilhas: unique(result
+          .filter((r: any) => r.trilhaId)
+          .map((r: any) => ({ id: Number(r.trilhaId), nome: String(r.trilhaNome || `Trilha #${r.trilhaId}`) }))),
+      };
+    }),
+
+    // Admin: gera um ZIP com todos os cases filtrados, anexos, evidências e planilha índice
+    exportarCasesAdmin: protectedProcedure
+      .input(z.object({
+        programId: z.number().optional(),
+        turmaId: z.number().optional(),
+        alunoId: z.number().optional(),
+        trilhaId: z.number().optional(),
+        dateFrom: z.string().optional(),
+        dateTo: z.string().optional(),
+        includeEvidence: z.boolean().default(true),
+      }).optional())
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user || ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Apenas administradores podem exportar cases." });
+        }
+
+        const database = await getDb();
+        if (!database) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco de dados indisponível." });
+        }
+
+        const filtros = input || { includeEvidence: true };
+        const conditions: any[] = [sql`cs.entregue = 1`];
+        if (filtros.programId) conditions.push(sql`a.programId = ${filtros.programId}`);
+        if (filtros.turmaId) conditions.push(sql`a.turmaId = ${filtros.turmaId}`);
+        if (filtros.alunoId) conditions.push(sql`cs.alunoId = ${filtros.alunoId}`);
+        if (filtros.trilhaId) conditions.push(sql`cs.trilhaId = ${filtros.trilhaId}`);
+        if (filtros.dateFrom) conditions.push(sql`DATE(cs.dataEntrega) >= ${filtros.dateFrom}`);
+        if (filtros.dateTo) conditions.push(sql`DATE(cs.dataEntrega) <= ${filtros.dateTo}`);
+
+        const whereSql = sql.join(conditions, sql` AND `);
+        const rows = await database.execute(sql`
+          SELECT
+            cs.id AS caseId,
+            cs.alunoId,
+            a.name AS alunoNome,
+            a.email AS alunoEmail,
+            a.programId,
+            p.name AS empresa,
+            a.turmaId,
+            t.name AS turmaNome,
+            cs.trilhaId,
+            COALESCE(cs.trilhaNome, tr.name) AS trilhaNome,
+            cs.titulo,
+            cs.resumoPublico,
+            cs.descricao,
+            cs.dataEntrega,
+            cs.oQueAprendi,
+            cs.oQueMudei,
+            cs.resultadoMensuravel,
+            cs.antesVsDepois,
+            cs.fileKey,
+            cs.fileUrl,
+            cs.fileName,
+            cs.evidenciaKey,
+            cs.evidenciaUrl,
+            cs.evidenciaFileName,
+            cs.notaAlunoAplicabilidade,
+            cs.notaMentoraAplicabilidade,
+            cs.observacao
+          FROM cases_sucesso cs
+          INNER JOIN alunos a ON a.id = cs.alunoId
+          LEFT JOIN programs p ON p.id = a.programId
+          LEFT JOIN turmas t ON t.id = a.turmaId
+          LEFT JOIN trilhas tr ON tr.id = cs.trilhaId
+          WHERE ${whereSql}
+          ORDER BY p.name, t.name, a.name, cs.dataEntrega, cs.id
+        `) as any;
+
+        const cases = (rows?.[0] ?? rows) as any[];
+        if (!cases.length) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Nenhum case entregue foi encontrado com os filtros selecionados." });
+        }
+
+        const AdmZip = (await import("adm-zip")).default;
+        const zip = new AdmZip();
+        const erros: string[] = [];
+        let totalArquivos = 0;
+
+        const limparNome = (valor: unknown, fallback: string) => {
+          const texto = String(valor || fallback)
+            .replace(/[<>:"/\\|?*\x00-\x1F]/g, "-")
+            .replace(/\s+/g, " ")
+            .trim();
+          return (texto || fallback).slice(0, 120);
+        };
+
+        const baixarArquivo = async (key?: string | null, url?: string | null): Promise<Buffer | null> => {
+          if (key) {
+            try {
+              return await storageDownloadBuffer(String(key));
+            } catch (e) {
+              console.warn("[ExportCases] Falha ao baixar por key, tentando URL:", key, e);
+            }
+          }
+          if (url) {
+            const response = await fetch(String(url));
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return Buffer.from(await response.arrayBuffer());
+          }
+          return null;
+        };
+
+        const linhasIndice: any[] = [];
+
+        for (const item of cases) {
+          const empresa = limparNome(item.empresa, "Sem empresa");
+          const turma = limparNome(item.turmaNome, "Sem turma");
+          const aluno = limparNome(item.alunoNome, `Aluno ${item.alunoId}`);
+          const trilha = limparNome(item.trilhaNome, "Sem trilha");
+          const titulo = limparNome(item.titulo, `Case ${item.caseId}`);
+          const pasta = `${empresa}/${turma}/${aluno}/${trilha}`;
+
+          const resumo = [
+            `CASE #${item.caseId}`,
+            `Título: ${item.titulo || ""}`,
+            `Aluno: ${item.alunoNome || ""}`,
+            `E-mail: ${item.alunoEmail || ""}`,
+            `Empresa: ${item.empresa || ""}`,
+            `Turma: ${item.turmaNome || ""}`,
+            `Trilha: ${item.trilhaNome || ""}`,
+            `Data de entrega: ${item.dataEntrega ? new Date(item.dataEntrega).toLocaleDateString("pt-BR") : ""}`,
+            "",
+            `Resumo público: ${item.resumoPublico || ""}`,
+            `Descrição: ${item.descricao || ""}`,
+            `O que aprendi: ${item.oQueAprendi || ""}`,
+            `O que mudei: ${item.oQueMudei || ""}`,
+            `Resultado mensurável: ${item.resultadoMensuravel || ""}`,
+            `Antes vs. Depois: ${item.antesVsDepois || ""}`,
+            `Nota do aluno: ${item.notaAlunoAplicabilidade ?? ""}`,
+            `Nota da mentora: ${item.notaMentoraAplicabilidade ?? ""}`,
+            `Observação: ${item.observacao || ""}`,
+          ].join("\n");
+          zip.addFile(`${pasta}/CASE ${item.caseId} - ${titulo} - dados.txt`, Buffer.from(resumo, "utf8"));
+
+          let arquivoCase = "Não";
+          let evidencia = "Não";
+
+          if (item.fileKey || item.fileUrl) {
+            try {
+              const buffer = await baixarArquivo(item.fileKey, item.fileUrl);
+              if (buffer) {
+                const nomeOriginal = limparNome(item.fileName, `case-${item.caseId}.bin`);
+                zip.addFile(`${pasta}/CASE ${item.caseId} - ${nomeOriginal}`, buffer);
+                arquivoCase = "Sim";
+                totalArquivos++;
+              }
+            } catch (e: any) {
+              const erro = `Case #${item.caseId}: arquivo principal não pôde ser baixado (${e?.message || e})`;
+              erros.push(erro);
+              console.warn("[ExportCases]", erro);
+            }
+          }
+
+          if (filtros.includeEvidence !== false && (item.evidenciaKey || item.evidenciaUrl)) {
+            try {
+              const buffer = await baixarArquivo(item.evidenciaKey, item.evidenciaUrl);
+              if (buffer) {
+                const nomeOriginal = limparNome(item.evidenciaFileName, `evidencia-${item.caseId}.bin`);
+                zip.addFile(`${pasta}/EVIDÊNCIA ${item.caseId} - ${nomeOriginal}`, buffer);
+                evidencia = "Sim";
+                totalArquivos++;
+              }
+            } catch (e: any) {
+              const erro = `Case #${item.caseId}: evidência não pôde ser baixada (${e?.message || e})`;
+              erros.push(erro);
+              console.warn("[ExportCases]", erro);
+            }
+          }
+
+          linhasIndice.push({
+            "ID do Case": Number(item.caseId),
+            "Empresa": item.empresa || "",
+            "Turma": item.turmaNome || "",
+            "Aluno": item.alunoNome || "",
+            "E-mail": item.alunoEmail || "",
+            "Trilha": item.trilhaNome || "",
+            "Título": item.titulo || "",
+            "Data de Entrega": item.dataEntrega ? new Date(item.dataEntrega).toLocaleDateString("pt-BR") : "",
+            "Arquivo do Case": arquivoCase,
+            "Evidência": evidencia,
+            "Nota do Aluno": item.notaAlunoAplicabilidade ?? "",
+            "Nota da Mentora": item.notaMentoraAplicabilidade ?? "",
+          });
+        }
+
+        const ws = XLSX.utils.json_to_sheet(linhasIndice);
+        ws["!cols"] = [
+          { wch: 12 }, { wch: 28 }, { wch: 24 }, { wch: 34 }, { wch: 34 },
+          { wch: 24 }, { wch: 45 }, { wch: 16 }, { wch: 16 }, { wch: 12 },
+          { wch: 14 }, { wch: 16 },
+        ];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Relação dos Cases");
+        const xlsxBuffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
+        zip.addFile("RELACAO_DOS_CASES.xlsx", xlsxBuffer);
+
+        if (erros.length) {
+          zip.addFile(
+            "AVISO_ARQUIVOS_NAO_BAIXADOS.txt",
+            Buffer.from(
+              "Alguns anexos referenciados no sistema não puderam ser recuperados automaticamente.\n\n" + erros.join("\n"),
+              "utf8"
+            )
+          );
+        }
+
+        const zipBuffer = zip.toBuffer();
+        const empresaFiltro = filtros.programId
+          ? (cases.find((c: any) => Number(c.programId) === filtros.programId)?.empresa || `empresa-${filtros.programId}`)
+          : "todas-as-empresas";
+        const data = new Date().toISOString().slice(0, 10);
+        const fileName = `CASES - ${limparNome(empresaFiltro, "empresas")} - ${data}.zip`;
+        const key = `exports/cases/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.zip`;
+
+        await storagePut(key, zipBuffer, "application/zip", "private, max-age=0, no-store");
+        const download = await storageGetDownload(key, fileName);
+
+        return {
+          success: true,
+          url: download.url,
+          fileName,
+          totalCases: cases.length,
+          totalFiles: totalArquivos,
+          failedFiles: erros.length,
+        };
       }),
 
     // Admin: detalhes completos de um case para o relatório
