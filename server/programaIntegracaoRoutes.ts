@@ -1024,6 +1024,13 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     const mentorasConfiguradas = Array.isArray(configGeralPrograma.mentoras)
       ? configGeralPrograma.mentoras
       : [];
+    const emailsConfigurados = configGeralPrograma?.emails && typeof configGeralPrograma.emails === "object"
+      ? configGeralPrograma.emails as Record<string, any>
+      : {};
+    const modelosCobrancaConfigurados = Object.fromEntries(
+      Object.entries(emailsConfigurados).filter(([chave]) =>
+        chave.startsWith("m_cobranca_form_") || chave.startsWith("m_reforco_form_")),
+    );
     const nomeMentoraResponsavel = (row: any): string => {
       const mentorId = String(row?.mentorLegacyId || "").trim();
       if (mentorId) {
@@ -1310,6 +1317,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         gestorSelecionado: gestorSelecionadoPublico,
         empresaId: adminGlobal ? null : empresaId,
         usuarioAtualNome: acessoUgpRh ? String(user?.name || user?.email || "") : "",
+        modelosCobranca: acessoUgpRh ? modelosCobrancaConfigurados : {},
         atualizadoEm: new Date().toISOString(),
         colaboradores: [],
       });
@@ -1824,6 +1832,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       gestorSelecionado: gestorSelecionadoPublico,
       empresaId: adminGlobal ? null : empresaId,
       usuarioAtualNome: acessoUgpRh ? String(user?.name || user?.email || "") : "",
+      modelosCobranca: acessoUgpRh ? modelosCobrancaConfigurados : {},
       atualizadoEm: new Date().toISOString(),
       colaboradores,
     });
