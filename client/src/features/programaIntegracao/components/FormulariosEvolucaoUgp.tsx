@@ -56,6 +56,15 @@ function valorApresentado(
   pergunta: ReturnType<typeof perguntasCatalogo>[number],
   valor: unknown,
 ): string {
+  if (pergunta.type === 'scale') {
+    const texto = textoValor(valor);
+    const numero = Number(String(texto).replace(',', '.'));
+    if (Number.isFinite(numero)) {
+      if (numero === 0) return 'Sem opinião (0)';
+      if (numero >= 1 && numero <= 5) return String(numero).replace('.', ',') + ' de 5';
+    }
+    return texto;
+  }
   if (!pergunta.options || !pergunta.options.length) return textoValor(valor);
   const mapa = new Map(pergunta.options.map((opt) => {
     const item = optionValueLabel(opt);
@@ -148,7 +157,7 @@ function EvolucaoPapel({ respostas, papel }: { respostas: RespostaAcompanhamento
             <CartesianGrid strokeDasharray="3 3" opacity={0.25} />
             <XAxis dataKey="momento" />
             <YAxis domain={[0,5]} ticks={[0,1,2,3,4,5]} />
-            <ChartTooltip formatter={(v: number) => Number(v).toFixed(2).replace('.', ',')} />
+            <ChartTooltip formatter={(v: number) => Number(v).toFixed(2).replace('.', ',') + ' de 5'} />
             <Legend />
             {PILARES_ACOMPANHAMENTO.map((p, i) => (
               <Line key={p.chave} type="linear" dataKey={p.chave} name={p.nome} stroke={CORES[i % CORES.length]} strokeWidth={2.2} dot={{ r: 4 }} connectNulls />
@@ -171,7 +180,7 @@ function EvolucaoPapel({ respostas, papel }: { respostas: RespostaAcompanhamento
                 <td className="px-3 py-3 font-medium">{p.nome}</td>
                 {momentos.map((m) => (
                   <td key={m.ciclo} className="px-3 py-3 text-center tabular-nums">
-                    {m.pilares[p.chave] == null ? '—' : Number(m.pilares[p.chave]).toFixed(2).replace('.', ',')}
+                    {m.pilares[p.chave] == null ? '—' : Number(m.pilares[p.chave]).toFixed(2).replace('.', ',') + ' de 5'}
                   </td>
                 ))}
               </tr>
