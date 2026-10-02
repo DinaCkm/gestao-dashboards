@@ -221,6 +221,13 @@ interface AcompanhamentoResponse {
   gestorSelecionado?: GestorDisponivel | null;
   atualizadoEm: string;
   usuarioAtualNome?: string;
+  modelosCobranca?: Record<string, {
+    para?: string;
+    cc?: string;
+    assunto?: string;
+    corpo?: string;
+    anexo?: string;
+  }>;
   colaboradores: ColaboradorAcompanhamento[];
 }
 
@@ -3188,7 +3195,7 @@ function TabelaFormulariosPendentesUgp({ colaborador }: { colaborador: Colaborad
 }
 
 function CarteiraUgp({
-  colaboradores,busca,setBusca,unidade,setUnidade,fase,setFase,status,setStatus,radarFiltro,setRadarFiltro,onAbrir,onRecarregar,assinatura
+  colaboradores,busca,setBusca,unidade,setUnidade,fase,setFase,status,setStatus,radarFiltro,setRadarFiltro,onAbrir,onRecarregar,assinatura,modelosCobranca
 }: {
   colaboradores: ColaboradorAcompanhamento[];
   busca:string; setBusca:(v:string)=>void;
@@ -3199,6 +3206,7 @@ function CarteiraUgp({
   onAbrir:(id:string)=>void;
   onRecarregar:()=>Promise<void>|void;
   assinatura:string;
+  modelosCobranca?: Record<string, any>;
 }) {
   const unidades=Array.from(new Set(colaboradores.map((x)=>x.unidade).filter(Boolean))).sort();
   const lista=colaboradores.filter((x)=>{
@@ -3253,6 +3261,7 @@ function CarteiraUgp({
         onAbrir={onAbrir}
         onRecarregar={onRecarregar}
         assinatura={assinatura}
+        modelosCobranca={modelosCobranca}
       />
 
       {radarFiltro==='all' && (
@@ -4698,6 +4707,7 @@ export default function AcompanharIntegracaoGestor() {
                 onAbrir={abrirDetalhe}
                 onRecarregar={() => carregar(gestorView)}
                 assinatura={dados?.usuarioAtualNome || 'UGP/RH'}
+                modelosCobranca={dados?.modelosCobranca || {}}
               />
             )
           ) : modoDetalhe && colaborador ? (

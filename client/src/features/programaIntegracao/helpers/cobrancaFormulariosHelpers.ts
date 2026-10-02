@@ -10,12 +10,20 @@ import {
 } from './itemStateHelpers';
 import { formatarData } from './dateHelpers';
 import { linkIntegracaoPorChave } from './emailLinksHelpers';
-import { emailMarkdownParaTexto, type EmailMontadoIntegracao } from './emailCoreHelpers';
+import {
+  emailMarkdownParaTexto,
+  emailTemDadoFaltante,
+  montarEmailComModelo,
+  type EmailMontadoIntegracao,
+  type ValoresEmailIntegracao,
+} from './emailCoreHelpers';
 import { ASSINATURA_EMAIL_INTEGRACAO } from './emailModelosPadrao';
 import { MARCADOR_EMAIL_VAZIO } from './emailValoresHelpers';
 import type { EmailPreviewIntegracao } from './emailMontagemHelpers';
 import type { ItemPlanoReal, ResponsavelIntegracao } from './planoReal';
 import { FERIADOS_PADRAO_INTEGRACAO } from './configDefaults';
+import { modeloEmailIntegracao } from './emailModelosIntegracao';
+import { CHAVE_MODELO_COBRANCA } from './emailModelosCobranca';
 
 export type PapelCobranca = 'Gestor' | 'Anjo' | 'Colaborador' | 'UGP';
 
@@ -149,6 +157,65 @@ function primeiro(nome: string): string {
   return String(nome || '').trim().split(/\s+/).filter(Boolean)[0] || '';
 }
 
+function chaveModeloCobranca(
+  modo: 'primeira' | 'segunda',
+  papel: PapelCobranca,
+): string {
+  return CHAVE_MODELO_COBRANCA[modo][papel];
+}
+
+function avisoCobranca(config: BootstrapState['config']): string {
+  return String(config?.aviso || '');
+}
+
+function valoresBaseCobranca(
+  processo: ProcessoIntegracao,
+  papel: PapelCobranca,
+): ValoresEmailIntegracao {
+  const destino = destinoPapel(processo, papel);
+  return {
+    COLABORADOR: processo.nome || '',
+    PRIMEIRO_NOME: primeiro(processo.nome),
+    EMAIL_COLABORADOR: processo.emailCorporativo || processo.email || '',
+    GESTOR: processo.gestor || '',
+    GESTOR_1: primeiro(processo.gestor),
+    EMAIL_GESTOR: processo.gestorEmail || '',
+    ANJO: processo.anjo || '',
+    ANJO_1: primeiro(processo.anjo),
+    EMAIL_ANJO: processo.anjoEmail || '',
+    UGP: processo.ugpResponsavelEmail || '',
+    DESTINATARIO_1: destino.trat || primeiro(destino.nome),
+  };
+}
+
+function finalizarPreviewCobranca(
+  emailBase: EmailMontadoIntegracao,
+  destino: DestinoCobrancaFormulario,
+): EmailPreviewIntegracao {
+  const email = {
+    ...emailBase,
+    para: destino.para || MARCADOR_EMAIL_VAZIO,
+    cc: '',
+    anexo: '',
+    corpo: emailBase.corpo + ASSINATURA_EMAIL_INTEGRACAO,
+  };
+  const textoSimples = emailMarkdownParaTexto(email.corpo);
+  const paraMailto = email.para.includes(MARCADOR_EMAIL_VAZIO) ? '' : email.para;
+  const ccMailto = email.cc && !email.cc.includes(MARCADOR_EMAIL_VAZIO) ? email.cc : '';
+  const mailto =
+    `mailto:${encodeURIComponent(paraMailto)}` +
+    `?subject=${encodeURIComponent(email.assunto)}` +
+    `&body=${encodeURIComponent(textoSimples)}` +
+    (ccMailto ? `&cc=${encodeURIComponent(ccMailto)}` : '');
+
+  return {
+    email,
+    textoSimples,
+    mailto,
+    faltandoDados: !destino.para || emailTemDadoFaltante(email, MARCADOR_EMAIL_VAZIO),
+  };
+}
+
 export function formulariosPendentes(
   processo: ProcessoIntegracao,
   feriados: string[] = [],
@@ -253,64 +320,45 @@ export function montarEmailCobranca(
   config: BootstrapState['config'],
   origin?: string,
 ): EmailPreviewIntegracao {
+  const chave = chaveModeloCobranca('primeira', papel);
+  const modelo = modeloEmailIntegracao(chave, config?.emails || null);
   const destino = destinoPapel(processo, papel);
-  const colaborador = processo.nome || MARCADOR_EMAIL_VAZIO;
-  const linhas = itens.map((item) => {
+  if (!modelo) {
+    const vazio: EmailMontadoIntegracao = {
+      chave,
+      fase: 'Cobrança de formulários',
+      nome: 'Cobrança de formulários',
+      para: MARCADOR_EMAIL_VAZIO,
+      cc: '',
+      assunto: MARCADOR_EMAIL_VAZIO,
+      corpo: MARCADOR_EMAIL_VAZIO,
+      anexo: '',
+    };
+    return finalizarPreviewCobranca(vazio, destino);
+  }
+
+  const lista = itens.map((item) => {
     const link = textoLink(item, config, origin);
     return `- **${item.it.form || item.it.t}** — previsto para ${formatarData(item.data)}` +
       (item.st.k === 'late' ? ' *(em atraso)*' : '') +
       (link ? `\n  ${link}` : '');
   }).join('\n');
 
-  const abertura = papel === 'Colaborador'
-    ? 'Passando para lembrar de um ponto rápido do seu processo de integração.'
-    : `Estamos organizando os registros do processo de integração de **${colaborador}** e passamos para um lembrete rápido.`;
-
-  const porque = papel === 'Colaborador'
-    ? 'Suas respostas são o que nos mostra como está sendo a sua experiência — e é a partir delas que ajustamos o acompanhamento.'
-    : papel === 'Anjo'
-      ? 'Sua percepção como Anjo entra no acompanhamento do processo e ajuda a CKM a enxergar coisas que não aparecem nas conversas formais.'
-      : papel === 'UGP'
-        ? 'Esses registros são o que permite seguir com as próximas etapas do programa dentro do fluxo combinado.'
-        : 'É a partir das suas respostas que conseguimos montar o relatório de evolução do colaborador e seguir com o acompanhamento.';
-
-  let corpo =
-    `Olá${destino.trat ? ` ${destino.trat}` : ''}, tudo bem?\n\n` +
-    `${abertura} ${itens.length > 1
-      ? 'Em nosso acompanhamento, ainda não recebemos suas respostas e estes formulários permanecem registrados como pendentes.'
-      : 'Em nosso acompanhamento, ainda não recebemos sua resposta e este formulário permanece registrado como pendente.'} ` +
-    'Caso você já tenha realizado o preenchimento, por favor nos informe para que possamos conferir o registro.\n\n' +
-    '**O que está pendente**\n' + linhas + '\n\n' +
-    `> O preenchimento ${itens.length > 1 ? 'desses formulários é obrigatório' : 'desse formulário é obrigatório'} dentro do Programa de Integração.\n\n` +
-    'O preenchimento costuma levar apenas alguns minutos e é importante para mantermos o acompanhamento atualizado e seguirmos com as próximas etapas.\n\n' +
-    porque + '\n\n' +
-    'Se aparecer qualquer dificuldade com o link ou com alguma pergunta, é só responder este e-mail que a gente ajuda.' +
-    ASSINATURA_EMAIL_INTEGRACAO;
-
-  const aviso = String(config?.aviso || '').trim();
-  if (aviso) corpo = aviso.replace(/^>\s?/, '> ') + '\n\n' + corpo;
-
-  const email: EmailMontadoIntegracao = {
-    chave: `__cobranca_${papel}`,
-    fase: 'Cobrança de formulários',
-    nome: `Cobrança de formulários · ${papel}`,
-    para: destino.para || MARCADOR_EMAIL_VAZIO,
-    cc: '',
-    anexo: '',
-    assunto: `[Onboarding] ${papel === 'Colaborador' ? 'Lembrete: formulário do seu processo de integração' : `Formulários pendentes — integração de ${colaborador}`}`,
-    corpo,
+  const valores: ValoresEmailIntegracao = {
+    ...valoresBaseCobranca(processo, papel),
+    LISTA_FORMULARIOS: lista,
+    FORMULARIO: itens.length === 1 ? (itens[0].it.form || itens[0].it.t) : '',
+    LINK_FORMULARIO: itens.length === 1 ? textoLink(itens[0], config, origin) : '',
   };
 
-  const textoSimples = emailMarkdownParaTexto(corpo);
-  const paraMailto = email.para.includes(MARCADOR_EMAIL_VAZIO) ? '' : email.para;
-  const mailto = `mailto:${encodeURIComponent(paraMailto)}?subject=${encodeURIComponent(email.assunto)}&body=${encodeURIComponent(textoSimples)}`;
-
-  return {
-    email,
-    textoSimples,
-    mailto,
-    faltandoDados: !destino.para || corpo.includes(MARCADOR_EMAIL_VAZIO),
-  };
+  const email = montarEmailComModelo(
+    chave,
+    modelo,
+    valores,
+    MARCADOR_EMAIL_VAZIO,
+    avisoCobranca(config),
+  );
+  return finalizarPreviewCobranca(email, destino);
 }
 
 export function montarEmailReforcoCobranca(
@@ -320,37 +368,42 @@ export function montarEmailReforcoCobranca(
   config: BootstrapState['config'],
   origin?: string,
 ): EmailPreviewIntegracao {
+  const chave = chaveModeloCobranca('segunda', papel);
+  const modelo = modeloEmailIntegracao(chave, config?.emails || null);
   const destino = destinoPapel(processo, papel);
-  const link = textoLink(item, config, origin);
-  const nomeFormulario = item.it.form || item.it.t || 'Formulário';
-  const corpo =
-    `Olá${destino.trat ? ` ${destino.trat}` : ''}, tudo bem?\n\n` +
-    `O formulário **${nomeFormulario}** continua pendente em nosso acompanhamento.\n\n` +
-    'Pedimos, por favor, que realize o preenchimento pelo link abaixo:\n' +
-    (link ? `${link}\n\n` : '\n') +
-    'Caso já tenha respondido, por favor nos informe para que possamos conferir o registro.' +
-    ASSINATURA_EMAIL_INTEGRACAO;
+  if (!modelo) {
+    const vazio: EmailMontadoIntegracao = {
+      chave,
+      fase: 'Reforço de cobrança de formulário',
+      nome: 'Reforço de cobrança',
+      para: MARCADOR_EMAIL_VAZIO,
+      cc: '',
+      assunto: MARCADOR_EMAIL_VAZIO,
+      corpo: MARCADOR_EMAIL_VAZIO,
+      anexo: '',
+    };
+    return finalizarPreviewCobranca(vazio, destino);
+  }
 
-  const email: EmailMontadoIntegracao = {
-    chave: `__cobranca_reforco_${papel}`,
-    fase: 'Reforço de cobrança de formulário',
-    nome: `Reforço de cobrança · ${papel}`,
-    para: destino.para || MARCADOR_EMAIL_VAZIO,
-    cc: '',
-    anexo: '',
-    assunto: '[Onboarding] Pendência de formulário',
-    corpo,
+  const link = textoLink(item, config, origin);
+  const valores: ValoresEmailIntegracao = {
+    ...valoresBaseCobranca(processo, papel),
+    FORMULARIO: item.it.form || item.it.t || 'Formulário',
+    LINK_FORMULARIO: link,
+    LISTA_FORMULARIOS: `- **${item.it.form || item.it.t}**\n  ${link}`,
   };
 
-  const textoSimples = emailMarkdownParaTexto(corpo);
-  const paraMailto = email.para.includes(MARCADOR_EMAIL_VAZIO) ? '' : email.para;
-  const mailto = `mailto:${encodeURIComponent(paraMailto)}?subject=${encodeURIComponent(email.assunto)}&body=${encodeURIComponent(textoSimples)}`;
-
+  const email = montarEmailComModelo(
+    chave,
+    modelo,
+    valores,
+    MARCADOR_EMAIL_VAZIO,
+    avisoCobranca(config),
+  );
+  const preview = finalizarPreviewCobranca(email, destino);
   return {
-    email,
-    textoSimples,
-    mailto,
-    faltandoDados: !destino.para || corpo.includes(MARCADOR_EMAIL_VAZIO) || !link,
+    ...preview,
+    faltandoDados: preview.faltandoDados || !link,
   };
 }
 

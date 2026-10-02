@@ -5,10 +5,16 @@ import { MODELOS_EMAIL_AGENDAMENTO_INTEGRACAO } from './emailModelosAgendamento'
 import { MODELOS_EMAIL_POS1_INTEGRACAO } from './emailModelosPos1';
 import { MODELOS_EMAIL_CICLOS_23_INTEGRACAO } from './emailModelosCiclos23';
 import { MODELOS_EMAIL_ENCERRAMENTO_INTEGRACAO } from './emailModelosEncerramento';
+import {
+  MODELOS_EMAIL_COBRANCA_INTEGRACAO,
+  ORDEM_EMAILS_COBRANCA_INTEGRACAO,
+  TOKENS_COBRANCA_INTEGRACAO,
+} from './emailModelosCobranca';
 
 /**
- * Registro único dos 32 modelos históricos do Programa de Integração.
- * A ordem continua vindo do MAIL_ORDEM original.
+ * Registro único dos modelos do Programa de Integração.
+ * Os 32 modelos históricos permanecem intactos e os modelos operacionais de
+ * cobrança entram como uma fase adicional, sem alterar a ordem histórica.
  */
 export const MODELOS_EMAIL_INTEGRACAO: Record<string, ModeloEmailIntegracao> = {
   ...MODELOS_EMAIL_PADRAO_INTEGRACAO,
@@ -16,9 +22,13 @@ export const MODELOS_EMAIL_INTEGRACAO: Record<string, ModeloEmailIntegracao> = {
   ...MODELOS_EMAIL_POS1_INTEGRACAO,
   ...MODELOS_EMAIL_CICLOS_23_INTEGRACAO,
   ...MODELOS_EMAIL_ENCERRAMENTO_INTEGRACAO,
+  ...MODELOS_EMAIL_COBRANCA_INTEGRACAO,
 };
 
-export const CHAVES_EMAIL_INTEGRACAO = [...ORDEM_EMAILS_INTEGRACAO];
+export const CHAVES_EMAIL_INTEGRACAO = [
+  ...ORDEM_EMAILS_INTEGRACAO,
+  ...ORDEM_EMAILS_COBRANCA_INTEGRACAO,
+];
 
 /** Tokens literais do array TOKENS do HTML histórico. */
 export const TOKENS_EMAIL_INTEGRACAO = [
@@ -60,6 +70,8 @@ export const TOKENS_EMAIL_INTEGRACAO = [
   ['BLOCO_RELATORIO', 'relatório de evolução ou aviso de formulário faltando'],
   ['BLOCO_CONSIDERACOES', 'considerações da CKM — só entra se você escrever algo'],
 ] as const;
+
+export { TOKENS_COBRANCA_INTEGRACAO };
 
 /** Retorna o modelo padrão da chave sem alterar qualquer configuração. */
 export function modeloPadraoEmailIntegracao(chave: string): ModeloEmailIntegracao | null {
