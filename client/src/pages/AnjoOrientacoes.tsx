@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import AnjoRouteGuard from "@/features/programaIntegracao/components/AnjoRouteGuard";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { HeartHandshake, Route, Users, MessageCircle, CalendarCheck, ArrowRight, ShieldCheck, Sunrise, Handshake, Compass, Coffee, Milestone, Heart, Lightbulb, Headphones, Eye, Network, Sprout, AlertTriangle, Check, X, CheckCircle2 } from "lucide-react";
+import { HeartHandshake, Route, Users, MessageCircle, CalendarCheck, ArrowRight, ShieldCheck, Sunrise, Handshake, Compass, Coffee, Flag, Heart, Lightbulb, Headphones, Eye, Network, Sprout, AlertTriangle, Check, X, CheckCircle2 } from "lucide-react";
 import { AnjoAcolhendoIllustration, SparkShape } from "@/components/illustrations/ProgramaIntegracaoIllustrations";
 import { useLocation } from "wouter";
 import "@/features/programaIntegracao/styles/acompanhamentoIntegracao.css";
@@ -60,7 +60,7 @@ const etapas = [
   },
 ];
 
-const etapaIcones = [Sunrise, Handshake, Compass, Coffee, Milestone];
+const etapaIcones = [Sunrise, Handshake, Compass, Coffee, Flag];
 
 const esperado = [
   ["Acolher", "Contribuir para que a chegada e a adaptação sejam mais leves e positivas."],
