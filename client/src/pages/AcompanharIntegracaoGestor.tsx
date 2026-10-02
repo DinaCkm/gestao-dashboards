@@ -37,6 +37,7 @@ import { gerarAcompanhamentoIntegracaoPdf } from '@/features/programaIntegracao/
 import { gerarDocumentoAtaRelatorio } from '@/features/programaIntegracao/helpers/atasRelatoriosHelpers';
 import { FormulariosEvolucaoUgp } from '@/features/programaIntegracao/components/FormulariosEvolucaoUgp';
 import { CobrancaFormulariosUgp } from '@/features/programaIntegracao/components/CobrancaFormulariosUgp';
+import '@/features/programaIntegracao/styles/acompanhamentoIntegracao.css';
 
 interface HistoricoCobrancaFormulario {
   id: string;
@@ -2529,6 +2530,129 @@ function tendenciaGeral(colaborador: ColaboradorAcompanhamento) {
     .map((m) => ({ dia: diaDoAlinhamento(m.ciclo), valor: Number(m.geral) }));
 }
 
+function diasAtePrazoVisual(prazo: string) {
+  const valor = String(prazo || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return null;
+  const agora = new Date();
+  const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 12);
+  const data = new Date(valor + 'T12:00:00');
+  if (Number.isNaN(data.getTime())) return null;
+  return Math.round((data.getTime() - hoje.getTime()) / 86400000);
+}
+
+function iniciaisPessoa(nome: string) {
+  const partes = String(nome || '').trim().split(/\s+/).filter(Boolean);
+  if (!partes.length) return '—';
+  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+  return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+}
+
+function matizPessoa(id: string, nome: string) {
+  const base = String(id || nome || 'pessoa');
+  let hash = 0;
+  for (let i = 0; i < base.length; i += 1) hash = ((hash << 5) - hash + base.charCodeAt(i)) | 0;
+  return Math.abs(hash) % 360;
+}
+
+function AnimatedNumber({ value, suffix = '' }: { value: number; suffix?: string }) {
+  const [display, setDisplay] = useState(value);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.matchMedia('(prefers-reduced-motion: reduce)').matches || value <= 0) {
+      setDisplay(value);
+      return;
+    }
+
+    let frame = 0;
+    const inicio = performance.now();
+    const duracao = 750;
+    setDisplay(0);
+
+    const tick = (agora: number) => {
+      const progresso = Math.min((agora - inicio) / duracao, 1);
+      const suavizado = 1 - Math.pow(1 - progresso, 3);
+      setDisplay(Math.round(value * suavizado));
+      if (progresso < 1) frame = window.requestAnimationFrame(tick);
+    };
+    frame = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frame);
+  }, [value]);
+
+  return <>{display}{suffix}</>;
+}
+
+function KpiResumoCard({
+  titulo,
+  valor,
+  detalhe,
+  icon: Icon,
+  variante,
+  tag,
+  tooltip,
+  meter,
+  zeroPositivo = false,
+}: {
+  titulo: string;
+  valor: number | null;
+  detalhe: string;
+  icon: React.ComponentType<{ className?: string }>;
+  variante: 'brand' | 'warn' | 'danger' | 'ok' | 'info';
+  tag?: { texto: string; tipo: 'ok' | 'warn' | 'muted' };
+  tooltip?: string;
+  meter?: number | null;
+  zeroPositivo?: boolean;
+}) {
+  const zero = valor === 0;
+  const classeZero = zeroPositivo && zero ? ' is-clear' : zero && titulo === 'Concluindo' ? ' is-zero' : '';
+  return (
+    <article className={'pi-kpi pi-kpi--' + variante + classeZero}>
+      <div className="pi-kpi-head">
+        <span className="pi-kpi-icon"><Icon className="h-[18px] w-[18px]" /></span>
+        {tag && <span className={'pi-tag pi-tag--' + tag.tipo}>{tag.tipo === 'ok' && <CheckCircle2 className="h-3.5 w-3.5" />}{tag.texto}</span>}
+      </div>
+      <div className="pi-kpi-label">
+        {titulo}
+        {tooltip && <span className="pi-tip" tabIndex={0} data-pi-tip={tooltip}>i</span>}
+      </div>
+      <div className="pi-kpi-value">
+        {valor == null ? '—' : <AnimatedNumber value={valor} suffix={titulo === 'Índice médio' ? '%' : ''} />}
+      </div>
+      <div className="pi-kpi-hint">{detalhe}</div>
+      {meter != null && (
+        <div className="pi-kpi-meter" aria-label={'Progresso ' + Math.round(meter) + '%'}>
+          <span style={{ width: Math.max(0, Math.min(100, meter)) + '%' }} />
+        </div>
+      )}
+    </article>
+  );
+}
+
+function TendenciaPill({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const pontos = tendenciaGeral(colaborador);
+  if (pontos.length < 2) {
+    return (
+      <span className="pi-trend pi-trend--flat" data-pi-tip="São necessários ao menos dois resultados comparáveis para identificar tendência.">
+        <ArrowRight className="h-3.5 w-3.5" /> Sem tendência
+      </span>
+    );
+  }
+
+  const anterior = pontos[pontos.length - 2].valor;
+  const atual = pontos[pontos.length - 1].valor;
+  const direcao = direcaoMudanca(atual - anterior);
+  if (direcao === 'subiu') {
+    return <span className="pi-trend pi-trend--up"><ArrowUpRight className="h-3.5 w-3.5" /> Subindo</span>;
+  }
+  if (direcao === 'caiu') {
+    return <span className="pi-trend pi-trend--down"><ArrowDownRight className="h-3.5 w-3.5" /> Caindo</span>;
+  }
+  return (
+    <span className="pi-trend pi-trend--flat" data-pi-tip="A variação entre os dois resultados mais recentes ficou dentro da faixa considerada estável.">
+      <ArrowRight className="h-3.5 w-3.5" /> Estável
+    </span>
+  );
+}
+
 function SparklineMini({ pontos }: { pontos: Array<{ dia: number; valor: number }> }) {
   if (pontos.length < 2) return <span className="text-xs text-slate-400">sem tendência</span>;
   const width = 92, height = 28;
@@ -3252,24 +3376,57 @@ function CarteiraUgp({
   const pendencias=colaboradores.reduce((s,x)=>s+x.formulariosPendentes.length,0);
   const concluindo=colaboradores.filter((x)=>x.dia>=140).length;
 
+  const vencem3dias = colaboradores.reduce((soma, item) => soma + (item.formulariosPendentes || []).filter((p) => {
+    const dias = diasAtePrazoVisual(p.prazo);
+    return dias != null && dias >= 0 && dias <= 3;
+  }).length, 0);
+
   return (
     <div className="space-y-5">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {[
-          ['Ativos',colaboradores.length,'pessoas em integração'],
-          ['Atenção',atencao,'com sinais prioritários'],
-          ['Pendências',pendencias,'formulários pendentes'],
-          ['Índice médio de desenvolvimento',indiceMedio==null?'—':String(indiceMedio)+'%','entre resultados disponíveis'],
-          ['Concluindo',concluindo,'a partir do dia 140'],
-        ].map(([label,value,detail])=>(
-          <Card key={String(label)} className="rounded-2xl border-slate-200 border-t-[3px] border-t-violet-400 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
-            <CardContent className="p-4">
-              <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">{label}</div>
-              <div className="mt-2 text-[28px] font-bold tabular-nums text-slate-950">{value}</div>
-              <div className="mt-1 text-xs text-slate-500">{detail}</div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="pi-kpi-grid">
+        <KpiResumoCard
+          titulo="Ativos"
+          valor={colaboradores.length}
+          detalhe="pessoas em integração"
+          icon={Users}
+          variante="brand"
+        />
+        <KpiResumoCard
+          titulo="Atenção"
+          valor={atencao}
+          detalhe="com sinais prioritários"
+          icon={AlertTriangle}
+          variante="danger"
+          zeroPositivo
+          tag={atencao === 0 ? { texto: 'Tudo em dia', tipo: 'ok' } : undefined}
+          tooltip="Colaboradores classificados pelo acompanhamento atual como Atenção, conforme os sinais e pendências já existentes."
+        />
+        <KpiResumoCard
+          titulo="Pendências"
+          valor={pendencias}
+          detalhe="formulários pendentes"
+          icon={FileText}
+          variante="warn"
+          tag={{ texto: vencem3dias + ' vencem em 3d', tipo: 'warn' }}
+        />
+        <KpiResumoCard
+          titulo="Índice médio"
+          valor={indiceMedio}
+          detalhe="entre resultados disponíveis"
+          icon={BarChart3}
+          variante="ok"
+          meter={indiceMedio}
+          tooltip="Média do Índice de Integração calculada somente entre colaboradores que já possuem índice disponível."
+        />
+        <KpiResumoCard
+          titulo="Concluindo"
+          valor={concluindo}
+          detalhe="a partir do dia 140"
+          icon={CheckCircle2}
+          variante="info"
+          tag={concluindo === 0 ? { texto: 'Nenhum ainda', tipo: 'muted' } : undefined}
+          tooltip="Colaboradores atualmente a partir do dia 140 da jornada de integração."
+        />
       </div>
 
       <CobrancaFormulariosUgp
@@ -3290,26 +3447,64 @@ function CarteiraUgp({
       />
 
       {radarFiltro==='all' && (
-      <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
-        <div className="border-b bg-white p-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"/><Input className="pl-9" value={busca} onChange={(e)=>setBusca(e.target.value)} placeholder="Buscar por nome, cargo ou unidade..."/></div>
-            <Select value={unidade} onValueChange={setUnidade}><SelectTrigger className="w-full lg:w-[220px]"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Todas as unidades</SelectItem>{unidades.map((u)=><SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select>
-            <Select value={fase} onValueChange={setFase}><SelectTrigger className="w-full lg:w-[180px]"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Todas as fases</SelectItem><SelectItem value="ate15">Até 15 dias</SelectItem><SelectItem value="16a45">16 a 45 dias</SelectItem><SelectItem value="46a75">46 a 75 dias</SelectItem><SelectItem value="76a150">76 a 150 dias</SelectItem></SelectContent></Select>
-            <Select value={status} onValueChange={setStatus}><SelectTrigger className="w-full lg:w-[190px]"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Todos os status</SelectItem><SelectItem value="em_dia">Em dia</SelectItem><SelectItem value="acompanhar">Acompanhar</SelectItem><SelectItem value="atencao">Atenção</SelectItem></SelectContent></Select>
+      <Card className="pi-table-card">
+        <div className="pi-toolbar">
+          <div className="pi-toolbar-grid grid gap-3 lg:grid-cols-[1fr_220px_180px_190px]">
+            <div className="relative"><Search className="pi-search-icon absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"/><Input className="pi-control pl-9" value={busca} onChange={(e)=>setBusca(e.target.value)} placeholder="Buscar por nome, cargo ou unidade..."/></div>
+            <Select value={unidade} onValueChange={setUnidade}><SelectTrigger className="pi-select-trigger w-full"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Todas as unidades</SelectItem>{unidades.map((u)=><SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select>
+            <Select value={fase} onValueChange={setFase}><SelectTrigger className="pi-select-trigger w-full"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Todas as fases</SelectItem><SelectItem value="ate15">Até 15 dias</SelectItem><SelectItem value="16a45">16 a 45 dias</SelectItem><SelectItem value="46a75">46 a 75 dias</SelectItem><SelectItem value="76a150">76 a 150 dias</SelectItem></SelectContent></Select>
+            <Select value={status} onValueChange={setStatus}><SelectTrigger className="pi-select-trigger w-full"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Todos os status</SelectItem><SelectItem value="em_dia">Em dia</SelectItem><SelectItem value="acompanhar">Acompanhar</SelectItem><SelectItem value="atencao">Atenção</SelectItem></SelectContent></Select>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1180px] text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3 text-left">Colaborador</th><th className="px-4 py-3 text-left">Unidade</th><th className="px-4 py-3 text-center">Dias em integração</th><th className="px-4 py-3 text-center">Processo completo</th><th className="px-4 py-3 text-center">Índice de desenvolvimento</th><th className="px-4 py-3 text-center">Tendência</th><th className="px-4 py-3 text-center">Status</th><th className="px-4 py-3 text-right">Abrir</th></tr></thead>
+        <div className="pi-table-wrap">
+          <table className="pi-table min-w-[1180px] text-sm">
+            <thead><tr><th className="px-4 py-3 text-left">Colaborador</th><th className="px-4 py-3 text-left">Unidade</th><th className="px-4 py-3 text-center">Dias em integração</th><th className="px-4 py-3 text-center">Processo completo</th><th className="px-4 py-3 text-center">Índice de desenvolvimento</th><th className="px-4 py-3 text-center">Tendência</th><th className="px-4 py-3 text-center">Status</th><th className="px-4 py-3 text-right">Abrir</th></tr></thead>
             <tbody>
               {lista.map((x)=>{
                 const idx=indiceIntegracao(x).indice, st=statusCarteira(x);
                 const progresso=x.processoAcoes || {total:95,concluidas:0,percentual:0};
                 const fechamento=requisitosFechamento(x);
-                return <tr key={x.id} onClick={()=>onAbrir(x.id)} className="group cursor-pointer border-t transition-colors hover:bg-[#F7F5FF]"><td className="px-4 py-4"><div className="font-bold text-slate-950">{x.nome}</div><div className="mt-1 text-xs text-slate-500">{x.cargo||'Cargo não informado'}</div></td><td className="px-4 py-4 text-slate-600">{x.unidade||'—'}</td><td className="px-4 py-4 text-center font-bold tabular-nums">{x.dia}/{x.totalDias}</td><td className="px-4 py-4 text-center"><div className="mx-auto w-[130px]">{fechamento.completo ? <><div className="text-base font-bold tabular-nums text-emerald-700">100%</div><div className="mt-1 text-[11px] font-semibold text-emerald-700">Completo</div></> : <><div className="text-sm font-bold text-amber-700">Pendente</div><div className="mt-1 text-[11px] leading-tight text-slate-500">{Math.round(progresso.percentual)}% das ações</div></>}<Progress className="mt-1.5 h-2" value={fechamento.completo ? 100 : Math.min(99, progresso.percentual)}/></div></td><td className="px-4 py-4 text-center text-lg font-bold tabular-nums">{idx==null?'—':Math.round(idx)+'%'}</td><td className="px-4 py-4 text-center"><div className="flex justify-center"><SparklineMini pontos={tendenciaGeral(x)}/></div></td><td className="px-4 py-4 text-center"><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></td><td className="px-4 py-4 text-right"><Button size="sm" variant="ghost" className="gap-1 text-violet-700">Ver <ChevronRight className="h-4 w-4"/></Button></td></tr>;
+                const percentualProcesso = fechamento.completo ? 100 : Math.min(99, Number(progresso.percentual || 0));
+                const atrasadoProcesso = !fechamento.completo && temFormularioEmAtrasoOperacional(x);
+                const score = idx == null ? null : Math.round(idx);
+                const scoreClasse = score == null ? 'pi-score--none' : score >= 80 ? 'pi-score--ok' : score >= 60 ? 'pi-score--warn' : 'pi-score--danger';
+                const statusClasse = st.chave === 'atencao' ? 'pi-pill--warn' : st.chave === 'acompanhar' ? 'pi-pill--info' : 'pi-pill--ok';
+                const faltam = Math.max(0, Number(x.totalDias || 150) - Number(x.dia || 0));
+                return (
+                  <tr key={x.id} onClick={()=>onAbrir(x.id)} className="pi-row group cursor-pointer border-t">
+                    <td className="px-4 py-4">
+                      <div className="pi-person">
+                        <span className="pi-avatar" style={{ '--pi-h': matizPessoa(x.id, x.nome) } as React.CSSProperties}>{iniciaisPessoa(x.nome)}</span>
+                        <div><div className="pi-person-name">{x.nome}</div><div className="pi-person-role">{x.cargo||'Cargo não informado'}</div></div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4"><span className="pi-unit">{x.unidade||'—'}</span></td>
+                    <td className="px-4 py-4 text-center">
+                      <span className="pi-days" data-pi-tip={'Dia ' + x.dia + ' de ' + x.totalDias + ' · faltam ' + faltam + ' dias'}>{x.dia}<small>/{x.totalDias}</small></span>
+                    </td>
+                    <td className="px-4 py-4 text-center">
+                      <div className="pi-process" data-pi-tip={(progresso.concluidas || 0) + ' de ' + (progresso.total || 0) + ' ações concluídas'}>
+                        <span className={'pi-pill ' + (fechamento.completo ? 'pi-pill--ok' : atrasadoProcesso ? 'pi-pill--danger' : 'pi-pill--warn')}>
+                          {fechamento.completo ? 'Completo' : atrasadoProcesso ? 'Atrasado' : 'Pendente'}
+                        </span>
+                        <div className={'pi-process-bar ' + (fechamento.completo ? 'is-complete' : !atrasadoProcesso ? 'is-pending' : '')}><span style={{ width: percentualProcesso + '%' }} /></div>
+                        <span className="pi-process-meta">{Math.round(percentualProcesso)}% das ações</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 text-center">
+                      {score == null ? (
+                        <span className="pi-score pi-score--none" data-pi-tip="Ainda sem resultados suficientes para calcular o índice de desenvolvimento.">Aguardando</span>
+                      ) : (
+                        <span className={'pi-score ' + scoreClasse}><span className="pi-score-ring" style={{ '--pi-score': score } as React.CSSProperties}/><span>{score}%</span></span>
+                      )}
+                    </td>
+                    <td className="px-4 py-4 text-center"><TendenciaPill colaborador={x}/></td>
+                    <td className="px-4 py-4 text-center"><span className={'pi-pill ' + statusClasse}>{st.rotulo}</span></td>
+                    <td className="px-4 py-4 text-right"><Button size="sm" variant="ghost" className="pi-go">Ver <ChevronRight className="h-4 w-4"/></Button></td>
+                  </tr>
+                );
               })}
-              {!lista.length&&<tr><td colSpan={8} className="px-4 py-12 text-center text-slate-500">Nenhum colaborador encontrado com os filtros atuais.</td></tr>}
+              {!lista.length&&<tr><td colSpan={8} className="pi-muted px-4 py-12 text-center">Nenhum colaborador encontrado com os filtros atuais.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -4363,32 +4558,39 @@ function CarteiraGestor({
 
   return (
     <div className="space-y-5">
-      <div className="grid gap-3 sm:grid-cols-3">
-        {[
-          ['Colaboradores',colaboradores.length,'em acompanhamento'],
-          ['Atenção',atencao,'processos que exigem atenção'],
-          ['Formulários do Gestor',pendenciasGestor,'pendências sob sua responsabilidade'],
-        ].map(([label,value,detail])=>(
-          <Card key={String(label)} className="rounded-2xl border-slate-200 border-t-[3px] border-t-violet-400 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
-            <CardContent className="p-4">
-              <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">{label}</div>
-              <div className="mt-2 text-[28px] font-bold tabular-nums text-slate-950">{value}</div>
-              <div className="mt-1 text-xs text-slate-500">{detail}</div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="pi-kpi-grid">
+        <KpiResumoCard titulo="Colaboradores" valor={colaboradores.length} detalhe="em acompanhamento" icon={Users} variante="brand" />
+        <KpiResumoCard
+          titulo="Atenção"
+          valor={atencao}
+          detalhe="processos que exigem atenção"
+          icon={AlertTriangle}
+          variante="danger"
+          zeroPositivo
+          tag={atencao === 0 ? { texto: 'Tudo em dia', tipo: 'ok' } : undefined}
+          tooltip="Processos classificados pelo acompanhamento atual como Atenção, conforme as regras já existentes."
+        />
+        <KpiResumoCard
+          titulo="Formulários do gestor"
+          valor={pendenciasGestor}
+          detalhe="pendências sob sua responsabilidade"
+          icon={ClipboardList}
+          variante="warn"
+          tag={{ texto: 'Sua ação', tipo: 'warn' }}
+          tooltip="Formulários pendentes que dependem da resposta do gestor nesta carteira."
+        />
       </div>
 
-      <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
-        <div className="border-b bg-white p-4">
+      <Card className="pi-table-card">
+        <div className="pi-toolbar">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"/>
-            <Input className="pl-9" value={busca} onChange={(e)=>setBusca(e.target.value)} placeholder="Buscar por nome, cargo ou unidade..."/>
+            <Search className="pi-search-icon absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"/>
+            <Input className="pi-control pl-9" value={busca} onChange={(e)=>setBusca(e.target.value)} placeholder="Buscar por nome, cargo ou unidade..."/>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+        <div className="pi-table-wrap">
+          <table className="pi-table min-w-[760px] text-sm">
+            <thead>
               <tr>
                 <th className="px-4 py-3 text-left">Colaborador</th>
                 <th className="px-4 py-3 text-left">Unidade</th>
@@ -4400,17 +4602,30 @@ function CarteiraGestor({
             <tbody>
               {lista.map((x)=>{
                 const st=statusCarteira(x);
+                const statusClasse = st.chave === 'atencao' ? 'pi-pill--warn' : st.chave === 'acompanhar' ? 'pi-pill--info' : 'pi-pill--ok';
+                const faltam = Math.max(0, Number(x.totalDias || 150) - Number(x.dia || 0));
+                const progressoDias = x.totalDias > 0 ? Math.max(0, Math.min(100, (x.dia / x.totalDias) * 100)) : 0;
                 return (
-                  <tr key={x.id} onClick={()=>onAbrir(x.id)} className="group cursor-pointer border-t transition-colors hover:bg-[#F7F5FF]">
-                    <td className="px-4 py-4"><div className="font-bold text-slate-950">{x.nome}</div><div className="mt-1 text-xs text-slate-500">{x.cargo||'Cargo não informado'}</div></td>
-                    <td className="px-4 py-4 text-slate-600">{x.unidade||'—'}</td>
-                    <td className="px-4 py-4 text-center font-bold tabular-nums">{x.dia}/{x.totalDias}</td>
-                    <td className="px-4 py-4 text-center"><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></td>
-                    <td className="px-4 py-4 text-right"><Button size="sm" variant="ghost" className="gap-1 text-violet-700">Ver <ChevronRight className="h-4 w-4"/></Button></td>
+                  <tr key={x.id} onClick={()=>onAbrir(x.id)} className="pi-row group cursor-pointer border-t">
+                    <td className="px-4 py-4">
+                      <div className="pi-person">
+                        <span className="pi-avatar" style={{ '--pi-h': matizPessoa(x.id, x.nome) } as React.CSSProperties}>{iniciaisPessoa(x.nome)}</span>
+                        <div><div className="pi-person-name">{x.nome}</div><div className="pi-person-role">{x.cargo||'Cargo não informado'}</div></div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4"><span className="pi-unit">{x.unidade||'—'}</span></td>
+                    <td className="px-4 py-4 text-center">
+                      <div data-pi-tip={'Dia ' + x.dia + ' de ' + x.totalDias + ' · faltam ' + faltam + ' dias'}>
+                        <span className="pi-days">{x.dia}<small>/{x.totalDias}</small></span>
+                        <div className="pi-days-progress"><span style={{ width: progressoDias + '%' }} /></div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 text-center"><span className={'pi-pill ' + statusClasse}>{st.rotulo}</span></td>
+                    <td className="px-4 py-4 text-right"><Button size="sm" variant="ghost" className="pi-go">Ver <ChevronRight className="h-4 w-4"/></Button></td>
                   </tr>
                 );
               })}
-              {!lista.length&&<tr><td colSpan={5} className="px-4 py-12 text-center text-slate-500">Nenhum colaborador encontrado.</td></tr>}
+              {!lista.length&&<tr><td colSpan={5} className="pi-muted px-4 py-12 text-center">Nenhum colaborador encontrado.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -4627,73 +4842,99 @@ export default function AcompanharIntegracaoGestor() {
     void carregar(value);
   };
 
-  const atualizado = dados?.atualizadoEm
-    ? new Date(dados.atualizadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+  const atualizadoHora = dados?.atualizadoEm
+    ? new Date(dados.atualizadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     : '—';
+
+  const visaoTitulo = adminVisualizandoGestor
+    ? 'Visão do Gestor'
+    : dados?.adminView && dados?.gestorSelecionado && isUgpRh
+      ? 'Visão UGP/RH'
+      : dados?.adminView
+        ? 'Visão Administrativa'
+        : dados?.restrictedUgp
+          ? 'Visão UGP/RH'
+          : isUgpRh
+            ? 'Visão UGP/RH'
+            : 'Visão do Gestor';
+
+  const atencaoHero = colaboradores.filter((x) => statusCarteira(x).chave === 'atencao').length;
+  const formulariosHero = colaboradores.reduce((soma, x) => soma + (x.formulariosPendentes || []).length, 0);
+  const atrasadosHero = colaboradores.reduce((soma, x) => soma + (x.formulariosPendentes || []).filter((p) => {
+    const dias = diasAtePrazoVisual(p.prazo);
+    return dias != null && dias < 0;
+  }).length, 0);
+  const vencem3Hero = colaboradores.reduce((soma, x) => soma + (x.formulariosPendentes || []).filter((p) => {
+    const dias = diasAtePrazoVisual(p.prazo);
+    return dias != null && dias >= 0 && dias <= 3;
+  }).length, 0);
+  const indicesHero = colaboradores.map((x) => indiceIntegracao(x).indice).filter((v): v is number => v != null);
+  const indiceMedioHero = indicesHero.length ? Math.round(indicesHero.reduce((s, v) => s + v, 0) / indicesHero.length) : null;
+  const resumoAdministrativoHero = isUgpRh || Boolean(dados?.adminView && !adminVisualizandoGestor);
 
   return (
     <TooltipProvider>
       <DashboardLayout>
-        <div className="mx-auto max-w-[1580px] space-y-8 rounded-[28px] bg-[#F6F6FA] p-4 sm:p-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <div className="text-xs font-bold uppercase tracking-[0.12em] text-violet-600">
-                {adminVisualizandoGestor
-                  ? 'Visão do Gestor'
-                  : dados?.adminView && dados?.gestorSelecionado && isUgpRh
-                    ? 'Visão UGP/RH'
-                    : dados?.adminView
-                      ? 'Visão Administrativa'
-                      : dados?.restrictedUgp
-                        ? 'Visão UGP/RH'
-                        : isUgpRh
-                          ? 'Visão UGP/RH'
-                          : 'Visão do Gestor'}
+        <div className="pi-acompanhamento mx-auto max-w-[1580px]">
+          <header className={'pi-hero ' + (modoDetalhe ? 'pi-hero--detail' : '')}>
+            <div className="pi-hero-top">
+              <div>
+                <span className="pi-eyebrow">{visaoTitulo}</span>
+                <h1>Acompanhar Integração</h1>
+                <p className="pi-hero-subtitle">Acompanhamento executivo dos colaboradores ativos no Programa de Integração.</p>
               </div>
-              <h1 className="mt-1 text-[28px] font-bold leading-[34px] tracking-tight text-slate-950">Acompanhar Integração</h1>
-              <p className="mt-1 text-sm text-slate-500">
-                Acompanhamento executivo dos colaboradores ativos no Programa de Integração.
-              </p>
+              <div className="pi-hero-actions">
+                {dados?.adminView && (
+                  <div className="pi-hero-select">
+                    <div className="pi-hero-select-label">Visualizar como</div>
+                    <Select value={gestorView} onValueChange={trocarVisaoGerente} disabled={loading}>
+                      <SelectTrigger className="pi-view-select">
+                        <SelectValue placeholder="Selecione a visão" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Visão Administrativa — todos os processos</SelectItem>
+                        {(dados.gestoresDisponiveis || []).map((g) => (
+                          <SelectItem key={g.key} value={g.key}>
+                            {g.origem === 'configurado'
+                              ? `${g.nome} — ${g.nivelAcesso === 'ugp' ? 'UGP/RH' : 'Gestor'} · ${g.modo === 'all' ? 'todos da empresa' : g.modo === 'manual' ? 'seleção manual' : 'somente seus colaboradores'}${g.empresaNome ? ` — ${g.empresaNome}` : ''}`
+                              : `${g.nome} — ${g.colaboradores} colaborador(es)`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className="pi-updated"
+                  onClick={() => void carregar(gestorView)}
+                  disabled={loading}
+                  title="Atualizar os dados desta página"
+                >
+                  <span className="pi-live" />
+                  <RefreshCw className={'h-3.5 w-3.5 ' + (loading ? 'animate-spin' : '')} />
+                  Atualizado às {atualizadoHora}
+                </button>
+              </div>
             </div>
 
-            <div className="flex flex-wrap items-end gap-2">
-              {dados?.adminView && (
-                <div className="min-w-[290px] space-y-1">
-                  <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Visualizar como</div>
-                  <Select value={gestorView} onValueChange={trocarVisaoGerente} disabled={loading}>
-                    <SelectTrigger className="bg-white">
-                      <SelectValue placeholder="Selecione a visão" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Visão Administrativa — todos os processos</SelectItem>
-                      {(dados.gestoresDisponiveis || []).map((g) => (
-                        <SelectItem key={g.key} value={g.key}>
-                          {g.origem === 'configurado'
-                            ? `${g.nome} — ${g.nivelAcesso === 'ugp' ? 'UGP/RH' : 'Gestor'} · ${g.modo === 'all' ? 'todos da empresa' : g.modo === 'manual' ? 'seleção manual' : 'somente seus colaboradores'}${g.empresaNome ? ` — ${g.empresaNome}` : ''}`
-                            : `${g.nome} — ${g.colaboradores} colaborador(es)`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+            {!modoDetalhe && !loading && !erro && (
+              <div className="pi-insight">
+                <Sparkles className="h-4 w-4" />
+                {resumoAdministrativoHero ? (
+                  <span>
+                    <strong>{vencem3Hero} {vencem3Hero === 1 ? 'formulário' : 'formulários'}</strong> {vencem3Hero === 1 ? 'vence' : 'vencem'} nos próximos 3 dias · {atrasadosHero === 0 ? 'nenhum atrasado' : atrasadosHero + (atrasadosHero === 1 ? ' atrasado' : ' atrasados')} · índice médio de <strong>{indiceMedioHero == null ? '—' : indiceMedioHero + '%'}</strong>
+                  </span>
+                ) : (
+                  <span>
+                    Você tem <strong>{formulariosHero} {formulariosHero === 1 ? 'formulário' : 'formulários'}</strong> aguardando sua resposta · {atencaoHero === 0 ? 'nenhum processo em atenção' : atencaoHero + (atencaoHero === 1 ? ' em atenção' : ' em atenção')}
+                  </span>
+                )}
+              </div>
+            )}
+          </header>
 
-              <Button
-                variant="outline"
-                className="h-auto gap-3 rounded-xl bg-white px-3 py-2 shadow-[0_1px_2px_rgba(16,24,40,.05)]"
-                onClick={() => void carregar(gestorView)}
-                disabled={loading}
-                title="Atualizar os dados desta página"
-              >
-                <RefreshCw className={'h-4 w-4 text-violet-700 ' + (loading ? 'animate-spin' : '')} />
-                <span className="text-left">
-                  <span className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">Atualizado</span>
-                  <span className="block text-xs font-semibold tabular-nums text-slate-700">{atualizado}</span>
-                </span>
-              </Button>
-            </div>
-          </div>
-
+          <div className="pi-content">
           {loading ? (
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -4795,6 +5036,7 @@ export default function AcompanharIntegracaoGestor() {
               onOpenChange={setPerfilOpen}
             />
           )}
+          </div>
         </div>
       </DashboardLayout>
     </TooltipProvider>
