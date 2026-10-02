@@ -1001,6 +1001,59 @@ programaIntegracaoRouter.get("/api/programa-integracao/bootstrap", requireAdmin,
     ordemBanco.forEach((id: string) => { if (!ordemConfig.includes(id)) ordemConfig.push(id); });
     config.ordem = ordemConfig;
     config.respostasPendentes = pendentes;
+    const resumoCobrancas = (() => {
+      if (!acessoUgpRh) {
+        return {
+          formulariosCobrados: 0,
+          respondidosPosCobranca: 0,
+          pendentesPosCobranca: 0,
+        };
+      }
+
+      const formularios = new Map<string, {
+        ultimaCobrancaEm: string;
+        respondidoEm: string;
+      }>();
+
+      historicoCobrancasGeral.forEach((registro: any) => {
+        const email = String(registro?.respondenteEmail || "").trim().toLowerCase();
+        const nome = normTxt(registro?.respondenteNome || "");
+        const chaveInstancia = [
+          Number(registro?.processoDbId || 0),
+          String(registro?.chave || ""),
+          email || nome,
+        ].join("|");
+        const atual = formularios.get(chaveInstancia) || {
+          ultimaCobrancaEm: "",
+          respondidoEm: "",
+        };
+        const cobradoEm = String(registro?.cobradoEm || "");
+        const respondidoEm = String(registro?.respondidoEm || "");
+        if (cobradoEm > atual.ultimaCobrancaEm) atual.ultimaCobrancaEm = cobradoEm;
+        if (respondidoEm > atual.respondidoEm) atual.respondidoEm = respondidoEm;
+        formularios.set(chaveInstancia, atual);
+      });
+
+      let respondidosPosCobranca = 0;
+      let pendentesPosCobranca = 0;
+      formularios.forEach((registro) => {
+        const cobrancaTs = registro.ultimaCobrancaEm
+          ? new Date(registro.ultimaCobrancaEm).getTime()
+          : 0;
+        const respostaTs = registro.respondidoEm
+          ? new Date(registro.respondidoEm).getTime()
+          : 0;
+        if (cobrancaTs > 0 && respostaTs > cobrancaTs) respondidosPosCobranca += 1;
+        else pendentesPosCobranca += 1;
+      });
+
+      return {
+        formulariosCobrados: formularios.size,
+        respondidosPosCobranca,
+        pendentesPosCobranca,
+      };
+    })();
+
     res.setHeader("Cache-Control", "no-store");
     return res.json({ ok: true, state: { config, processos } });
   } catch (error) {
@@ -1426,6 +1479,11 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         usuarioAtualNome: acessoUgpRh ? String(user?.name || user?.email || "") : "",
         modelosCobranca: acessoUgpRh ? modelosCobrancaConfigurados : {},
         historicoCobrancas: [],
+        resumoCobrancas: {
+          formulariosCobrados: 0,
+          respondidosPosCobranca: 0,
+          pendentesPosCobranca: 0,
+        },
         atualizadoEm: new Date().toISOString(),
         colaboradores: [],
       });
@@ -1595,6 +1653,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     const colaboradores = permitidos.map((row: any) => {
       const estado = asJson<Record<string, any>>(row.estado, {});
       const respostas = respostasPorProcesso.get(Number(row.id)) || [];
+      const respostasRaw = respostasRawPorProcesso.get(Number(row.id)) || [];
       const alin = estado.alin || {};
       const alinhamentosFeitos = [1,2,3,4].filter((n) => {
         const a = alin[String(n)] ?? alin[n];
@@ -1663,6 +1722,24 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       const cobrancasFormularios = [...cobrancasUnificadasMap.values()]
         .sort((a: any, b: any) => String(a?.cobradoEm || "").localeCompare(String(b?.cobradoEm || "")));
 
+      const respostaCorrespondenteCobranca = (registro: any) => {
+        const formKey = String(registro?.formKey || "");
+        const ciclo = Number(registro?.ciclo || 0);
+        const papel = String(registro?.papel || "");
+        const compativeis = respostasRaw
+          .filter((resposta: any) => {
+            if (String(resposta?.formKey || "") !== formKey) return false;
+            if (Number(resposta?.ciclo || 0) !== ciclo) return false;
+            if (formKey === "pesquisa" || formKey === "bem") return true;
+            return String(resposta?.papel || "") === papel;
+          })
+          .filter((resposta: any) => resposta?.submittedAt)
+          .sort((a: any, b: any) =>
+            new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+          );
+        return compativeis[0] || null;
+      };
+
       const historicoCobrancasPara = (chave: string, respondenteEmail = "", respondenteNome = "") => {
         const emailAtual = String(respondenteEmail || "").trim().toLowerCase();
         const nomeAtual = normTxt(respondenteNome || "");
@@ -1691,12 +1768,16 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
 
       if (acessoUgpRh) {
         cobrancasFormularios.forEach((item: any) => {
+          const resposta = respostaCorrespondenteCobranca(item);
           historicoCobrancasGeral.push({
             ...item,
             processoId: String(row.legacyId || ""),
             processoDbId: Number(row.id || 0),
             colaboradorNome: String(row.nome || ""),
             unidade: String(row.unidade || ""),
+            respondidoEm: resposta?.submittedAt
+              ? new Date(resposta.submittedAt).toISOString()
+              : "",
           });
         });
       }
@@ -1992,6 +2073,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       historicoCobrancas: acessoUgpRh
         ? historicoCobrancasGeral.sort((a: any, b: any) => String(b?.cobradoEm || "").localeCompare(String(a?.cobradoEm || "")))
         : [],
+      resumoCobrancas,
       atualizadoEm: new Date().toISOString(),
       colaboradores,
     });
