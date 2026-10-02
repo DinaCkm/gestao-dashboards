@@ -3115,8 +3115,33 @@ function ComposicaoIndice({
                 <div>
                   <div className="font-black text-slate-900">Desenvolvimento · peso 25%</div>
                   <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                    Mostra <b>se o desenvolvimento está no ritmo esperado para o momento atual da jornada</b>. O PDI representa 60% desta dimensão e a Jornada Compliance 40%. O PDI começa a ser considerado a partir do 30º dia, com expectativa de 25% no dia 30, 50% no dia 75 e 100% no dia 150. A Jornada Compliance deve chegar a 100% até o 60º dia.
+                    Mostra <b>se o desenvolvimento está no ritmo esperado para o momento atual da jornada</b>. O PDI representa 60% desta dimensão e a Jornada Compliance 40%. O PDI começa a ser considerado a partir do 20º dia e evolui gradualmente até 100% no dia 150. A Jornada Compliance deve chegar a 100% até o 60º dia.
                   </p>
+                  <div className="mt-3 rounded-xl border border-violet-100 bg-violet-50/40 p-3">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.06em] text-violet-700">Régua esperada do PDI</div>
+                    <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-600 sm:grid-cols-5">
+                      {[
+                        ['20 dias', '10%'],
+                        ['30 dias', '25%'],
+                        ['45 dias', '33%'],
+                        ['60 dias', '42%'],
+                        ['75 dias', '50%'],
+                        ['90 dias', '60%'],
+                        ['105 dias', '70%'],
+                        ['120 dias', '80%'],
+                        ['135 dias', '90%'],
+                        ['150 dias', '100%'],
+                      ].map(([marco, esperado]) => (
+                        <div key={marco} className="flex items-center justify-between gap-2 rounded-lg bg-white/80 px-2 py-1.5">
+                          <span>{marco}</span>
+                          <b className="text-slate-900">{esperado}</b>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-2 text-[11px] leading-relaxed text-slate-500">
+                      Entre os marcos, a expectativa cresce de forma contínua. Ex.: entre 45 e 60 dias, o percentual esperado sobe gradualmente de 33% para 42%.
+                    </div>
+                  </div>
                   <div className="mt-3 space-y-1 text-xs leading-relaxed text-slate-500">
                     <div>
                       <b>PDI:</b> {indice.desenvolvimentoRitmo.pdi.realizado == null ? 'sem dado' : Math.round(indice.desenvolvimentoRitmo.pdi.realizado) + '% realizado'}
