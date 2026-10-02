@@ -34,6 +34,15 @@ const ALL_NAV_ITEMS = [
   { label: "Tutoriais", path: "/tutoriais", icon: PlayCircle, requiresAceite: false },
 ];
 
+/**
+ * Link para o Banco de Sucessores (sistema Aderência) por programa.
+ * O participante entra lá com o MESMO e-mail e CPF/ID de acesso do EcoLíder.
+ * 16 = SEBRAE Acre.
+ */
+const BANCO_SUCESSORES_URL_POR_PROGRAMA: Record<number, string> = {
+  16: "https://aderencia-ac.ecodobem.com",
+};
+
 /** Rotas que ficam bloqueadas até o aceite (para alunos novos) */
 const BLOCKED_PATHS = ALL_NAV_ITEMS.filter(i => i.requiresAceite).map(i => i.path);
 
@@ -187,9 +196,23 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
       ];
     }
 
+    const bancoSucessoresUrl = user?.programId ? BANCO_SUCESSORES_URL_POR_PROGRAMA[user.programId] : undefined;
+    if (bancoSucessoresUrl) {
+      items = [
+        ...items,
+        {
+          label: "Banco de Sucessores",
+          path: "/banco-de-sucessores",
+          icon: Award,
+          requiresAceite: true,
+          externalUrl: bancoSucessoresUrl,
+        } as any,
+      ];
+    }
+
     if (!menuBloqueado) return items;
     return items.filter(item => !item.requiresAceite);
-  }, [menuBloqueado, isCandidatoPS, isVeteranSemOnboarding, isAlunoAutonomo, hasActiveAngelAccess]);
+  }, [menuBloqueado, isCandidatoPS, isVeteranSemOnboarding, isAlunoAutonomo, hasActiveAngelAccess, user?.programId]);
 
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
