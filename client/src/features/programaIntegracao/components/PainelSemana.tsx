@@ -505,7 +505,7 @@ export function PainelSemana({
                   const podeCobrarFormulario = Boolean(
                     temRespostaFormulario &&
                     !resposta &&
-                    acao.st.k === 'late' &&
+                    (acao.st.k === 'late' || acao.st.k === 'act') &&
                     acao.lado === 'eles' &&
                     papelCobranca,
                   );
