@@ -52,10 +52,14 @@
   --pi-skin-2: #8D5A3B;
   --pi-hair: #2B1B12;
 
-  --pi-d-exp: #2563EB;
-  --pi-d-ada: #0D9488;
-  --pi-d-dev: #C026D3;
-  --pi-index-track: #ECE9F5;
+  --d-exp: #2563EB;
+  --d-ada: #0D9488;
+  --d-dev: #C026D3;
+  --track: #ECE9F5;
+  --pi-d-exp: var(--d-exp);
+  --pi-d-ada: var(--d-ada);
+  --pi-d-dev: var(--d-dev);
+  --pi-index-track: var(--track);
 
   --pi-bg: #F3F1FA;
   --pi-surface: #FFFFFF;
@@ -125,10 +129,14 @@
   --pi-danger-ink: #FB7185;
   --pi-info-ink: #60A5FA;
 
-  --pi-d-exp: #3B82F6;
-  --pi-d-ada: #0D9488;
-  --pi-d-dev: #D946EF;
-  --pi-index-track: #251F3D;
+  --d-exp: #3B82F6;
+  --d-ada: #0D9488;
+  --d-dev: #D946EF;
+  --track: #251F3D;
+  --pi-d-exp: var(--d-exp);
+  --pi-d-ada: var(--d-ada);
+  --pi-d-dev: var(--d-dev);
+  --pi-index-track: var(--track);
   --pi-hero-1: #0E0624;
   --pi-hero-2: #26105E;
   --pi-hero-3: #4C1D95;
@@ -2319,14 +2327,14 @@
 }
 
 .pi-ugp-guide-head:focus-visible {
-  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .62);
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--pi-white) 62%, transparent);
 }
 
 .pi-ugp-guide-eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #E9D5FF;
+  color: var(--pi-hero-muted);
   font-size: 12.5px;
   font-weight: 800;
 }
@@ -2370,7 +2378,7 @@
 
 .pi-ugp-guide-day small {
   display: block;
-  color: rgba(255, 255, 255, .70);
+  color: var(--pi-hero-muted);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: .08em;
@@ -2391,7 +2399,7 @@
   border-radius: var(--pi-r-pill);
   background: var(--pi-white);
   color: var(--pi-brand-700);
-  box-shadow: 0 10px 24px -10px rgba(0, 0, 0, .50);
+  box-shadow: var(--pi-shadow-lift);
   font-size: 13.5px;
   font-weight: 800;
   transition: transform .2s var(--pi-ease);
@@ -2484,7 +2492,7 @@
   padding: 16px;
   border: 1px solid var(--pi-border);
   border-radius: var(--pi-r-lg);
-  background: rgba(255, 255, 255, .96);
+  background: var(--pi-surface);
   color: var(--pi-text);
   text-align: left;
   opacity: 0;
@@ -2494,11 +2502,6 @@
     transform .4s var(--pi-ease),
     box-shadow .25s var(--pi-ease),
     border-color .25s var(--pi-ease);
-}
-
-.dark .pi-ugp-guide-step,
-[data-theme="dark"] .pi-ugp-guide-step {
-  background: rgba(20, 16, 36, .92);
 }
 
 .pi-ugp-guide.is-open .pi-ugp-guide-step {
@@ -2540,8 +2543,8 @@
       var(--pi-tile-c) 48%,
       color-mix(in srgb, var(--pi-tile-c) 60%, var(--pi-dark-tip)) 100%);
   box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, .45),
-    inset 0 -6px 12px rgba(0, 0, 0, .20),
+    inset 0 2px 0 color-mix(in srgb, var(--pi-white) 45%, transparent),
+    inset 0 -6px 12px color-mix(in srgb, var(--pi-dark-tip) 20%, transparent),
     0 10px 20px -10px var(--pi-tile-c);
 }
 
@@ -2559,7 +2562,7 @@
 
 .dark .pi-ugp-guide-step-num,
 [data-theme="dark"] .pi-ugp-guide-step-num {
-  color: #C4B5FD;
+  color: var(--pi-text-2);
 }
 
 .pi-ugp-guide-step h4 {
@@ -2739,7 +2742,7 @@
   inset: 11px;
   border-radius: 50%;
   background: var(--pi-surface);
-  box-shadow: inset 0 2px 8px rgba(18, 13, 36, .06);
+  box-shadow: inset 0 2px 8px color-mix(in srgb, var(--pi-dark-tip) 6%, transparent);
 }
 
 .pi-index-ring-inner {
@@ -3021,7 +3024,7 @@
 
 .dark .pi-index-how summary,
 [data-theme="dark"] .pi-index-how summary {
-  color: #DDD6FE;
+  color: var(--pi-text-2);
 }
 
 .pi-index-how summary::-webkit-details-marker {
