@@ -63,7 +63,7 @@ export function formulariosPendentes(
       if (fechado(statusAcaoAtual(processo, it.id))) return;
       if (dependenciaItemPendente(processo, it.id)) return;
       const dataItem = dataPrevistaItemCronograma(etapa, it);
-      if (dataItem >= hoje) return;
+      if (dataItem > hoje) return;
       out.push({
         it,
         data: dataItem,
@@ -176,8 +176,10 @@ export function montarEmailCobranca(
 
   let corpo =
     `Olá${destino.trat ? ` ${destino.trat}` : ''}, tudo bem?\n\n` +
-    `${abertura} Pelos nossos registros, ${itens.length > 1 ? 'estes formulários ainda constam como não respondidos' : 'este formulário ainda consta como não respondido'}. ` +
-    '**Se você já tiver respondido nos últimos dias, pode desconsiderar** — às vezes o retorno demora a chegar até nós.\n\n' +
+    `${abertura} ${itens.length > 1
+      ? 'Em nosso acompanhamento, ainda não recebemos suas respostas e estes formulários permanecem registrados como pendentes.'
+      : 'Em nosso acompanhamento, ainda não recebemos sua resposta e este formulário permanece registrado como pendente.'} ` +
+    'Caso você já tenha realizado o preenchimento, por favor nos informe para que possamos conferir o registro.\n\n' +
     '**O que está pendente**\n' + linhas + '\n\n' +
     `> O preenchimento ${itens.length > 1 ? 'desses formulários é obrigatório' : 'desse formulário é obrigatório'} dentro do Programa de Integração.\n\n` +
     'O preenchimento costuma levar apenas alguns minutos e é importante para mantermos o acompanhamento atualizado e seguirmos com as próximas etapas.\n\n' +
