@@ -2592,7 +2592,7 @@
 
 .dark .pi-ugp-guide-step-link,
 [data-theme="dark"] .pi-ugp-guide-step-link {
-  color: #C4B5FD;
+  color: var(--pi-text-2);
 }
 
 .pi-ugp-guide-step-link svg {
@@ -2985,7 +2985,7 @@
 
 .dark .pi-index-more,
 [data-theme="dark"] .pi-index-more {
-  color: #C4B5FD;
+  color: var(--pi-text-2);
 }
 
 .pi-index-more svg {
