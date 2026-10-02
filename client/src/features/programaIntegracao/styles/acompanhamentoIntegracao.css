@@ -2870,6 +2870,18 @@
 .pi-index-dim.is-ada { --pi-index-dim-c: var(--pi-d-ada); }
 .pi-index-dim.is-dev { --pi-index-dim-c: var(--pi-d-dev); }
 
+.pi-index-stack-part.is-exp,
+.pi-index-legend .is-exp,
+.pi-index-formula-name.is-exp { --pi-index-dim-c: var(--pi-d-exp); }
+
+.pi-index-stack-part.is-ada,
+.pi-index-legend .is-ada,
+.pi-index-formula-name.is-ada { --pi-index-dim-c: var(--pi-d-ada); }
+
+.pi-index-stack-part.is-dev,
+.pi-index-legend .is-dev,
+.pi-index-formula-name.is-dev { --pi-index-dim-c: var(--pi-d-dev); }
+
 .pi-index-dim:hover {
   transform: translateY(-3px);
   border-color: color-mix(in srgb, var(--pi-index-dim-c) 40%, var(--pi-border));
