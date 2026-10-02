@@ -1,7 +1,13 @@
 import type { BootstrapState, ProcessoIntegracao } from '../types';
 import { cronogramaReal, dataPrevistaItemCronograma } from './painelAcoes';
 import { calcularStatusItem, dependenciaItemPendente, type StatusItemPainel } from './statusHelpers';
-import { adicionarNotaAcao, aplicarStatusAcao, statusAcaoAtual } from './itemStateHelpers';
+import {
+  adicionarNotaAcao,
+  aplicarStatusAcao,
+  metadadosCobrancaFormularioAcao,
+  registrarCobrancaFormularioAcao,
+  statusAcaoAtual,
+} from './itemStateHelpers';
 import { formatarData } from './dateHelpers';
 import { linkIntegracaoPorChave } from './emailLinksHelpers';
 import { emailMarkdownParaTexto, type EmailMontadoIntegracao } from './emailCoreHelpers';
@@ -9,6 +15,7 @@ import { ASSINATURA_EMAIL_INTEGRACAO } from './emailModelosPadrao';
 import { MARCADOR_EMAIL_VAZIO } from './emailValoresHelpers';
 import type { EmailPreviewIntegracao } from './emailMontagemHelpers';
 import type { ItemPlanoReal, ResponsavelIntegracao } from './planoReal';
+import { FERIADOS_PADRAO_INTEGRACAO } from './configDefaults';
 
 export type PapelCobranca = 'Gestor' | 'Anjo' | 'Colaborador' | 'UGP';
 
@@ -43,6 +50,66 @@ function hojeIso(hojeRef: string | Date = new Date()): string {
 
 function fechado(status: string): boolean {
   return status === 'ok' || status === 'na' || status === 'wont';
+}
+
+function dataIsoUtc(data: string): Date | null {
+  const m = String(data || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function isoUtc(data: Date): string {
+  return data.toISOString().slice(0, 10);
+}
+
+function adicionarDiaIso(data: string, dias = 1): string {
+  const d = dataIsoUtc(data);
+  if (!d) return data;
+  d.setUTCDate(d.getUTCDate() + dias);
+  return isoUtc(d);
+}
+
+function diaUtil(data: string, feriados: string[]): boolean {
+  const d = dataIsoUtc(data);
+  if (!d) return false;
+  const semana = d.getUTCDay();
+  return semana !== 0 && semana !== 6 && !feriados.includes(data);
+}
+
+function feriadosEfetivos(feriados: string[]): string[] {
+  return feriados.length ? feriados : FERIADOS_PADRAO_INTEGRACAO;
+}
+
+export function dataReforcoCobranca(
+  primeiraEm: string,
+  feriados: string[] = [],
+): string | null {
+  const inicio = String(primeiraEm || '').slice(0, 10);
+  if (!dataIsoUtc(inicio)) return null;
+  const listaFeriados = feriadosEfetivos(feriados);
+  let atual = inicio;
+  let uteis = 0;
+  let guarda = 0;
+  while (uteis < 3 && guarda < 20) {
+    atual = adicionarDiaIso(atual, 1);
+    if (diaUtil(atual, listaFeriados)) uteis += 1;
+    guarda += 1;
+  }
+  return uteis === 3 ? atual : null;
+}
+
+export function segundaCobrancaDisponivel(
+  processo: ProcessoIntegracao,
+  itemId: string,
+  feriados: string[] = [],
+  hojeRef: string | Date = new Date(),
+): boolean {
+  const meta = metadadosCobrancaFormularioAcao(processo, itemId);
+  if (!meta.primeiraEm || meta.segundaEm) return false;
+  const dataReforco = dataReforcoCobranca(meta.primeiraEm, feriados);
+  if (!dataReforco) return false;
+  return hojeIso(hojeRef) >= dataReforco;
 }
 
 function primeiro(nome: string): string {
@@ -213,6 +280,47 @@ export function montarEmailCobranca(
   };
 }
 
+export function montarEmailReforcoCobranca(
+  processo: ProcessoIntegracao,
+  papel: PapelCobranca,
+  item: ItemCobrancaFormulario,
+  config: BootstrapState['config'],
+  origin?: string,
+): EmailPreviewIntegracao {
+  const destino = destinoPapel(processo, papel);
+  const link = textoLink(item, config, origin);
+  const nomeFormulario = item.it.form || item.it.t || 'Formulário';
+  const corpo =
+    `Olá${destino.trat ? ` ${destino.trat}` : ''}, tudo bem?\n\n` +
+    `O formulário **${nomeFormulario}** continua pendente em nosso acompanhamento.\n\n` +
+    'Pedimos, por favor, que realize o preenchimento pelo link abaixo:\n' +
+    (link ? `${link}\n\n` : '\n') +
+    'Caso já tenha respondido, por favor nos informe para que possamos conferir o registro.' +
+    ASSINATURA_EMAIL_INTEGRACAO;
+
+  const email: EmailMontadoIntegracao = {
+    chave: `__cobranca_reforco_${papel}`,
+    fase: 'Reforço de cobrança de formulário',
+    nome: `Reforço de cobrança · ${papel}`,
+    para: destino.para || MARCADOR_EMAIL_VAZIO,
+    cc: '',
+    anexo: '',
+    assunto: '[Onboarding] Pendência de formulário',
+    corpo,
+  };
+
+  const textoSimples = emailMarkdownParaTexto(corpo);
+  const paraMailto = email.para.includes(MARCADOR_EMAIL_VAZIO) ? '' : email.para;
+  const mailto = `mailto:${encodeURIComponent(paraMailto)}?subject=${encodeURIComponent(email.assunto)}&body=${encodeURIComponent(textoSimples)}`;
+
+  return {
+    email,
+    textoSimples,
+    mailto,
+    faltandoDados: !destino.para || corpo.includes(MARCADOR_EMAIL_VAZIO) || !link,
+  };
+}
+
 export function marcarItensComoCobrados(
   processo: ProcessoIntegracao,
   itens: ItemCobrancaFormulario[],
@@ -221,7 +329,18 @@ export function marcarItensComoCobrados(
   let proximo = processo;
   itens.forEach((item) => {
     proximo = aplicarStatusAcao(proximo, item.it.id, 'wait', agoraRef);
+    proximo = registrarCobrancaFormularioAcao(proximo, item.it.id, 'primeira', agoraRef);
     proximo = adicionarNotaAcao(proximo, item.it.id, 'Cobrança enviada por e-mail.', agoraRef);
   });
+  return proximo;
+}
+
+export function marcarItemComoReforcado(
+  processo: ProcessoIntegracao,
+  item: ItemCobrancaFormulario,
+  agoraRef: Date = new Date(),
+): ProcessoIntegracao {
+  let proximo = registrarCobrancaFormularioAcao(processo, item.it.id, 'segunda', agoraRef);
+  proximo = adicionarNotaAcao(proximo, item.it.id, 'Reforço de cobrança enviado por e-mail.', agoraRef);
   return proximo;
 }
