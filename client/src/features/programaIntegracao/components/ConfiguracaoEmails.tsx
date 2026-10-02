@@ -4,9 +4,17 @@ import { salvarSecaoConfig } from '../api/client';
 import {
   CHAVES_EMAIL_INTEGRACAO,
   TOKENS_EMAIL_INTEGRACAO,
+  TOKENS_COBRANCA_INTEGRACAO,
   modeloEmailIntegracao,
   modeloPadraoEmailIntegracao,
 } from '../helpers/emailModelosIntegracao';
+import { dadosModeloCobranca, ehModeloCobranca } from '../helpers/emailModelosCobranca';
+import {
+  formulariosPendentes,
+  montarEmailCobranca,
+  montarEmailReforcoCobranca,
+  type PapelCobranca,
+} from '../helpers/cobrancaFormulariosHelpers';
 import {
   emailMarkdownParaHtmlPreview,
   montarPreviewEmailIntegracao,
@@ -53,6 +61,11 @@ export function ConfiguracaoEmails({ config, processos, onSaved, chaveInicialExt
   const modeloAtual = modeloEmailIntegracao(chave, config.emails || null);
   const modeloPadrao = modeloPadraoEmailIntegracao(chave);
   const modeloEditado = Boolean(config.emails && config.emails[chave]);
+  const modeloCobranca = ehModeloCobranca(chave);
+  const dadosCobranca = dadosModeloCobranca(chave);
+  const tokensDisponiveis = modeloCobranca
+    ? TOKENS_COBRANCA_INTEGRACAO
+    : TOKENS_EMAIL_INTEGRACAO;
 
   useEffect(() => {
     if (!chaveInicialExterna || !CHAVES_EMAIL_INTEGRACAO.includes(chaveInicialExterna as any)) return;
@@ -98,14 +111,39 @@ export function ConfiguracaoEmails({ config, processos, onSaved, chaveInicialExt
       : {};
     emailsTemporarios[chave] = { ...draft };
     const configTemporaria = { ...config, emails: emailsTemporarios };
+    const feriados = Array.isArray(config.feriados) ? config.feriados : [];
+    const origin = typeof window !== 'undefined' ? window.location.origin : undefined;
+
+    if (dadosCobranca) {
+      const papel = dadosCobranca.papel as PapelCobranca;
+      const pendentes = formulariosPendentes(processoPreview, feriados)
+        .filter((item) => item.papel === papel);
+      if (!pendentes.length) return null;
+      return dadosCobranca.modo === 'segunda'
+        ? montarEmailReforcoCobranca(
+            processoPreview,
+            papel,
+            pendentes[0],
+            configTemporaria as any,
+            origin,
+          )
+        : montarEmailCobranca(
+            processoPreview,
+            papel,
+            pendentes,
+            configTemporaria as any,
+            origin,
+          );
+    }
+
     return montarPreviewEmailIntegracao(
       chave,
       processoPreview,
       configTemporaria as any,
-      Array.isArray(config.feriados) ? config.feriados : [],
-      typeof window !== 'undefined' ? window.location.origin : undefined,
+      feriados,
+      origin,
     );
-  }, [chave, config, draft, processoPreview]);
+  }, [chave, config, draft, processoPreview, dadosCobranca]);
 
   const marcar = (campo: CampoModelo, valor: string) => {
     setDraft((atual) => ({ ...atual, [campo]: valor }));
@@ -188,7 +226,9 @@ export function ConfiguracaoEmails({ config, processos, onSaved, chaveInicialExt
       <Card className="self-start xl:sticky xl:top-4">
         <CardHeader>
           <CardTitle>Modelos de e-mail</CardTitle>
-          <p className="text-xs text-muted-foreground">{CHAVES_EMAIL_INTEGRACAO.length} modelos históricos</p>
+          <p className="text-xs text-muted-foreground">
+            {CHAVES_EMAIL_INTEGRACAO.length} modelos · 32 históricos + 8 de cobrança
+          </p>
         </CardHeader>
         <CardContent className="max-h-[72vh] space-y-4 overflow-y-auto">
           {fases.map(({ fase, chaves }) => (
@@ -233,20 +273,34 @@ export function ConfiguracaoEmails({ config, processos, onSaved, chaveInicialExt
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-1 text-sm">
                 <span className="font-medium">Para</span>
-                <input value={draft.para} onChange={(e) => marcar('para', e.target.value)} className="w-full rounded-md border bg-background px-3 py-2" />
+                <input
+                  value={draft.para}
+                  onChange={(e) => marcar('para', e.target.value)}
+                  disabled={modeloCobranca}
+                  className="w-full rounded-md border bg-background px-3 py-2 disabled:cursor-not-allowed disabled:bg-muted/50"
+                />
+                {modeloCobranca && (
+                  <span className="block text-xs text-muted-foreground">
+                    Protegido: o destinatário vem automaticamente do cadastro oficial.
+                  </span>
+                )}
               </label>
-              <label className="space-y-1 text-sm">
-                <span className="font-medium">Cópia</span>
-                <input value={draft.cc} onChange={(e) => marcar('cc', e.target.value)} className="w-full rounded-md border bg-background px-3 py-2" />
-              </label>
+              {!modeloCobranca && (
+                <label className="space-y-1 text-sm">
+                  <span className="font-medium">Cópia</span>
+                  <input value={draft.cc} onChange={(e) => marcar('cc', e.target.value)} className="w-full rounded-md border bg-background px-3 py-2" />
+                </label>
+              )}
               <label className="space-y-1 text-sm md:col-span-2">
                 <span className="font-medium">Assunto</span>
                 <input value={draft.assunto} onChange={(e) => marcar('assunto', e.target.value)} className="w-full rounded-md border bg-background px-3 py-2" />
               </label>
-              <label className="space-y-1 text-sm md:col-span-2">
-                <span className="font-medium">Anexos (texto informativo)</span>
-                <input value={draft.anexo} onChange={(e) => marcar('anexo', e.target.value)} className="w-full rounded-md border bg-background px-3 py-2" />
-              </label>
+              {!modeloCobranca && (
+                <label className="space-y-1 text-sm md:col-span-2">
+                  <span className="font-medium">Anexos (texto informativo)</span>
+                  <input value={draft.anexo} onChange={(e) => marcar('anexo', e.target.value)} className="w-full rounded-md border bg-background px-3 py-2" />
+                </label>
+              )}
               <label className="space-y-1 text-sm md:col-span-2">
                 <span className="font-medium">Corpo</span>
                 <textarea
@@ -255,14 +309,17 @@ export function ConfiguracaoEmails({ config, processos, onSaved, chaveInicialExt
                   onChange={(e) => marcar('corpo', e.target.value)}
                   className="min-h-[360px] w-full rounded-md border bg-background px-3 py-2 font-mono text-sm leading-6"
                 />
-                <span className="block text-xs text-muted-foreground">**negrito** · linha começando com - vira lista · --- sozinho vira divisória</span>
+                <span className="block text-xs text-muted-foreground">
+                  **negrito** · linha começando com - vira lista · --- sozinho vira divisória
+                  {modeloCobranca ? ' · a assinatura padrão é acrescentada automaticamente' : ''}
+                </span>
               </label>
             </div>
 
             <div>
               <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Clique para inserir no corpo</div>
               <div className="flex flex-wrap gap-1.5">
-                {TOKENS_EMAIL_INTEGRACAO.map(([token, descricao]) => (
+                {tokensDisponiveis.map(([token, descricao]) => (
                   <button
                     key={token}
                     type="button"
@@ -308,8 +365,14 @@ export function ConfiguracaoEmails({ config, processos, onSaved, chaveInicialExt
             </div>
           </CardHeader>
           <CardContent>
-            {!processoPreview || !preview ? (
+            {!processoPreview ? (
               <p className="text-sm text-muted-foreground">Cadastre um processo para visualizar os tokens preenchidos na prévia.</p>
+            ) : !preview && modeloCobranca ? (
+              <p className="text-sm text-muted-foreground">
+                O processo selecionado não possui um formulário pendente compatível com este modelo. Selecione outro processo para visualizar uma prévia real.
+              </p>
+            ) : !preview ? (
+              <p className="text-sm text-muted-foreground">Não foi possível montar a prévia deste modelo com o processo selecionado.</p>
             ) : (
               <div className="space-y-4">
                 {preview.faltandoDados && (
