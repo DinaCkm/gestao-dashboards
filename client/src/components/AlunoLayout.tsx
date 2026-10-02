@@ -43,6 +43,12 @@ const BANCO_SUCESSORES_URL_POR_PROGRAMA: Record<number, string> = {
   16: "https://aderencia-ac.ecodobem.com",
 };
 
+/**
+ * Aviso "preencha o formulário de Aderência" — aparece uma vez por sessão (a cada login)
+ * para os alunos dos programas acima, até a data limite (30 dias a partir de 02/10/2026).
+ */
+const AVISO_ADERENCIA_ATE = new Date("2026-11-01T03:00:00Z"); // 01/11/2026 00:00 (Brasília)
+
 /** Rotas que ficam bloqueadas até o aceite (para alunos novos) */
 const BLOCKED_PATHS = ALL_NAV_ITEMS.filter(i => i.requiresAceite).map(i => i.path);
 
@@ -112,6 +118,21 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
   const fecharAvisoPrazo = () => {
     if (avisoPrazo) sessionStorage.setItem(`aviso_prazo_dismissed_${avisoPrazo.limite}`, '1');
     setAvisoPrazoAberto(false);
+  };
+
+  // Aviso do formulário de Aderência (SEBRAE Acre) — uma vez por sessão, até AVISO_ADERENCIA_ATE.
+  // Espera o aviso de prazo fechar, para não abrir dois avisos ao mesmo tempo.
+  const aderenciaUrl = user?.programId ? BANCO_SUCESSORES_URL_POR_PROGRAMA[user.programId] : undefined;
+  const [avisoAderenciaAberto, setAvisoAderenciaAberto] = useState(false);
+  useEffect(() => {
+    if (!aderenciaUrl || avisoPrazoAberto) return;
+    if (new Date() >= AVISO_ADERENCIA_ATE) return;
+    if (sessionStorage.getItem('aviso_aderencia_dismissed') === '1') return;
+    setAvisoAderenciaAberto(true);
+  }, [aderenciaUrl, avisoPrazoAberto]);
+  const fecharAvisoAderencia = () => {
+    sessionStorage.setItem('aviso_aderencia_dismissed', '1');
+    setAvisoAderenciaAberto(false);
   };
 
   // Buscar status de onboarding (aceite + data de criação)
@@ -405,6 +426,34 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
           <span>FALE CONOSCO</span>
         </a>
       </div>
+
+      {/* Aviso: preencher o formulário de Aderência (SEBRAE Acre) */}
+      {aderenciaUrl && (
+        <Dialog open={avisoAderenciaAberto} onOpenChange={(open) => { if (!open) fecharAvisoAderencia(); }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+                <DialogTitle>Atenção</DialogTitle>
+              </div>
+              <DialogDescription className="pt-2 text-base text-foreground">
+                Preencha o formulário de <strong>ADERÊNCIA</strong>. Clique em <strong>Aderência</strong> no menu.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={fecharAvisoAderencia} className="w-full sm:w-auto">
+                Depois
+              </Button>
+              <Button
+                onClick={() => { fecharAvisoAderencia(); window.open(aderenciaUrl, "_blank", "noopener,noreferrer"); }}
+                className="w-full sm:w-auto"
+              >
+                Ir para Aderência
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Aviso de prazo de encerramento do programa */}
       {avisoPrazo && (
