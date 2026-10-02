@@ -18,6 +18,7 @@ import { modeloEmailIntegracao } from '../helpers/emailModelosIntegracao';
 import { CHAVE_MODELO_COBRANCA } from '../helpers/emailModelosCobranca';
 import { MARCADOR_EMAIL_VAZIO } from '../helpers/emailValoresHelpers';
 import { calcularResumoCobrancasFormularios } from '../helpers/cobrancaIndicadoresHelpers';
+import { ProgramaIntegracaoEmptyState } from '@/components/illustrations/ProgramaIntegracaoEmptyState';
 
 type FiltroRapido = 'all' | 'atraso' | 'vence3' | 'pendentes' | 'nao_cobrados';
 
@@ -452,6 +453,29 @@ export function CobrancaFormulariosUgp({
 
   const totalAtrasados = contador('atraso');
 
+  const limparEstadoVazio = () => {
+    setBusca('');
+    setPapel('all');
+    setAlinhamento('all');
+    setFiltroRapido('all');
+  };
+
+  const vazioBusca = busca.trim();
+  const vazioTitulo = vazioBusca
+    ? `Nenhum resultado para '${vazioBusca}'`
+    : filtro === 'atraso'
+      ? 'Nenhum formulário atrasado'
+      : filtro === 'vence3'
+        ? 'Nada vencendo nos próximos 3 dias'
+        : 'Nenhum formulário encontrado';
+  const vazioTexto = vazioBusca
+    ? 'Confira a grafia ou tente nome, cargo ou unidade.'
+    : filtro === 'atraso'
+      ? 'Ótimo sinal! Todos os formulários estão dentro do prazo.'
+      : filtro === 'vence3'
+        ? 'Você está em dia com os prazos.'
+        : 'Não há formulários que correspondam aos filtros atuais.';
+
   const alterarSelecao = (id: string, valor: boolean) => {
     setSelecionados((atual) => {
       const proximo = new Set(atual);
@@ -736,7 +760,17 @@ export function CobrancaFormulariosUgp({
                     </tr>
                   );
                 })}
-                {!itensVisiveis.length && <tr><td colSpan={11} className="px-4 py-12 text-center text-slate-500">Nenhum formulário pendente encontrado com os filtros atuais.</td></tr>}
+                {!itensVisiveis.length && (
+                  <tr>
+                    <td colSpan={11} className="pi-empty-table-cell">
+                      <ProgramaIntegracaoEmptyState
+                        titulo={vazioTitulo}
+                        texto={vazioTexto}
+                        onLimpar={limparEstadoVazio}
+                      />
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
