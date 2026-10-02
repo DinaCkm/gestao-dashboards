@@ -1460,7 +1460,7 @@ function LeituraIntegradaUgp({ colaborador }: { colaborador: ColaboradorAcompanh
 
           <div className="rounded-2xl border border-teal-200 bg-teal-50/60 p-4">
             <div className="text-xs font-black uppercase tracking-wide text-teal-700">Gestor</div>
-            <div className="mt-1 text-3xl font-black text-slate-950">{gestorAtual == null ? '—' : `${gestorAtual.toFixed(2).replace('.', ',')} / 5`}</div>
+            <div className="mt-1 text-3xl font-black text-slate-950">{gestorAtual == null ? '—' : `${gestorAtual.toFixed(2).replace('.', ',')} de 5`}</div>
             <div className="mt-1 text-xs leading-relaxed text-slate-600">
               Avaliação do Programa{gestorUltimo ? ` · alinhamento de ${diaDoAlinhamento(gestorUltimo.ciclo)} dias` : ''}
             </div>
@@ -1469,7 +1469,7 @@ function LeituraIntegradaUgp({ colaborador }: { colaborador: ColaboradorAcompanh
 
           <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
             <div className="text-xs font-black uppercase tracking-wide text-amber-700">Anjo</div>
-            <div className="mt-1 text-3xl font-black text-slate-950">{anjoAtual == null ? '—' : `${anjoAtual.toFixed(2).replace('.', ',')} / 5`}</div>
+            <div className="mt-1 text-3xl font-black text-slate-950">{anjoAtual == null ? '—' : `${anjoAtual.toFixed(2).replace('.', ',')} de 5`}</div>
             <div className="mt-1 text-xs leading-relaxed text-slate-600">
               Avaliação do Programa{anjoUltimo ? ` · alinhamento de ${diaDoAlinhamento(anjoUltimo.ciclo)} dias` : ''}
             </div>
@@ -2440,7 +2440,7 @@ function EvolucaoBloco({ titulo, respostas, papel }: {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.25} />
                   <XAxis dataKey="momento" />
                   <YAxis domain={[0, 5]} ticks={[0,1,2,3,4,5]} />
-                  <ChartTooltip formatter={(v: number) => Number(v).toFixed(2).replace('.', ',')} />
+                  <ChartTooltip formatter={(v: number) => Number(v).toFixed(2).replace('.', ',') + ' de 5'} />
                   <Legend />
                   {PILARES_ACOMPANHAMENTO.map((p, i) => (
                     <Line
@@ -2472,7 +2472,7 @@ function EvolucaoBloco({ titulo, respostas, papel }: {
                       <td className="px-3 py-2 font-medium">{p.nome}</td>
                       {momentos.map((m) => (
                         <td key={m.ciclo} className="px-3 py-2 text-center">
-                          {m.pilares[p.chave] == null ? '—' : m.pilares[p.chave]!.toFixed(2).replace('.', ',')}
+                          {m.pilares[p.chave] == null ? '—' : m.pilares[p.chave]!.toFixed(2).replace('.', ',') + ' de 5'}
                         </td>
                       ))}
                     </tr>
@@ -3470,7 +3470,7 @@ function PercepcoesDumbbell({ colaborador }: { colaborador: ColaboradorAcompanha
             const difOriginal=gv!=null&&av!=null?Math.abs(gv-av):null;
             const dif=gp!=null&&ap!=null?Math.abs(gp-ap):null;
             const alerta=difOriginal!=null&&difOriginal>=3;
-            return <div key={pilar.chave} className={'rounded-2xl border p-4 '+(alerta?'border-amber-200 bg-amber-50/50':'border-slate-200 bg-white')}><div className="flex justify-between gap-3"><div className="font-semibold">{pilar.nome}</div>{alerta&&<Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">diferença relevante</Badge>}</div><div className="relative mt-4 h-8"><div className="absolute left-0 right-0 top-4 h-1 rounded-full bg-slate-100"/>{gp!=null&&ap!=null&&<div className="absolute top-4 h-1" style={{left:Math.min(gp,ap)+'%',width:Math.abs(gp-ap)+'%',backgroundColor:'#CBD5E1'}}/>}{gp!=null&&<span className="absolute top-1 h-6 w-6 -translate-x-1/2 rounded-full border-4 border-white shadow" style={{left:gp+'%',backgroundColor:PAPEL_CORES.gestor}}/>}{ap!=null&&<span className="absolute top-1 h-6 w-6 -translate-x-1/2 rotate-45 rounded-[4px] border-4 border-white shadow" style={{left:ap+'%',backgroundColor:PAPEL_CORES.anjo}}/>}</div><div className="mt-2 flex flex-wrap gap-4 text-xs"><span style={{color:PAPEL_CORES.gestor}} className="font-bold">Gestor: {gp==null?'—':Math.round(gp)+'% · nota '+gv?.toFixed(2).replace('.',',')}</span><span style={{color:PAPEL_CORES.anjo}} className="font-bold">Anjo: {ap==null?'—':Math.round(ap)+'% · nota '+av?.toFixed(2).replace('.',',')}</span>{difOriginal!=null&&<span className="font-semibold text-slate-500">diferença na nota original: {difOriginal.toFixed(2).replace('.',',')} ponto(s)</span>}</div></div>;
+            return <div key={pilar.chave} className={'rounded-2xl border p-4 '+(alerta?'border-amber-200 bg-amber-50/50':'border-slate-200 bg-white')}><div className="flex justify-between gap-3"><div className="font-semibold">{pilar.nome}</div>{alerta&&<Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">diferença relevante</Badge>}</div><div className="relative mt-4 h-8"><div className="absolute left-0 right-0 top-4 h-1 rounded-full bg-slate-100"/>{gp!=null&&ap!=null&&<div className="absolute top-4 h-1" style={{left:Math.min(gp,ap)+'%',width:Math.abs(gp-ap)+'%',backgroundColor:'#CBD5E1'}}/>}{gp!=null&&<span className="absolute top-1 h-6 w-6 -translate-x-1/2 rounded-full border-4 border-white shadow" style={{left:gp+'%',backgroundColor:PAPEL_CORES.gestor}}/>}{ap!=null&&<span className="absolute top-1 h-6 w-6 -translate-x-1/2 rotate-45 rounded-[4px] border-4 border-white shadow" style={{left:ap+'%',backgroundColor:PAPEL_CORES.anjo}}/>}</div><div className="mt-2 flex flex-wrap gap-4 text-xs"><span style={{color:PAPEL_CORES.gestor}} className="font-bold">Gestor: {gp==null?'—':Math.round(gp)+'% · nota '+gv?.toFixed(2).replace('.',',')+' de 5'}</span><span style={{color:PAPEL_CORES.anjo}} className="font-bold">Anjo: {ap==null?'—':Math.round(ap)+'% · nota '+av?.toFixed(2).replace('.',',')+' de 5'}</span>{difOriginal!=null&&<span className="font-semibold text-slate-500">diferença na nota original: {difOriginal.toFixed(2).replace('.',',')} ponto(s)</span>}</div></div>;
           })}
         </div>
       </CardContent>
