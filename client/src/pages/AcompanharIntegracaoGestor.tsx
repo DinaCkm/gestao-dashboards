@@ -3407,7 +3407,7 @@ function CarteiraUgp({
           detalhe="formulários pendentes"
           icon={FileText}
           variante="warn"
-          tag={{ texto: vencem3dias + ' vencem em 3d', tipo: 'warn' }}
+          tag={{ texto: vencem3dias + ' vencem em até 3 dias', tipo: 'warn' }}
         />
         <KpiResumoCard
           titulo="Índice médio"
