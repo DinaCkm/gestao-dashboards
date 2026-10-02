@@ -37,6 +37,7 @@ import { gerarAcompanhamentoIntegracaoPdf } from '@/features/programaIntegracao/
 import { gerarDocumentoAtaRelatorio } from '@/features/programaIntegracao/helpers/atasRelatoriosHelpers';
 import { FormulariosEvolucaoUgp } from '@/features/programaIntegracao/components/FormulariosEvolucaoUgp';
 import { CobrancaFormulariosUgp } from '@/features/programaIntegracao/components/CobrancaFormulariosUgp';
+import { ProgramaIntegracaoEmptyState } from '@/components/illustrations/ProgramaIntegracaoEmptyState';
 import '@/features/programaIntegracao/styles/acompanhamentoIntegracao.css';
 
 interface HistoricoCobrancaFormulario {
@@ -3381,6 +3382,20 @@ function CarteiraUgp({
     return dias != null && dias >= 0 && dias <= 3;
   }).length, 0);
 
+  const limparFiltrosCarteira = () => {
+    setBusca('');
+    setUnidade('all');
+    setFase('all');
+    setStatus('all');
+  };
+  const termoVazioCarteira = busca.trim();
+  const tituloVazioCarteira = termoVazioCarteira
+    ? `Nenhum resultado para '${termoVazioCarteira}'`
+    : 'Nenhum colaborador encontrado';
+  const textoVazioCarteira = termoVazioCarteira
+    ? 'Confira a grafia ou tente nome, cargo ou unidade.'
+    : 'Não há colaboradores que correspondam aos filtros atuais.';
+
   return (
     <div className="space-y-5">
       <div className="pi-kpi-grid">
@@ -3504,7 +3519,17 @@ function CarteiraUgp({
                   </tr>
                 );
               })}
-              {!lista.length&&<tr><td colSpan={8} className="pi-muted px-4 py-12 text-center">Nenhum colaborador encontrado com os filtros atuais.</td></tr>}
+              {!lista.length && (
+                <tr>
+                  <td colSpan={8} className="pi-empty-table-cell">
+                    <ProgramaIntegracaoEmptyState
+                      titulo={tituloVazioCarteira}
+                      texto={textoVazioCarteira}
+                      onLimpar={limparFiltrosCarteira}
+                    />
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -4555,6 +4580,7 @@ function CarteiraGestor({
   const lista=colaboradores.filter((x)=>!termo||[x.nome,x.cargo,x.unidade].some((v)=>String(v||'').toLowerCase().includes(termo)));
   const atencao=colaboradores.filter((x)=>statusCarteira(x).chave==='atencao').length;
   const pendenciasGestor=colaboradores.reduce((s,x)=>s+(x.formulariosPendentes||[]).length,0);
+  const termoVazioGestor = busca.trim();
 
   return (
     <div className="space-y-5">
@@ -4625,7 +4651,18 @@ function CarteiraGestor({
                   </tr>
                 );
               })}
-              {!lista.length&&<tr><td colSpan={5} className="pi-muted px-4 py-12 text-center">Nenhum colaborador encontrado.</td></tr>}
+              {!lista.length && (
+                <tr>
+                  <td colSpan={5} className="pi-empty-table-cell">
+                    <ProgramaIntegracaoEmptyState
+                      titulo={termoVazioGestor ? `Nenhum resultado para '${termoVazioGestor}'` : 'Nenhum colaborador encontrado'}
+                      texto={termoVazioGestor ? 'Confira a grafia ou tente nome, cargo ou unidade.' : 'Não há colaboradores disponíveis nesta carteira.'}
+                      onLimpar={termoVazioGestor ? () => setBusca('') : undefined}
+                      acao="Limpar busca"
+                    />
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
