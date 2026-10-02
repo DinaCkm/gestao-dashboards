@@ -1563,6 +1563,8 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       }
     }
 
+    const historicoCobrancasGeral: any[] = [];
+
     const colaboradores = permitidos.map((row: any) => {
       const estado = asJson<Record<string, any>>(row.estado, {});
       const respostas = respostasPorProcesso.get(Number(row.id)) || [];
@@ -1602,31 +1604,75 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
 
       const formulariosPendentes: any[] = [];
       const feito = estado.feito && typeof estado.feito === "object" ? estado.feito : {};
-      const cobrancasFormularios = Array.isArray(estado?.cobrancasFormularios)
+      const cobrancasPersistidas = Array.isArray(estado?.cobrancasFormularios)
         ? estado.cobrancasFormularios.filter((item: any) => item && typeof item === "object")
         : [];
-      const ultimaCobrancaPara = (chave: string, respondenteEmail = "", respondenteNome = "") => {
+      const cobrancasLegadasCkm = cobrancasLegadasCkmDoEstado(estado, row);
+      const cobrancasUnificadasMap = new Map<string, any>();
+
+      [...cobrancasPersistidas, ...cobrancasLegadasCkm].forEach((item: any) => {
+        const origem = String(item?.origem || "").trim() || "UGP";
+        const chave = String(item?.chave || "");
+        const cobradoEm = String(item?.cobradoEm || "");
+        const email = String(item?.respondenteEmail || "").trim().toLowerCase();
+        const dedupe = [chave, cobradoEm, origem, email].join("|");
+        if (cobrancasUnificadasMap.has(dedupe)) return;
+        cobrancasUnificadasMap.set(dedupe, {
+          id: String(item?.id || dedupe),
+          chave,
+          formKey: String(item?.formKey || ""),
+          ciclo: Number(item?.ciclo || 0),
+          papel: String(item?.papel || ""),
+          formulario: String(item?.formulario || ""),
+          respondenteNome: String(item?.respondenteNome || ""),
+          respondenteEmail: String(item?.respondenteEmail || ""),
+          cobradoEm,
+          cobradoPorUserId: Number(item?.cobradoPorUserId || 0) || null,
+          cobradoPorNome: String(item?.cobradoPorNome || ""),
+          origem,
+          etapa: String(item?.etapa || ""),
+        });
+      });
+      const cobrancasFormularios = [...cobrancasUnificadasMap.values()]
+        .sort((a: any, b: any) => String(a?.cobradoEm || "").localeCompare(String(b?.cobradoEm || "")));
+
+      const historicoCobrancasPara = (chave: string, respondenteEmail = "", respondenteNome = "") => {
         const emailAtual = String(respondenteEmail || "").trim().toLowerCase();
         const nomeAtual = normTxt(respondenteNome || "");
-        const registros = cobrancasFormularios
-          .filter((item: any) => {
-            if (String(item?.chave || "") !== chave) return false;
-            const emailRegistro = String(item?.respondenteEmail || "").trim().toLowerCase();
-            const nomeRegistro = normTxt(item?.respondenteNome || "");
-            if (emailAtual) return !emailRegistro || emailRegistro === emailAtual;
-            if (nomeAtual) return !nomeRegistro || nomeRegistro === nomeAtual;
-            return true;
-          })
-          .sort((a: any, b: any) => String(b?.cobradoEm || "").localeCompare(String(a?.cobradoEm || "")));
-        const ultima = registros[0];
+        return cobrancasFormularios.filter((item: any) => {
+          if (String(item?.chave || "") !== chave) return false;
+          const emailRegistro = String(item?.respondenteEmail || "").trim().toLowerCase();
+          const nomeRegistro = normTxt(item?.respondenteNome || "");
+          if (emailAtual) return !emailRegistro || emailRegistro === emailAtual;
+          if (nomeAtual) return !nomeRegistro || nomeRegistro === nomeAtual;
+          return true;
+        });
+      };
+
+      const ultimaCobrancaPara = (chave: string, respondenteEmail = "", respondenteNome = "") => {
+        const registros = historicoCobrancasPara(chave, respondenteEmail, respondenteNome);
+        const ultima = registros[registros.length - 1];
         return ultima
           ? {
               cobradoEm: String(ultima.cobradoEm || ""),
               cobradoPorNome: String(ultima.cobradoPorNome || ""),
               cobradoPorUserId: Number(ultima.cobradoPorUserId || 0) || null,
+              origem: String(ultima.origem || ""),
             }
           : null;
       };
+
+      if (acessoUgpRh) {
+        cobrancasFormularios.forEach((item: any) => {
+          historicoCobrancasGeral.push({
+            ...item,
+            processoId: String(row.legacyId || ""),
+            processoDbId: Number(row.id || 0),
+            colaboradorNome: String(row.nome || ""),
+            unidade: String(row.unidade || ""),
+          });
+        });
+      }
 
       // O Programa de Integração possui 95 ações reais no plano.
       // Para a carteira executiva, o percentual do processo considera somente
@@ -1673,6 +1719,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
           respondenteEmail: String(row.gestorEmail || ""),
           gestorEmail: String(row.gestorEmail || ""),
           ultimaCobranca: ultimaCobrancaPara(chaveCobranca, String(row.gestorEmail || ""), String(row.gestor || "")),
+          historicoCobrancas: historicoCobrancasPara(chaveCobranca, String(row.gestorEmail || ""), String(row.gestor || "")),
         });
       }
 
@@ -1733,6 +1780,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
               respondenteEmail,
               gestorEmail: String(row.gestorEmail || ""),
               ultimaCobranca: ultimaCobrancaPara(chaveCobranca, respondenteEmail, respondenteNome),
+              historicoCobrancas: historicoCobrancasPara(chaveCobranca, respondenteEmail, respondenteNome),
             });
           }
         });
