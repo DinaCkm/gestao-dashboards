@@ -574,7 +574,7 @@ export function CobrancaFormulariosUgp({
           <div className="pi-chips">
             {([
               ['atraso', 'Atrasados', contador('atraso')],
-              ['vence3', 'Vencem em 3 dias', contador('vence3')],
+              ['vence3', 'Vencem em até 3 dias', contador('vence3')],
               ['pendentes', 'Todos pendentes', contador('pendentes')],
               ['nao_cobrados', 'Ainda não cobrados', contador('nao_cobrados')],
             ] as Array<[FiltroRapido, string, number]>).map(([valor, rotulo, total]) => {
