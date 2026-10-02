@@ -1399,6 +1399,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         empresaId: adminGlobal ? null : empresaId,
         usuarioAtualNome: acessoUgpRh ? String(user?.name || user?.email || "") : "",
         modelosCobranca: acessoUgpRh ? modelosCobrancaConfigurados : {},
+        historicoCobrancas: [],
         atualizadoEm: new Date().toISOString(),
         colaboradores: [],
       });
@@ -1962,6 +1963,9 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       empresaId: adminGlobal ? null : empresaId,
       usuarioAtualNome: acessoUgpRh ? String(user?.name || user?.email || "") : "",
       modelosCobranca: acessoUgpRh ? modelosCobrancaConfigurados : {},
+      historicoCobrancas: acessoUgpRh
+        ? historicoCobrancasGeral.sort((a: any, b: any) => String(b?.cobradoEm || "").localeCompare(String(a?.cobradoEm || "")))
+        : [],
       atualizadoEm: new Date().toISOString(),
       colaboradores,
     });
@@ -2210,6 +2214,8 @@ programaIntegracaoRouter.post("/api/programa-integracao/gestor/cobrancas-formula
           cobradoEm: agora,
           cobradoPorUserId,
           cobradoPorNome,
+          origem: "UGP",
+          etapa: "manual",
         });
         registrados += 1;
 
