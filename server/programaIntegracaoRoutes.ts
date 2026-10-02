@@ -605,6 +605,87 @@ function addDiasIso(iso: string, dias: number): string {
   return data.toISOString().slice(0, 10);
 }
 
+type MetaCobrancaFormulario = {
+  formKey: "bem" | "pesquisa" | "aval";
+  ciclo: number;
+  papel: "Gestor" | "Anjo" | "Colaborador";
+  formulario: string;
+};
+
+const META_COBRANCA_POR_ITEM: Record<string, MetaCobrancaFormulario> = {
+  "pre-04b": { formKey: "bem", ciclo: 0, papel: "Gestor", formulario: "Bem Acolhido em Nossa Unidade" },
+  "pos1-08": { formKey: "pesquisa", ciclo: 1, papel: "Colaborador", formulario: "Pesquisa de Integração" },
+  "pos1-09": { formKey: "aval", ciclo: 1, papel: "Gestor", formulario: "Avaliação do Programa de Integração" },
+  "pos1-10": { formKey: "aval", ciclo: 1, papel: "Anjo", formulario: "Avaliação do Programa de Integração" },
+  "pos2-08": { formKey: "pesquisa", ciclo: 2, papel: "Colaborador", formulario: "Pesquisa de Integração" },
+  "pos2-09": { formKey: "aval", ciclo: 2, papel: "Gestor", formulario: "Avaliação do Programa de Integração" },
+  "pos2-10": { formKey: "aval", ciclo: 2, papel: "Anjo", formulario: "Avaliação do Programa de Integração" },
+  "pos3-09": { formKey: "pesquisa", ciclo: 3, papel: "Colaborador", formulario: "Pesquisa de Integração" },
+  "pos3-10": { formKey: "aval", ciclo: 3, papel: "Gestor", formulario: "Avaliação do Programa de Integração" },
+  "pos3-11": { formKey: "aval", ciclo: 3, papel: "Anjo", formulario: "Avaliação do Programa de Integração" },
+  "pos4-07": { formKey: "pesquisa", ciclo: 4, papel: "Colaborador", formulario: "Pesquisa de Integração" },
+  "pos4-08": { formKey: "aval", ciclo: 4, papel: "Gestor", formulario: "Avaliação do Programa de Integração" },
+  "pos4-09": { formKey: "aval", ciclo: 4, papel: "Anjo", formulario: "Avaliação do Programa de Integração" },
+};
+
+function chaveCobrancaFormulario(meta: MetaCobrancaFormulario): string {
+  return `${meta.formKey}|${meta.ciclo}|${meta.papel}`;
+}
+
+function destinoCobrancaDoProcesso(processo: any, papel: MetaCobrancaFormulario["papel"]) {
+  if (papel === "Gestor") {
+    return { nome: String(processo?.gestor || ""), email: String(processo?.gestorEmail || "") };
+  }
+  if (papel === "Anjo") {
+    return { nome: String(processo?.anjo || ""), email: String(processo?.anjoEmail || "") };
+  }
+  return {
+    nome: String(processo?.nome || ""),
+    email: String(processo?.emailCorporativo || processo?.email || ""),
+  };
+}
+
+function cobrancasLegadasCkmDoEstado(estado: Record<string, any>, processo: any): any[] {
+  const feito = estado?.feito && typeof estado.feito === "object" ? estado.feito : {};
+  const out: any[] = [];
+
+  Object.entries(META_COBRANCA_POR_ITEM).forEach(([itemId, meta]) => {
+    const ficha = feito?.[itemId] && typeof feito[itemId] === "object" ? feito[itemId] : {};
+    const cobranca = ficha?.cobrancaFormulario && typeof ficha.cobrancaFormulario === "object"
+      ? ficha.cobrancaFormulario
+      : {};
+    const destino = destinoCobrancaDoProcesso(processo, meta.papel);
+    const chave = chaveCobrancaFormulario(meta);
+
+    ([
+      ["primeiraEm", "primeira"],
+      ["segundaEm", "segunda"],
+    ] as const).forEach(([campo, etapa]) => {
+      const cobradoEm = String(cobranca?.[campo] || "").trim();
+      if (!cobradoEm) return;
+      out.push({
+        id: `legacy_ckm_${itemId}_${etapa}_${cobradoEm}`,
+        chave,
+        formKey: meta.formKey,
+        ciclo: meta.ciclo,
+        papel: meta.papel,
+        formulario: meta.formulario,
+        respondenteNome: destino.nome,
+        respondenteEmail: destino.email,
+        cobradoEm,
+        cobradoPorUserId: null,
+        cobradoPorNome: "CKM",
+        origem: "CKM",
+        etapa,
+        itemId,
+        legado: true,
+      });
+    });
+  });
+
+  return out;
+}
+
 function respostaCompacta(row: any, incluirDetalhesUgp = false) {
   const answers = asJson<Record<string, any>>(row.answers, {});
   const qmap = PROGRAMA_INTEGRACAO_QUESTION_INDEX[row.formKey as ProgramaIntegracaoFormKey] || {};
