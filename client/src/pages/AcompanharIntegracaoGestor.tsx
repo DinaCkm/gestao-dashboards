@@ -4658,7 +4658,6 @@ function CarteiraGestor({
                       titulo={termoVazioGestor ? `Nenhum resultado para '${termoVazioGestor}'` : 'Nenhum colaborador encontrado'}
                       texto={termoVazioGestor ? 'Confira a grafia ou tente nome, cargo ou unidade.' : 'Não há colaboradores disponíveis nesta carteira.'}
                       onLimpar={termoVazioGestor ? () => setBusca('') : undefined}
-                      acao="Limpar busca"
                     />
                   </td>
                 </tr>
