@@ -624,12 +624,12 @@ export function CobrancaFormulariosUgp({
       {ativo && (
         <Card className="pi-table-card">
           <div className="pi-toolbar">
-            <div className="mb-3 flex flex-col gap-3 rounded-xl border border-violet-100 bg-violet-50/50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="pi-mode-banner mb-3 flex flex-col gap-3 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <div className="text-sm font-bold text-violet-950">Modo cobrança de formulários</div>
-                <div className="text-xs text-violet-700">Uma linha por formulário pendente. Nenhum conteúdo de resposta é exibido.</div>
+                <div className="pi-mode-title text-sm">Modo cobrança de formulários</div>
+                <div className="pi-mode-subtitle text-xs">Uma linha por formulário pendente. Nenhum conteúdo de resposta é exibido.</div>
               </div>
-              <Button size="sm" variant="outline" onClick={() => setFiltroRapido('all')}>Voltar para a carteira</Button>
+              <Button size="sm" variant="outline" className="pi-filter-action is-quiet" onClick={() => setFiltroRapido('all')}>Voltar para a carteira</Button>
             </div>
 
             <div className="pi-toolbar-grid grid gap-3 lg:grid-cols-[1fr_200px_180px_180px]">
