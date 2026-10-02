@@ -251,11 +251,6 @@ interface AcompanhamentoResponse {
     anexo?: string;
   }>;
   historicoCobrancas?: HistoricoCobrancaFormulario[];
-  resumoCobrancas?: {
-    formulariosCobrados: number;
-    respondidosPosCobranca: number;
-    pendentesPosCobranca: number;
-  };
   colaboradores: ColaboradorAcompanhamento[];
 }
 
@@ -3223,7 +3218,7 @@ function TabelaFormulariosPendentesUgp({ colaborador }: { colaborador: Colaborad
 }
 
 function CarteiraUgp({
-  colaboradores,busca,setBusca,unidade,setUnidade,fase,setFase,status,setStatus,radarFiltro,setRadarFiltro,onAbrir,onRecarregar,assinatura,modelosCobranca,historicoCobrancas,resumoCobrancas
+  colaboradores,busca,setBusca,unidade,setUnidade,fase,setFase,status,setStatus,radarFiltro,setRadarFiltro,onAbrir,onRecarregar,assinatura,modelosCobranca,historicoCobrancas
 }: {
   colaboradores: ColaboradorAcompanhamento[];
   busca:string; setBusca:(v:string)=>void;
@@ -3236,11 +3231,6 @@ function CarteiraUgp({
   assinatura:string;
   modelosCobranca?: Record<string, any>;
   historicoCobrancas?: HistoricoCobrancaFormulario[];
-  resumoCobrancas?: {
-    formulariosCobrados: number;
-    respondidosPosCobranca: number;
-    pendentesPosCobranca: number;
-  };
 }) {
   const unidades=Array.from(new Set(colaboradores.map((x)=>x.unidade).filter(Boolean))).sort();
   const lista=colaboradores.filter((x)=>{
@@ -3297,11 +3287,6 @@ function CarteiraUgp({
         assinatura={assinatura}
         modelosCobranca={modelosCobranca}
         historicoCobrancas={historicoCobrancas || []}
-        resumoCobrancas={resumoCobrancas || {
-          formulariosCobrados: 0,
-          respondidosPosCobranca: 0,
-          pendentesPosCobranca: 0,
-        }}
       />
 
       {radarFiltro==='all' && (
@@ -4749,11 +4734,6 @@ export default function AcompanharIntegracaoGestor() {
                 assinatura={dados?.usuarioAtualNome || 'UGP/RH'}
                 modelosCobranca={dados?.modelosCobranca || {}}
                 historicoCobrancas={dados?.historicoCobrancas || []}
-                resumoCobrancas={dados?.resumoCobrancas || {
-                  formulariosCobrados: 0,
-                  respondidosPosCobranca: 0,
-                  pendentesPosCobranca: 0,
-                }}
               />
             )
           ) : modoDetalhe && colaborador ? (
