@@ -3075,7 +3075,7 @@ function ComposicaoIndice({
           </p>
 
           <div className="grid gap-3 md:grid-cols-3">
-            <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
+            <div className="pi-index-how-dimension is-exp">
               <div className="flex items-start gap-3">
                 <span className="pi-index-tile is-exp"><Heart className="h-4 w-4" /></span>
                 <div>
@@ -3087,7 +3087,7 @@ function ComposicaoIndice({
               </div>
             </div>
 
-            <div className="rounded-xl border border-teal-100 bg-teal-50/60 p-4">
+            <div className="pi-index-how-dimension is-ada">
               <div className="flex items-start gap-3">
                 <span className="pi-index-tile is-ada"><Puzzle className="h-4 w-4" /></span>
                 <div>
@@ -3099,7 +3099,7 @@ function ComposicaoIndice({
               </div>
             </div>
 
-            <div className="rounded-xl border border-fuchsia-100 bg-fuchsia-50/60 p-4">
+            <div className="pi-index-how-dimension is-dev">
               <div className="flex items-start gap-3">
                 <span className="pi-index-tile is-dev"><Sprout className="h-4 w-4" /></span>
                 <div>
