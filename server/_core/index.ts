@@ -15,6 +15,7 @@ import { programaIntegracaoPotencialRouter } from "../programaIntegracaoPotencia
 import { programaIntegracaoRegistrosRouter } from "../programaIntegracaoRegistrosRoutes";
 import { programaIntegracaoAnjoRouter } from "../programaIntegracaoAnjoRoutes";
 import { programaIntegracaoRouter } from "../programaIntegracaoRoutes";
+import { pdiIntegracaoRouter } from "../pdiIntegracaoRoutes";
 import { registerProgramaIntegracaoPages } from "../programaIntegracaoPages";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
@@ -73,6 +74,9 @@ async function startServer() {
 
   // Edição de metadados dos cursos (título, descrição e resumo)
   app.use(courseMetadataRouter);
+
+  // Integração com o PDI: cursos ativos por competência (assinado com HMAC)
+  app.use(pdiIntegracaoRouter);
 
   // Programa de Integracao: config parcial segura, importacao administrativa,
   // revisao de pendencias, restauracao protegida, gerenciamento de pessoas,
