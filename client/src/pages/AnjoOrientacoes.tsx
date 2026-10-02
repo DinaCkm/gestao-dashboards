@@ -1,12 +1,9 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import AnjoRouteGuard from "@/features/programaIntegracao/components/AnjoRouteGuard";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { HeartHandshake, Route, Users, MessageCircle, CalendarCheck, ArrowRight, ShieldCheck, Sunrise, Handshake, Compass, Coffee, Milestone, Heart, Lightbulb, Headphones, Eye, Network, Sprout, Sparkles } from "lucide-react";
+import { HeartHandshake, Route, Users, MessageCircle, CalendarCheck, ArrowRight, ShieldCheck, Sunrise, Handshake, Compass, Coffee, Milestone, Heart, Lightbulb, Headphones, Eye, Network, Sprout, Sparkles, Check, X, CheckCircle2 } from "lucide-react";
 import { useLocation } from "wouter";
+import "@/features/programaIntegracao/styles/acompanhamentoIntegracao.css";
 
 const etapas = [
   {
@@ -73,6 +70,7 @@ const esperado = [
 ];
 
 const esperadoIcones = [Heart, Lightbulb, Headphones, Eye, Network, Sprout];
+const esperadoClasses = ["v-rose", "v-amber", "v-sky", "v-violet", "v-teal", "v-green"];
 
 export default function AnjoOrientacoes() {
   const [, setLocation] = useLocation();
@@ -80,105 +78,119 @@ export default function AnjoOrientacoes() {
   return (
     <DashboardLayout>
       <AnjoRouteGuard>
-      <div className="mx-auto max-w-6xl space-y-6">
-        <div className="rounded-2xl border bg-gradient-to-br from-violet-50 via-background to-cyan-50 p-5 sm:p-7">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="max-w-3xl">
-              <Badge variant="outline" className="gap-1.5"><Sparkles className="h-3.5 w-3.5" />Espaço do Anjo</Badge>
-              <h1 className="mt-3 text-3xl font-bold tracking-tight">Cartilha e Orientações do Anjo</h1>
-              <p className="mt-2 text-sm text-muted-foreground">Tudo o que você precisa saber para apoiar o colaborador durante sua integração.</p>
+        <div className="pi-acompanhamento pi-anjo-page mx-auto">
+          <header className="pi-hero pi-anjo-hero-simple">
+            <div className="pi-hero-top">
+              <div>
+                <span className="pi-eyebrow pi-eyebrow--icon"><Sparkles /> Espaço do Anjo</span>
+                <h1>Cartilha e Orientações do Anjo</h1>
+                <p className="pi-hero-subtitle">Tudo o que você precisa saber para apoiar o colaborador durante sua integração.</p>
+              </div>
+              <button type="button" className="pi-btn pi-btn--white" onClick={() => setLocation("/anjo/formularios")}>
+                Acompanhar integração <ArrowRight />
+              </button>
             </div>
-            <Button type="button" onClick={() => setLocation("/anjo/formularios")}>
-              Acompanhar integração <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+          </header>
+
+          <article className="pi-anjo-card pi-anjo-section">
+            <div className="pi-anjo-card-head">
+              <span className="pi-anjo-icon-tile is-small"><HeartHandshake /></span>
+              <h2 className="pi-anjo-card-title">Seu papel na integração</h2>
+            </div>
+            <div className="pi-anjo-prose">
+              <p>Ser um Colaborador Anjo é exercer um papel de acolhimento, conexão e apoio durante o processo de integração. Você será uma das referências do colaborador nesse período, ajudando-o a compreender a equipe, a rotina, os processos e a cultura da organização.</p>
+              <div className="pi-anjo-highlight"><strong>O Anjo é um colaborador experiente</strong> que acompanha colegas recém-chegados ou em transição interna, contribuindo para uma adaptação mais acolhedora, positiva e eficiente.</div>
+              <p>Seu papel é orientar, apoiar, compartilhar caminhos e estar disponível durante os primeiros momentos da integração.</p>
+            </div>
+          </article>
+
+          <div className="pi-anjo-quote">
+            <span className="pi-anjo-icon-tile is-small"><MessageCircle /></span>
+            <p>
+              O primeiro dia em um novo ambiente pode ser desafiador. Como Anjo, você será uma das principais referências do colaborador durante sua chegada e adaptação. <strong>Você não precisa ter todas as respostas.</strong> O mais importante é orientar, acolher e ajudar o colaborador a encontrar os caminhos certos.
+            </p>
           </div>
-        </div>
 
-        <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2"><HeartHandshake className="h-5 w-5" />Seu papel na integração</CardTitle></CardHeader>
-          <CardContent className="space-y-3 text-sm leading-6">
-            <p>Ser um Colaborador Anjo é exercer um papel de acolhimento, conexão e apoio durante o processo de integração. Você será uma das referências do colaborador nesse período, ajudando-o a compreender a equipe, a rotina, os processos e a cultura da organização.</p>
-            <p><strong>O Anjo é um colaborador experiente</strong> que acompanha colegas recém-chegados ou em transição interna, contribuindo para uma adaptação mais acolhedora, positiva e eficiente.</p>
-            <p>Seu papel é orientar, apoiar, compartilhar caminhos e estar disponível durante os primeiros momentos da integração.</p>
-          </CardContent>
-        </Card>
+          <section className="pi-anjo-section">
+            <h2 className="pi-anjo-section-title"><span className="pi-anjo-icon-tile is-small"><Route /></span>Linha do tempo orientativa</h2>
+            <Accordion type="single" collapsible className="pi-anjo-timeline">
+              {etapas.map((etapa, index) => {
+                const EtapaIcone = etapaIcones[index];
+                return (
+                  <AccordionItem key={etapa.id} value={etapa.id} className="pi-anjo-step">
+                    <AccordionTrigger>
+                      <span className="flex min-w-0 flex-1 items-center gap-4 text-left">
+                        <span className="pi-anjo-step-node"><EtapaIcone /></span>
+                        <span className="pi-anjo-step-meta">
+                          <span className="pi-anjo-step-num">ETAPA {etapa.numero}</span>
+                          <span className="pi-anjo-step-title block">{etapa.titulo}</span>
+                        </span>
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent className="pi-anjo-step-body">
+                      <ul className="pi-anjo-checklist">
+                        {etapa.itens.map((item) => <li key={item}><Check /><span>{item}</span></li>)}
+                      </ul>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+          </section>
 
-        <Alert>
-          <MessageCircle className="h-4 w-4" />
-          <AlertDescription>
-            O primeiro dia em um novo ambiente pode ser desafiador. Como Anjo, você será uma das principais referências do colaborador durante sua chegada e adaptação. Você não precisa ter todas as respostas. O mais importante é orientar, acolher e ajudar o colaborador a encontrar os caminhos certos.
-          </AlertDescription>
-        </Alert>
-
-        <div>
-          <div className="mb-3 flex items-center gap-2"><Route className="h-5 w-5" /><h2 className="text-xl font-semibold">Linha do tempo orientativa</h2></div>
-          <Accordion type="single" collapsible className="space-y-2">
-            {etapas.map((etapa, index) => {
-              const EtapaIcone = etapaIcones[index];
-              return (
-              <AccordionItem key={etapa.id} value={etapa.id} className="rounded-lg border px-4">
-                <AccordionTrigger className="hover:no-underline">
-                  <span className="flex items-center gap-3 text-left">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-50 text-violet-700"><EtapaIcone className="h-4 w-4" /></span>
-                    <span><span className="block text-xs font-bold text-violet-600">{etapa.numero}</span><span>{etapa.titulo}</span></span>
-                  </span>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <ul className="space-y-2 pb-2 text-sm text-muted-foreground">
-                    {etapa.itens.map((item) => <li key={item} className="flex gap-2"><span aria-hidden="true">•</span><span>{item}</span></li>)}
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
-              );
-            })}
-          </Accordion>
-        </div>
-
-        <div>
-          <div className="mb-3 flex items-center gap-2"><CalendarCheck className="h-5 w-5" /><h2 className="text-xl font-semibold">O que se espera do Anjo</h2></div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {esperado.map(([titulo, descricao], index) => {
-              const EsperadoIcone = esperadoIcones[index];
-              return (
-                <Card key={titulo} className="transition-shadow hover:shadow-sm">
-                  <CardContent className="pt-5">
-                    <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50 text-violet-700"><EsperadoIcone className="h-4 w-4" /></div>
-                    <p className="font-semibold">{titulo}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{descricao}</p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-
-        <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5" />O Anjo não substitui o gestor</CardTitle></CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
-            <div>
-              <p className="mb-2 text-sm font-semibold">Seu papel é:</p>
-              <p className="text-sm text-muted-foreground">acolher, orientar, apoiar, integrar e acompanhar.</p>
+          <section className="pi-anjo-section">
+            <h2 className="pi-anjo-section-title"><span className="pi-anjo-icon-tile is-small"><CalendarCheck /></span>O que se espera do Anjo</h2>
+            <div className="pi-anjo-values">
+              {esperado.map(([titulo, descricao], index) => {
+                const EsperadoIcone = esperadoIcones[index];
+                return (
+                  <article key={titulo} className={"pi-anjo-value " + esperadoClasses[index]}>
+                    <span className="pi-anjo-icon-tile"><EsperadoIcone /></span>
+                    <h3>{titulo}</h3>
+                    <p>{descricao}</p>
+                  </article>
+                );
+              })}
             </div>
-            <div>
-              <p className="mb-2 text-sm font-semibold">Não cabe ao Anjo:</p>
-              <ul className="space-y-1 text-sm text-muted-foreground">
-                <li>• realizar avaliação formal de desempenho;</li>
-                <li>• aplicar medidas disciplinares ou aprovar entregas;</li>
-                <li>• exercer gestão formal ou definir metas unilateralmente;</li>
-                <li>• assumir a responsabilidade pelo PDI;</li>
-                <li>• executar atribuições formais da UGP ou do gestor.</li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
+          </section>
 
-        <Card>
-          <CardContent className="flex flex-col gap-3 pt-6 sm:flex-row sm:items-center sm:justify-between">
-            <div><p className="font-semibold">Precisa conferir seus formulários?</p><p className="text-sm text-muted-foreground">Veja seus formulários e a evolução das avaliações que você já respondeu.</p></div>
-            <Button type="button" variant="outline" onClick={() => setLocation("/anjo/formularios")}><Users className="mr-2 h-4 w-4" />Acompanhar integração</Button>
-          </CardContent>
-        </Card>
-      </div>
+          <article className="pi-anjo-card pi-anjo-section">
+            <div className="pi-anjo-card-head">
+              <span className="pi-anjo-icon-tile is-small"><ShieldCheck /></span>
+              <h2 className="pi-anjo-card-title">O Anjo não substitui o gestor</h2>
+            </div>
+            <div className="pi-anjo-boundary">
+              <div className="pi-anjo-boundary-col pi-anjo-boundary-do">
+                <h4><CheckCircle2 /> Seu papel é</h4>
+                <div className="pi-anjo-tags">
+                  {["Acolher", "Orientar", "Apoiar", "Integrar", "Acompanhar"].map((item) => (
+                    <span className="pi-anjo-tag-ok" key={item}><Check />{item}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="pi-anjo-boundary-col pi-anjo-boundary-dont">
+                <h4><X /> Não cabe ao Anjo</h4>
+                <ul className="pi-anjo-xlist">
+                  <li><X /> realizar avaliação formal de desempenho;</li>
+                  <li><X /> aplicar medidas disciplinares ou aprovar entregas;</li>
+                  <li><X /> exercer gestão formal ou definir metas unilateralmente;</li>
+                  <li><X /> assumir a responsabilidade pelo PDI;</li>
+                  <li><X /> executar atribuições formais da UGP ou do gestor.</li>
+                </ul>
+              </div>
+            </div>
+          </article>
+
+          <article className="pi-anjo-card pi-anjo-section pi-anjo-footer-card">
+            <div>
+              <p className="pi-anjo-footer-title">Precisa conferir seus formulários?</p>
+              <p className="pi-anjo-footer-subtitle">Veja seus formulários e a evolução das avaliações que você já respondeu.</p>
+            </div>
+            <button type="button" className="pi-btn pi-btn--white" onClick={() => setLocation("/anjo/formularios")}>
+              <Users className="h-4 w-4" /> Acompanhar integração <ArrowRight />
+            </button>
+          </article>
+        </div>
       </AnjoRouteGuard>
     </DashboardLayout>
   );
